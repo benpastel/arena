@@ -1,13 +1,13 @@
-from enum import Enum
-from typing import Tuple, List
+from enum import Enum, IntEnum
+from typing import Tuple, List, Dict
+from random import shuffle
+from dataclasses import dataclass
 
-ROWS = 5
-COLUMNS = 5
 
 # There are two players:
 #   North - on top, moves first
 #   South - on bottom, moves second
-class Player(Enum):
+class Player(IntEnum):
     N = 0
     S = 1
 
@@ -39,44 +39,168 @@ class Wizard(Enum):
 #
 # Where W is a Wizard, M is a Mana Pool, and S is a Spellbook.
 #
-# We represent the board with two objects:
-#   - a 5x5 array
+
+# There are two spellbooks with 2 face-down spells each.
+# When a wizard moves onto a spellbook, they can examine and swap spells.
+class Spellbook(Enum):
+    W = 0
+    E = 0
+
+# manapools give +1 when a wizard moves onto them
+# they are fixed on the board
+MANAPOOL_POSITIONS = [(2, 0), (2, 3)]
+
+class Spell(Enum):
+    '''
+    The spells and their tile representations.
+
+    See spells.py for descriptions and effects.
+    '''
+    FLOWER_POWER = '🀥'
+    GRAPPLING_HOOK = '🀍'
+    BIRD_KNIGHT = '🀐'
+    CHROMATIC_GRENADES = '🀛'
+    BAMBOO_KNIVES = '🀒'
+
+# This represents a face-down spell tile, where the value is unknown to a player
+HIDDEN_SPELL = '🀫'
 
 
-class Square(IntEnum):
-    EMPTY = 0
+class GameResult(Enum):
+    ONGOING = 0
+    NORTH_WINS = 1
+    SOUTH_WINS = 2
 
-    # manapools give +1 when a wizard moves onto them
-    MANAPOOL = 1
-
-    # each spellbook has 2 face-down spell tiles
-    # wizards can examine and swap spell tiles when they move onto a spellbook
-    SPELLBOOK_W = 2
-    SPELLBOOK_E = 3
-
-# BOARD is a fixed array representing the position of the manapools and spellbooks
-# the wizard positions are tracked separately in a coordinate dict
-BOARD = np.full((ROWS, COLUMNS), Square.EMPTY, dtype=int)
-BOARD[2, 0] = Square.MANAPOOL
-BOARD[2, 1] = Square.SPELLBOOK_W
-BOARD[2, 3] = Square.MANAPOOL
-BOARD[2, 4] = Square.SPELLBOOK_E
+    # a draw is possible if both players are simultaneously killed by a chromatic grenade
+    DRAW = 3
 
 
+@dataclass
 class State:
-    #
-    wizard_positions: Dict[Wizard, Tuple(int, int)]
+    '''
+    This fully represents a game's state.
+    It includes secret information that should not be revealed to the players.
+    '''
 
+    # Wizard -> List of spells they have
+    # these are only visible to the wizard's player
+    #
+    # The number of spells per wizard is equivalent to the number of lives; they start at
+    # 2 and whenever they lose a life, that spell is removed from this list and added to
+    # `dead_spells`.
+    #
+    # When the list is empty, the wizard is dead.  When both of a player's wizards are dead,
+    # they lose.
+    wizard_spells: Dict[Wizard, List[Spell]]
+
+    # Spellbook -> the list of spells on that square.
+    # There are always exactly two spells in the list.
+    spellbook_spells: Dict[Spellbook, List[Spell]]
+
+    # The remaining spell tiles are hidden off-board.
+    # After an unsuccessful challenge, the challenged spell is first shuffled into this list,
+    # and then the wizard draws a new spell from this list.
+    hidden_spells: List[Spell]
+
+    # the turn counter also tracks the current player (turn_count % 2)
+    turn_count: int = 0
+
+    # Wizard -> (row, col) position on the board
+    # when a wizard is killed they are removed from this dict
+    wizard_positions: Dict[Wizard, Tuple[int, int]] = {
+        Wizard.NW: (0, 1),
+        Wizard.NE: (0, 3),
+        Wizard.SW: (4, 1),
+        Wizard.SE: (4, 3)
+    }
+
+    # Wizard -> the list of spells that have been revealed when this wizard lost a life.
+    # these spells stay face-up and are never reshuffled.
+    dead_spells: Dict[Wizard, List[Spell]] = {wizard: [] for wizard in Wizard}
 
 
 def new_state() -> State:
-    # Represent the board state as a dict wizard => (row, col) location of that wizard
-    #
+    '''
+    Return a new state with the spells randomly dealt to wizards and spellbooks
+    '''
+    spells = [spell for spell in Spell for s in range(3)]
+
+    # check that we didn't change the count of stuff in the rules and forget to change this method
+    assert len(spells) == 15
+    assert len(Wizard) == 4
+    assert len(Spellbook) == 2
+
+    # shuffle, then deal out the cards from fixed indices
+    shuffle(spells)
+    return State(
+        wizard_spells = {
+            Wizard.NW: spells[0:2],
+            Wizard.NE: spells[2:4],
+            Wizard.SW: spells[4:6],
+            Wizard.SE: spells[6:8]
+        },
+        spellbook_spells = {
+            Spellbook.W: spells[8:10],
+            Spellbook.E: spells[10:12]
+        },
+        hidden_spells = spells[12:15]
+    )
+
+def check_consistency(state: State) -> None:
+    '''
+    Check that the spells, wizard lives, and positions are consistent.
+    '''
+
+    # check there are exactly 3 of each spell
+    spell_counts = {spell: 0 for spell in Spell}
+    for spell_list in state.wizard_spells.values():
+        assert 0 <= len(spell_list) <= 2
+        for spell in spell_list:
+            spell_counts[spell] += 1
+
+    for spell_list in state.dead_spells.values():
+        assert 0 <= len(spell_list) <= 2
+        for spell in spell_list:
+            spell_counts[spell] += 1
+
+    for spell_list in state.spellbook_spells.values():
+        assert len(spell_list) == 2
+        for spell in spell_list:
+            spell_counts[spell] += 1
+
+    for spell in Spell:
+        assert spell_counts[spell] == 3
+
+    for wizard in Wizard:
+        # each wizard should have 2 alive or dead spells
+        assert len(state.wizard_spells[wizard]) + len(state.dead_spells[wizard]) == 2
+
+        # wizards have a position if and only if they are alive
+        assert (len(state.wizard_spells[wizard]) > 0) == (wizard in state.wizard_positions)
+
+    # check no wizards on the same square
+    assert len(state.wizard_positions.values()) == len(set(state.wizard_positions.values()))
 
 
-
-
-
-
+def check_game_result(state: State) -> GameResult:
+    '''
+    See if anyone has won the game.
+    '''
+    north_dead = (
+        Wizard.NW not in state.wizard_positions and
+        Wizard.NE not in state.wizard_positions
+    )
+    south_dead = (
+        Wizard.SW not in state.wizard_positions and
+        Wizard.SE not in state.wizard_positions
+    )
+    if north_dead and south_dead:
+        return GameResult.DRAW
+    elif south_dead:
+        return GameResult.NORTH_WINS
+    elif north_dead:
+        return GameResult.SOUTH_WINS
+    else:
+        return GameResult.ONGOING
 
 
