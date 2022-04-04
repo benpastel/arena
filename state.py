@@ -44,7 +44,7 @@ class Wizard(Enum):
 # When a wizard moves onto a spellbook, they can examine and swap spells.
 class Spellbook(Enum):
     W = 0
-    E = 0
+    E = 1
 
 # manapools give +1 when a wizard moves onto them
 # they are fixed on the board
@@ -102,26 +102,21 @@ class State:
     # and then the wizard draws a new spell from this list.
     hidden_spells: List[Spell]
 
-    # the turn counter also tracks the current player (turn_count % 2)
-    turn_count: int = 0
-
     # Wizard -> (row, col) position on the board
     # when a wizard is killed they are removed from this dict
-    wizard_positions: Dict[Wizard, Tuple[int, int]] = {
-        Wizard.NW: (0, 1),
-        Wizard.NE: (0, 3),
-        Wizard.SW: (4, 1),
-        Wizard.SE: (4, 3)
-    }
+    wizard_positions: Dict[Wizard, Tuple[int, int]]
 
     # Wizard -> the list of spells that have been revealed when this wizard lost a life.
     # these spells stay face-up and are never reshuffled.
-    dead_spells: Dict[Wizard, List[Spell]] = {wizard: [] for wizard in Wizard}
+    dead_spells: Dict[Wizard, List[Spell]]
+
+    # the turn counter also tracks the current player (turn_count % 2)
+    turn_count: int
 
 
 def new_state() -> State:
     '''
-    Return a new state with the spells randomly dealt to wizards and spellbooks
+    Return a new state with the spells randomly dealt.
     '''
     spells = [spell for spell in Spell for s in range(3)]
 
@@ -143,7 +138,15 @@ def new_state() -> State:
             Spellbook.W: spells[8:10],
             Spellbook.E: spells[10:12]
         },
-        hidden_spells = spells[12:15]
+        hidden_spells = spells[12:15],
+        wizard_positions = {
+            Wizard.NW: (0, 1),
+            Wizard.NE: (0, 3),
+            Wizard.SW: (4, 1),
+            Wizard.SE: (4, 3)
+        },
+        dead_spells = {wizard: [] for wizard in Wizard},
+        turn_count = 0
     )
 
 def check_consistency(state: State) -> None:
@@ -168,8 +171,12 @@ def check_consistency(state: State) -> None:
         for spell in spell_list:
             spell_counts[spell] += 1
 
+    assert len(state.hidden_spells) == 3
+    for spell in state.hidden_spells:
+        spell_counts[spell] += 1
+
     for spell in Spell:
-        assert spell_counts[spell] == 3
+        assert spell_counts[spell] == 3, spell_counts
 
     for wizard in Wizard:
         # each wizard should have 2 alive or dead spells
