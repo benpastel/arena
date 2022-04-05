@@ -1,20 +1,17 @@
-from enum import Enum, IntEnum
+from enum import Enum
 from typing import Tuple, List, Dict
 from random import shuffle
 from dataclasses import dataclass
 
 
 # There are two players:
-#   North - on top, moves first
-#   South - on bottom, moves second
-class Player(IntEnum):
+#   North - displayed on top
+#   South - displayed on bottom
+class Player(Enum):
     N = 0
     S = 1
 
-# There are 4 wizards:
-#   NorthWest and NorthEast belong to the North player
-#   SouthWest and SouthEast belong to the South player
-#
+
 # Wizards move around the board, acquire mana, and cast spells to try to kill
 # each other.
 class Wizard(Enum):
@@ -23,6 +20,14 @@ class Wizard(Enum):
     SW = 2
     SE = 3
 
+# which player controls which wizard
+PLAYER_TO_WIZARD = {
+    Player.N: [Wizard.NW, Wizard.NE],
+    Player.S: [Wizard.SW, Wizard.SE]
+}
+
+ROWS = 5
+COLUMNS = 5
 # Board setup looks like this:
 #
 #     North Player's Side
@@ -31,24 +36,28 @@ class Wizard(Enum):
 #        +---------+
 #      0 | |W| |W| |
 #      1 | | | | | |
-# rows 2 |M|S| |M|S|
+# rows 2 |S|B| |S|B|
 #      3 | | | | | |
 #      4 | |W| |W| |
 #        +---------+
 #    South Player's Side
 #
-# Where W is a Wizard, M is a Mana Pool, and S is a Spellbook.
-#
+# Where W is a Wizard, S is a Sparkle, and  is a Book.
 
-# There are two spellbooks with 2 face-down spells each.
-# When a wizard moves onto a spellbook, they can examine and swap spells.
-class Spellbook(Enum):
+# There are two books with 2 face-down spells each.
+# When a wizard moves onto a book, they can examine and swap spells.
+class Book(Enum):
     W = 0
     E = 1
 
-# manapools give +1 when a wizard moves onto them
+BOOK_POSITIONS = {
+    Book.W: (2, 1),
+    Book.E: (2, 4)
+}
+
+# sparkles give +1 when a wizard moves onto them
 # they are fixed on the board
-MANAPOOL_POSITIONS = [(2, 0), (2, 3)]
+SPARKLE_POSITIONS = [(2, 0), (2, 3)]
 
 class Spell(Enum):
     '''
@@ -62,8 +71,8 @@ class Spell(Enum):
     CHROMATIC_GRENADES = '🀛'
     BAMBOO_KNIVES = '🀒'
 
-# This represents a face-down spell tile, where the value is unknown to a player
-HIDDEN_SPELL = '🀫'
+    # This represents a face-down spell tile, where the value is unknown to a player
+    HIDDEN = '🀫'
 
 
 class GameResult(Enum):
@@ -79,11 +88,14 @@ class GameResult(Enum):
 class State:
     '''
     This fully represents a game's state.
-    It includes secret information that should not be revealed to the players.
+
+    There are 3 versions of the state:
+        - a private state known only to the server that includes all the spells
+        - a player's view on the state where some of the spells are hidden
     '''
 
-    # Wizard -> List of spells they have
-    # these are only visible to the wizard's player
+    # wizard -> list of spells they have
+    # each player can only see the spells of their own wizard
     #
     # The number of spells per wizard is equivalent to the number of lives; they start at
     # 2 and whenever they lose a life, that spell is removed from this list and added to
@@ -93,9 +105,9 @@ class State:
     # they lose.
     wizard_spells: Dict[Wizard, List[Spell]]
 
-    # Spellbook -> the list of spells on that square.
+    # Book -> the list of spells on that square.
     # There are always exactly two spells in the list.
-    spellbook_spells: Dict[Spellbook, List[Spell]]
+    book_spells: Dict[Book, List[Spell]]
 
     # The remaining spell tiles are hidden off-board.
     # After an unsuccessful challenge, the challenged spell is first shuffled into this list,
@@ -110,20 +122,20 @@ class State:
     # these spells stay face-up and are never reshuffled.
     dead_spells: Dict[Wizard, List[Spell]]
 
-    # the turn counter also tracks the current player (turn_count % 2)
-    turn_count: int
+    # human-readable event log of public information
+    log: List[str]
 
 
 def new_state() -> State:
     '''
     Return a new state with the spells randomly dealt.
     '''
-    spells = [spell for spell in Spell for s in range(3)]
+    spells = [spell for spell in Spell for s in range(3) if spell != Spell.HIDDEN]
 
     # check that we didn't change the count of stuff in the rules and forget to change this method
     assert len(spells) == 15
     assert len(Wizard) == 4
-    assert len(Spellbook) == 2
+    assert len(Book) == 2
 
     # shuffle, then deal out the cards from fixed indices
     shuffle(spells)
@@ -134,9 +146,9 @@ def new_state() -> State:
             Wizard.SW: spells[4:6],
             Wizard.SE: spells[6:8]
         },
-        spellbook_spells = {
-            Spellbook.W: spells[8:10],
-            Spellbook.E: spells[10:12]
+        book_spells = {
+            Book.W: spells[8:10],
+            Book.E: spells[10:12]
         },
         hidden_spells = spells[12:15],
         wizard_positions = {
@@ -146,47 +158,82 @@ def new_state() -> State:
             Wizard.SE: (4, 3)
         },
         dead_spells = {wizard: [] for wizard in Wizard},
-        turn_count = 0
+        log = []
     )
 
-def check_consistency(state: State) -> None:
+
+def player_view(private_state: State, player: Player) -> State:
+    '''
+    Return a copy of private_state with all hidden spells replaced by Spell.HIDDEN
+
+    This represents the player's knowledge of the state.
+    '''
+    wizard_spells = {}
+    for wizard, spells in private_state.wizard_spells.items():
+        if wizard in PLAYER_TO_WIZARD[player]:
+            # we can see our wizards' spells
+            wizard_spells[wizard] = spells
+        else:
+            # opponent's wizards' spells are hidden
+            wizard_spells[wizard] = [Spell.HIDDEN for _ in spells]
+
+    return State(
+        wizard_spells = wizard_spells,
+        # we can't see the book spells
+        book_spells = {
+            Book.W: [Spell.HIDDEN, Spell.HIDDEN],
+            Book.E: [Spell.HIDDEN, Spell.HIDDEN],
+        },
+        # we can't see the hidden spells
+        hidden_spells = [Spell.HIDDEN, Spell.HIDDEN, Spell.HIDDEN],
+        # we can see everything else
+        wizard_positions = private_state.wizard_positions,
+        dead_spells = private_state.dead_spells,
+        log = private_state.log
+    )
+
+
+def check_consistency(private_state: State) -> None:
     '''
     Check that the spells, wizard lives, and positions are consistent.
     '''
 
     # check there are exactly 3 of each spell
     spell_counts = {spell: 0 for spell in Spell}
-    for spell_list in state.wizard_spells.values():
+    for spell_list in private_state.wizard_spells.values():
         assert 0 <= len(spell_list) <= 2
         for spell in spell_list:
             spell_counts[spell] += 1
 
-    for spell_list in state.dead_spells.values():
+    for spell_list in private_state.dead_spells.values():
         assert 0 <= len(spell_list) <= 2
         for spell in spell_list:
             spell_counts[spell] += 1
 
-    for spell_list in state.spellbook_spells.values():
+    for spell_list in private_state.book_spells.values():
         assert len(spell_list) == 2
         for spell in spell_list:
             spell_counts[spell] += 1
 
-    assert len(state.hidden_spells) == 3
-    for spell in state.hidden_spells:
+    assert len(private_state.hidden_spells) == 3
+    for spell in private_state.hidden_spells:
         spell_counts[spell] += 1
 
     for spell in Spell:
-        assert spell_counts[spell] == 3, spell_counts
+        if spell == Spell.HIDDEN:
+            assert spell_counts[spell] == 0
+        else:
+            assert spell_counts[spell] == 3
 
     for wizard in Wizard:
         # each wizard should have 2 alive or dead spells
-        assert len(state.wizard_spells[wizard]) + len(state.dead_spells[wizard]) == 2
+        assert len(private_state.wizard_spells[wizard]) + len(private_state.dead_spells[wizard]) == 2
 
         # wizards have a position if and only if they are alive
-        assert (len(state.wizard_spells[wizard]) > 0) == (wizard in state.wizard_positions)
+        assert (len(private_state.wizard_spells[wizard]) > 0) == (wizard in private_state.wizard_positions)
 
     # check no wizards on the same square
-    assert len(state.wizard_positions.values()) == len(set(state.wizard_positions.values()))
+    assert len(private_state.wizard_positions.values()) == len(set(private_state.wizard_positions.values()))
 
 
 def check_game_result(state: State) -> GameResult:
