@@ -40,10 +40,10 @@ def print_state(state: State) -> None:
 
     print(f'{_render_tiles(Wizard.NW, state):16}{_render_tiles(Wizard.NE, state):16}')
     print('')
-    print('+--' * COLUMNS + '+')
+    print('  ' + '+--' * COLUMNS + '+')
     for r in range(ROWS):
-        print('|' + '|'.join(board[r]) + '|')
-    print('+--' * COLUMNS + '+')
+        print('  |' + '|'.join(board[r]) + '|')
+    print('  ' + '+--' * COLUMNS + '+')
     print('')
     print(f'{_render_tiles(Wizard.SW, state):16}{_render_tiles(Wizard.SE, state):16}')
 
