@@ -11,6 +11,9 @@ class Player(Enum):
     N = 0
     S = 1
 
+def other_player(p: Player) -> Player:
+    return Player.S if p == Player.N else Player.N
+
 
 # Wizards move around the board, acquire mana, and cast spells to try to kill
 # each other.
@@ -25,9 +28,20 @@ PLAYER_TO_WIZARD = {
     Player.N: [Wizard.NW, Wizard.NE],
     Player.S: [Wizard.SW, Wizard.SE]
 }
+WIZARD_TO_PLAYER = {
+    wizard: player
+    for player, wizards in PLAYER_TO_WIZARD.items()
+    for wizard in wizards
+}
 
 ROWS = 5
 COLUMNS = 5
+
+class Square(NamedTuple):
+    ''' A coordinate on the board. '''
+    row: int
+    col: int
+
 # Board setup looks like this:
 #
 #     North Player's Side
@@ -42,28 +56,28 @@ COLUMNS = 5
 #        +---------+
 #    South Player's Side
 #
-# Where W is a Wizard, S is a Sparkle, and  is a Book.
+# Where W is a Wizard, S is a Sparkle, and is a Book.
 
-# There are two books with 2 face-down spells each.
+# There are 2 books with 2 face-down spells each.
 # When a wizard moves onto a book, they can examine and swap spells.
 class Book(Enum):
     W = 0
     E = 1
 
 BOOK_POSITIONS = {
-    Book.W: (2, 1),
-    Book.E: (2, 4)
+    Book.W: Square(2, 1),
+    Book.E: Square(2, 4)
 }
 
 # sparkles give +1 when a wizard moves onto them
 # they are fixed on the board
-SPARKLE_POSITIONS = [(2, 0), (2, 3)]
+SPARKLE_POSITIONS = [Square(2, 0), Square(2, 3)]
 
 class Spell(Enum):
     '''
     The spells and their tile representations.
 
-    See spells.py for descriptions and effects.
+    See actions.py for descriptions and effects.
     '''
     FLOWER_POWER = '🀥'
     GRAPPLING_HOOK = '🀍'
@@ -91,7 +105,7 @@ class State:
 
     There are 3 versions of the state:
         - a private state known only to the server that includes all the spells
-        - a player's view on the state where some of the spells are hidden
+        - each player's view on the state where some of the spells are hidden
     '''
 
     # wizard -> list of spells they have
@@ -105,9 +119,8 @@ class State:
     # they lose.
     wizard_spells: Dict[Wizard, List[Spell]]
 
-    # Book -> the list of spells on that square.
-    # There are always exactly two spells in the list.
-    book_spells: Dict[Book, List[Spell]]
+    # Book -> The two spells on that square.
+    book_spells: Dict[Book, Tuple[Spell, Spell]]
 
     # The remaining spell tiles are hidden off-board.
     # After an unsuccessful challenge, the challenged spell is first shuffled into this list,
@@ -116,7 +129,7 @@ class State:
 
     # Wizard -> (row, col) position on the board
     # when a wizard is killed they are removed from this dict
-    wizard_positions: Dict[Wizard, Tuple[int, int]]
+    wizard_positions: Dict[Wizard, Square]
 
     # Wizard -> the list of spells that have been revealed when this wizard lost a life.
     # these spells stay face-up and are never reshuffled.
@@ -130,6 +143,7 @@ def new_state() -> State:
     '''
     Return a new state with the spells randomly dealt.
     '''
+    # 3 copies of each spell
     spells = [spell for spell in Spell for s in range(3) if spell != Spell.HIDDEN]
 
     # check that we didn't change the count of stuff in the rules and forget to change this method
@@ -147,15 +161,15 @@ def new_state() -> State:
             Wizard.SE: spells[6:8]
         },
         book_spells = {
-            Book.W: spells[8:10],
-            Book.E: spells[10:12]
+            Book.W: tuple(spells[8:10]),
+            Book.E: tuple(spells[10:12])
         },
         hidden_spells = spells[12:15],
         wizard_positions = {
-            Wizard.NW: (0, 1),
-            Wizard.NE: (0, 3),
-            Wizard.SW: (4, 1),
-            Wizard.SE: (4, 3)
+            Wizard.NW: Square(0, 1),
+            Wizard.NE: Square(0, 3),
+            Wizard.SW: Square(4, 1),
+            Wizard.SE: Square(4, 3)
         },
         dead_spells = {wizard: [] for wizard in Wizard},
         log = []
