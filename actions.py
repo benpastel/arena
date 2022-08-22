@@ -50,14 +50,18 @@ class Action(IntEnum):
     # move 2 in any direction, without gaining any mana
     BAMBOO_KNIVES_RUSH = 7
 
+    # target an empty square in a straight line 2 squares away
+    # kill in a 3x3 square
+    # RULES: change "empty" definition in google doc
+    GRENADES = 8
+
+
 
 def _all_distances(start: Square, obstructions: List[Square]) -> Dict[Square, int]:
     '''
     Return the manhattan distance from the start to all squares, with routes:
         - allowed to end on an obstruction
         - not allowed to pass through an obstruction as an intermediate step
-
-    TODO test this next!
     '''
     assert start not in obstructions
 
@@ -81,20 +85,30 @@ def _all_distances(start: Square, obstructions: List[Square]) -> Dict[Square, in
     return explored
 
 
-def _empty(s: Square, state: State) -> bool:
+def _grapple_end_square(start: Square, target: Square) -> Square:
     '''
-    True if no wizard is on the square.
+    If `start` grapples `target`, what square do they end up?
+
+    The square adjacent to `start` which is nearest `target`,
+    preferring North & South if tied.
     '''
-    return s not in wizard_positions.values()
+    row_diff = target.row - start.row
+    col_diff = target.col - start.col
 
+    if row_diff < 0 and abs(row_diff) >= abs(col_diff):
+        # North
+        return Square(start.row - 1, start.col)
+    elif row_diff > 0 and abs(row_diff) >= abs(col_diff):
+        # South
+        return Square(start.row + 1, start.col)
+    elif col_diff > 0:
+        # East
+        return Square(start.row, start.col + 1)
+    elif col_diff < 0:
+        # West
+        return Square(start.row, start.col - 1)
 
-def _has_enemy(s: Square, wizard: Wizard, state: State) -> bool:
-    '''
-    True if an enemy of `wizard` is on the square.
-    '''
-
-
-    return s in enemy_positions
+    raise AssertionError("Above cases should be exhaustive.")
 
 
 def valid_targets(wizard: Wizard, action: Action, state: State) -> List[Square]:
@@ -132,44 +146,51 @@ def valid_targets(wizard: Wizard, action: Action, state: State) -> List[Square]:
             for s, dist in empty_targets
             if dist == 1
         ]
-    # TODO: left off here: refactor all to use the lists above
-
     elif action == Action.SMITE:
-        return _enemy_positions(us, max_dist = ROWS * COLUMNS)
+        return enemy_targets
     elif action == Action.GRAPPLING_HOOK:
+        # can grapple any enemy if the square we pull them to is empty
+        # RULES: consider forcing target in LOS
         return [
-            s for s in ALL_SQUARES
-            if _dist(us, s) > 0
-            and _has_enemy(s)
+            s
+            for s in enemy_targets
+            if _grapple_end_square(start, s) not in obstructions
         ]
+
     elif action == Action.BIRD_KNIGHT:
         return [
-            s for s in ALL_SQUARES
-            if 1 <= _dist(us, s) <= 3
-            and _empty(s)
+            s
+            for s, dist in empty_targets
+            if 1 <= dist <= 3
         ]
     elif action == Action.BAMBOO_KNIVES_RANGE_1:
         return [
-            s for s in ALL_SQUARES
-            if _dist(us, s) == 1
-            and _has_enemy(s)
+            s
+            for s, dist in enemy_targets
+            if dist == 1
         ]
     elif action == Action.BAMBOO_KNIVES_RANGE_2:
         return [
-            s for s in ALL_SQUARES
-            if _dist(us, s) == 2
-            and _has_enemy(s)
+            s
+            for s, dist in enemy_targets
+            if dist == 2
         ]
     elif action == Action.BAMBOO_KNIVES_RUSH:
         return [
-            s for s in ALL_SQUARES
-
-            and
+            s
+            for s, dist in empty_targets
+            if 1 <= dist <= 2
+        ]
+    elif action == Action.CHROMATIC_GRENADES:
+        # empty straight line distance 2
+        return [
+            s
+            for s, dist in empty_targets
+            if dist == 2
+            and (s.row == start.row or s.col == start.col)
         ]
 
-
-    assert False # TODO
-
+    raise ValueError(f"Unknown {action=}")
 
 
 def take_action(wizard: Wizard, action: Action, state: State) -> None:
