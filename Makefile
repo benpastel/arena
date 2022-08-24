@@ -5,4 +5,4 @@ lint:
 
 .PHONY: test
 test: lint
-	pytest .
+	pytest . -vv

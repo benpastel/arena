@@ -85,11 +85,15 @@ def _all_distances(
         explored[s] = dist
         if s in obstructions:
             continue
-        for r in (s.row - 1, s.row, s.row + 1):
-            for c in (s.col - 1, s.col, s.col + 1):
-                if 0 <= r < rows and 0 <= c < cols and Square(r, c) not in explored:
-                    to_explore.append(Square(r, c))
-                    to_explore_dists.append(dist + 1)
+        for r, c in [
+            (s.row - 1, s.col),
+            (s.row + 1, s.col),
+            (s.row, s.col - 1),
+            (s.row, s.col + 1),
+        ]:
+            if 0 <= r < rows and 0 <= c < cols and Square(r, c) not in explored:
+                to_explore.append(Square(r, c))
+                to_explore_dists.append(dist + 1)
     return explored
 
 
