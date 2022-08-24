@@ -123,7 +123,7 @@ def _grapple_end_square(start: Square, target: Square) -> Square:
     raise AssertionError("Above cases should be exhaustive.")
 
 
-def valid_targets(wizard: Wizard, action: Action, state: State) -> List[Square]:
+def valid_targets(wizard: Wizard, action: Action, wizard_positions: Dict[Wizard, Square]) -> List[Square]:
     """
     If `wizard` were to take `action` in the current `state`,
     which squares would be valid targets of the action?  E.g. squares the wizard can move
@@ -132,17 +132,17 @@ def valid_targets(wizard: Wizard, action: Action, state: State) -> List[Square]:
     The returned list may be empty, which means the action would be invalid because there is no
     legal target.
     """
-    start = state.wizard_positions[wizard]
+    start = wizard_positions[wizard]
 
     # all other wizards are treated as obstructions for the purposes of calculating range
-    obstructions = [s for s in state.wizard_positions.values() if s != start]
+    obstructions = [s for s in wizard_positions.values() if s != start]
     distances = _all_distances(start, obstructions)
 
     enemy = other_player(WIZARD_TO_PLAYER[wizard])
-    enemy_positions = [state.wizard_positions[w] for w in PLAYER_TO_WIZARD[enemy]]
+    enemy_positions = [wizard_positions[w] for w in PLAYER_TO_WIZARD[enemy]]
 
     empty_targets = {
-        s: dist for s, dist in distances.items() if s not in state.wizard_positions
+        s: dist for s, dist in distances.items() if s not in wizard_positions
     }
     enemy_targets = {s: dist for s, dist in distances.items() if s in enemy_positions}
 

@@ -36,8 +36,88 @@ def test_all_distances():
 
 
 def test_grapple_end_square():
-    assert False, "TODO"
+    # north
+    assert _grapple_end_square(Square(3, 4), Square(0, 1)) == Square(2, 4)
+
+    # south
+    assert _grapple_end_square(Square(3, 4), Square(6, 1)) == Square(4, 4)
+
+    # east
+    assert _grapple_end_square(Square(3, 4), Square(4, 7)) == Square(3, 5)
+
+    # west
+    assert _grapple_end_square(Square(3, 4), Square(2, 4)) == Square(2, 4)
 
 
 def test_valid_targets():
+    # Test case looks like:
+    #
+    #   . . . . .
+    #   . E . . .
+    #   . W . . .
+    #   . F E . .
+    #   . . . . .
+    #
+    # Where:
+    #   - W is the wizard whose turn it is (SW)
+    #   - E is an enemy (NW, NE)
+    #   - F is a friend (SE)
+
+    us = Wizard.SW
+    positions = {
+        Wizard.SW: Square(2, 1),
+        Wizard.SE: Square(3, 2),
+        Wizard.NW: Square(1, 1),
+        Wizard.NE: Square(3, 2),
+    }
+
+    assert valid_targets(us, Action.MOVE, positions) == [
+        Square(2, 0),
+        Square(3, 1),
+    ]
+    assert valid_targets(us, Action.SMITE, positions) == [
+        Square(1, 1),
+        Square(3, 2),
+    ]
+    assert valid_targets(us, Action.FLOWER_POWER, positions) == [
+        Square(2, 0),
+        Square(3, 1),
+    ]
+    assert valid_targets(us, Action.GRAPPLING_HOOK, positions) == [
+        Square(1, 1)
+        # the other enemy's is an invalid target
+        # because their end position is blocked by our friend
+    ]
+    assert valid_targets(us, Action.BIRD_KNIGHT, positions) == [
+        Square(0, 0),
+        Square(1, 0),
+        Square(2, 0),
+        Square(3, 0),
+        Square(4, 0),
+        # TODO left off here
+    ]
+    assert valid_targets(us, Action.BAMBOO_KNIVES_RANGE_1, positions) == [
+
+    ]
+    assert valid_targets(us, Action.BAMBOO_KNIVES_RANGE_2, positions) == [
+
+    ]
+    assert valid_targets(us, Action.BAMBOO_KNIVES_RUSH, positions) == [
+
+    ]
+    assert valid_targets(us, Action.CHROMATIC_GRENADES, positions) == [
+
+    ]
+
+
+
+
+
+
+
+
+
+
+
+
     assert False, "TODO"

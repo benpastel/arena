@@ -6,3 +6,8 @@ lint:
 .PHONY: test
 test: lint
 	pytest . -vv
+
+
+.PHONY: run
+run: test
+	cd .. && python -m arena.game
