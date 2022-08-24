@@ -1,17 +1,15 @@
-
-
-from state import (
+from arena.state import (
     new_state,
     check_consistency,
     check_game_result,
     GameResult,
     Player,
-    player_view
+    player_view,
 )
-from display import print_state
+from arena.display import print_state
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # under construction
 
     state = new_state()
