@@ -123,7 +123,9 @@ def _grapple_end_square(start: Square, target: Square) -> Square:
     raise AssertionError("Above cases should be exhaustive.")
 
 
-def valid_targets(wizard: Wizard, action: Action, wizard_positions: Dict[Wizard, Square]) -> List[Square]:
+def valid_targets(
+    wizard: Wizard, action: Action, wizard_positions: Dict[Wizard, Square]
+) -> List[Square]:
     """
     If `wizard` were to take `action` in the current `state`,
     which squares would be valid targets of the action?  E.g. squares the wizard can move
@@ -142,7 +144,7 @@ def valid_targets(wizard: Wizard, action: Action, wizard_positions: Dict[Wizard,
     enemy_positions = [wizard_positions[w] for w in PLAYER_TO_WIZARD[enemy]]
 
     empty_targets = {
-        s: dist for s, dist in distances.items() if s not in wizard_positions
+        s: dist for s, dist in distances.items() if s not in wizard_positions.values()
     }
     enemy_targets = {s: dist for s, dist in distances.items() if s in enemy_positions}
 

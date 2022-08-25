@@ -1,3 +1,5 @@
+from typing import List
+
 from arena.state import State, Wizard, Square
 from arena.actions import Action, _all_distances, _grapple_end_square, valid_targets
 
@@ -62,62 +64,79 @@ def test_valid_targets():
     #   - W is the wizard whose turn it is (SW)
     #   - E is an enemy (NW, NE)
     #   - F is a friend (SE)
-
-    us = Wizard.SW
     positions = {
         Wizard.SW: Square(2, 1),
-        Wizard.SE: Square(3, 2),
+        Wizard.SE: Square(3, 1),
         Wizard.NW: Square(1, 1),
         Wizard.NE: Square(3, 2),
     }
 
-    assert valid_targets(us, Action.MOVE, positions) == [
-        Square(2, 0),
-        Square(3, 1),
-    ]
-    assert valid_targets(us, Action.SMITE, positions) == [
-        Square(1, 1),
-        Square(3, 2),
-    ]
-    assert valid_targets(us, Action.FLOWER_POWER, positions) == [
-        Square(2, 0),
-        Square(3, 1),
-    ]
-    assert valid_targets(us, Action.GRAPPLING_HOOK, positions) == [
-        Square(1, 1)
-        # the other enemy's is an invalid target
-        # because their end position is blocked by our friend
-    ]
-    assert valid_targets(us, Action.BIRD_KNIGHT, positions) == [
-        Square(0, 0),
-        Square(1, 0),
-        Square(2, 0),
-        Square(3, 0),
-        Square(4, 0),
-        # TODO left off here
-    ]
-    assert valid_targets(us, Action.BAMBOO_KNIVES_RANGE_1, positions) == [
+    def _assert_targets(action: Action, expected: List[Square]) -> None:
+        actual = valid_targets(Wizard.SW, action, positions)
+        assert sorted(actual) == sorted(expected), f"{action=}"
 
-    ]
-    assert valid_targets(us, Action.BAMBOO_KNIVES_RANGE_2, positions) == [
-
-    ]
-    assert valid_targets(us, Action.BAMBOO_KNIVES_RUSH, positions) == [
-
-    ]
-    assert valid_targets(us, Action.CHROMATIC_GRENADES, positions) == [
-
-    ]
-
-
-
-
-
-
-
-
-
-
-
-
-    assert False, "TODO"
+    _assert_targets(
+        Action.MOVE,
+        [
+            Square(2, 0),
+            Square(2, 2),
+        ],
+    )
+    _assert_targets(
+        Action.SMITE,
+        [
+            Square(1, 1),
+            Square(3, 2),
+        ],
+    )
+    _assert_targets(
+        Action.FLOWER_POWER,
+        [
+            Square(2, 0),
+            Square(3, 1),
+        ],
+    )
+    _assert_targets(
+        Action.GRAPPLING_HOOK,
+        [
+            Square(1, 1)
+            # the other enemy's is an invalid target
+            # because their end position is blocked by our friend
+        ],
+    )
+    _assert_targets(
+        Action.BIRD_KNIGHT,
+        [
+            Square(0, 0),
+            Square(1, 0),
+            Square(2, 0),
+            Square(3, 0),
+            Square(4, 0),
+            Square(0, 2),
+            Square(1, 2),
+            Square(2, 2),
+            Square(1, 3),
+            Square(2, 3),
+            Square(3, 3),
+            Square(2, 4),
+        ],
+    )
+    _assert_targets(Action.BAMBOO_KNIVES_RANGE_1, [Square(1, 1)])
+    _assert_targets(Action.BAMBOO_KNIVES_RANGE_2, [Square(3, 2)])
+    _assert_targets(
+        Action.BAMBOO_KNIVES_RUSH,
+        [
+            Square(1, 0),
+            Square(2, 0),
+            Square(3, 0),
+            Square(1, 2),
+            Square(2, 2),
+            Square(2, 3),
+        ],
+    )
+    _assert_targets(
+        Action.CHROMATIC_GRENADES,
+        [
+            Square(2, 3),
+        ],
+    )
