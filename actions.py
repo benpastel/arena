@@ -80,8 +80,8 @@ def _all_distances(
     to_explore_dists = [0]
 
     while to_explore:
-        s = to_explore.pop()
-        dist = to_explore_dists.pop()
+        s = to_explore.pop(0)
+        dist = to_explore_dists.pop(0)
         explored[s] = dist
         if s in obstructions:
             continue
@@ -152,13 +152,17 @@ def valid_targets(
         return [s for s, dist in empty_targets.items() if dist == 1]
     elif action == Action.SMITE:
         return list(enemy_targets.keys())
+    elif action == Action.FLOWER_POWER:
+        return [s for s, dist in empty_targets.items() if dist == 1]
     elif action == Action.GRAPPLING_HOOK:
-        # can grapple any enemy if the square we pull them to is empty
+        # can grapple any enemy
+        # unless the square we would pull them into is occupied by someone else
         # RULES: consider forcing target in LOS
         return [
             s
             for s in enemy_targets
             if _grapple_end_square(start, s) not in obstructions
+            or _grapple_end_square(start, s) == s
         ]
 
     elif action == Action.BIRD_KNIGHT:

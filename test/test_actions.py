@@ -93,7 +93,7 @@ def test_valid_targets():
         Action.FLOWER_POWER,
         [
             Square(2, 0),
-            Square(3, 1),
+            Square(2, 2),
         ],
     )
     _assert_targets(
