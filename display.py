@@ -34,7 +34,7 @@ def _render_tiles(wizard: Wizard, state: State) -> str:
     return f'{wizard_glyph}: {" ".join(spell_glyphs)}'
 
 
-def print_state(state: State) -> None:
+def display_state(state: State) -> None:
     board = [[EMPTY_SQUARE_GLYPH for c in range(COLUMNS)] for r in range(ROWS)]
 
     # add sparkles and books first

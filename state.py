@@ -24,12 +24,20 @@ class Wizard(Enum):
     SW = 2
     SE = 3
 
-
 # which player controls which wizard
 PLAYER_TO_WIZARD = {Player.N: [Wizard.NW, Wizard.NE], Player.S: [Wizard.SW, Wizard.SE]}
 WIZARD_TO_PLAYER = {
     wizard: player for player, wizards in PLAYER_TO_WIZARD.items() for wizard in wizards
 }
+
+# For now the turn order is hardcoded to pass clockwise
+# North player starts with 1 turn, then each gets 2 consecutive turns to the end.
+TURN_ORDER = [
+    Wizard.NE,
+    Wizard.SE,
+    Wizard.SW,
+    Wizard.NW
+]
 
 ROWS = 5
 COLUMNS = 5
@@ -138,6 +146,9 @@ class State:
     # human-readable event log of public information
     log: List[str]
 
+    # whose turn it is
+    current_wizard: Wizard
+
 
 def new_state() -> State:
     """
@@ -170,6 +181,7 @@ def new_state() -> State:
         },
         dead_spells={wizard: [] for wizard in Wizard},
         log=[],
+        current_wizard = TURN_ORDER[0]
     )
 
 
@@ -201,6 +213,7 @@ def player_view(private_state: State, player: Player) -> State:
         wizard_positions=private_state.wizard_positions,
         dead_spells=private_state.dead_spells,
         log=private_state.log,
+        current_wizard = private_state.current_wizard
     )
 
 
