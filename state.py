@@ -30,15 +30,6 @@ WIZARD_TO_PLAYER = {
     wizard: player for player, wizards in PLAYER_TO_WIZARD.items() for wizard in wizards
 }
 
-# For now the turn order is hardcoded to pass clockwise
-# North player starts with 1 turn, then each gets 2 consecutive turns to the end.
-TURN_ORDER = [
-    Wizard.NE,
-    Wizard.SE,
-    Wizard.SW,
-    Wizard.NW
-]
-
 ROWS = 5
 COLUMNS = 5
 
@@ -97,6 +88,96 @@ class Spell(Enum):
     HIDDEN = "🀫"
 
 
+
+class Action(IntEnum):
+    """
+    Each turn, each Wizard takes one of these actions.
+
+    Most spells allow a single action, but Bamboo Knives allows 3,
+    so we list them all out separately here.
+
+    TODO: spells will also have "double" versions here where you claim two copies of a tile
+    which have a more powerful effect.
+    """
+
+    # Move 1 square and gain 1 mana
+    MOVE = 0
+
+    # Pay 7 mana to kill at any range.
+    # If a Wizard has above 10 mana they must smite on their turn.
+    SMITE = 1
+
+    # Move 1 and gain 3 mana.
+    FLOWER_POWER = 2
+
+    # Pull any enemy to you & steal 2 mana.
+    GRAPPLING_HOOK = 3
+
+    # Gain 1 mana & move 1-3 squares.
+    BIRD_KNIGHT = 4
+
+    # spend 3 mana to kill @ range 1
+    BAMBOO_KNIVES_RANGE_1 = 5
+
+    # spend 5 mana to kill @ range 2
+    BAMBOO_KNIVES_RANGE_2 = 6
+
+    # move 2 in any direction, without gaining any mana
+    BAMBOO_KNIVES_RUSH = 7
+
+    # target an empty square in a straight line 2 squares away
+    # kill in a 3x3 square
+    # RULES: change "empty" definition in google doc
+    CHROMATIC_GRENADES = 8
+
+# action -> spell enabling that action
+# MOVE and SMITE aren't in this dict because they are always enabled
+ACTION_TO_SPELL = {
+    Action.FLOWER_POWER: Spell.FLOWER_POWER,
+    Action.GRAPPLING_HOOK: Spell.GRAPPLING_HOOK,
+    Action.BIRD_KNIGHT: Spell.BIRD_KNIGHT,
+    Action.BAMBOO_KNIVES_RANGE_1: Spell.BAMBOO_KNIVES,
+    Action.BAMBOO_KNIVES_RANGE_2: Spell.BAMBOO_KNIVES,
+    Action.BAMBOO_KNIVES_RUSH: Spell.BAMBOO_KNIVES,
+    Action.CHROMATIC_GRENADES: Spell.CHROMATIC_GRENADES
+}
+
+
+class Response(IntEnum):
+    '''
+    A response by the other player to a proposed action.  Only some responses are valid
+    on any given move.
+
+    They choices are to accept, challenge, or block
+    but when blocking, the player must choose a blocking spell.
+
+    We flatten the choice of blocking spell into a single enum to simplify
+    the player input.
+
+    Only some options are valid on any given move.
+    '''
+
+    # accept the action as given
+    ACCEPT = 0
+
+    # challenge the action
+    CHALLENGE = 1
+
+    # block a grappling hook by claiming to have a grappling hook
+    BLOCK_WITH_GRAPPLING_HOOK = 2
+
+    # block a grappling hook by claiming to have a bird knight
+    BLOCK_WITH_BIRD_KNIGHT = 3
+
+
+# response -> spell enabling that response
+# ACCEPT and CHALLENGE are always enabled
+RESPONSE_TO_SPELL = {
+    Response.BLOCK_WITH_GRAPPLING_HOOK: Spell.GRAPPLING_HOOK,
+    Response.BLOCK_WITH_BIRD_KNIGHT: Spell.BIRD_KNIGHT
+}
+
+
 class GameResult(Enum):
     ONGOING = 0
     NORTH_WINS = 1
@@ -146,8 +227,27 @@ class State:
     # human-readable event log of public information
     log: List[str]
 
-    # whose turn it is
-    current_wizard: Wizard
+    # count of turns since beginning of game, starting at 0
+    turn_count: int
+
+    def current_wizard(self) -> Wizard:
+        '''
+        For now the turn order is hardcoded to pass clockwise
+        North player starts with 1 turn, then each gets 2 consecutive turns to the end.
+        '''
+        order = [
+            Wizard.NE,
+            Wizard.SE,
+            Wizard.SW,
+            Wizard.NW
+        ]
+        return order[turn % 4]
+
+    def current_player(self) -> Player:
+        return WIZARD_TO_PLAYER[self.current_wizard()]
+
+    def other_player(self) -> Player:
+        return other_player(self.current_player())
 
 
 def new_state() -> State:
@@ -181,7 +281,7 @@ def new_state() -> State:
         },
         dead_spells={wizard: [] for wizard in Wizard},
         log=[],
-        current_wizard = TURN_ORDER[0]
+        turn_count = 0
     )
 
 
@@ -213,7 +313,7 @@ def player_view(private_state: State, player: Player) -> State:
         wizard_positions=private_state.wizard_positions,
         dead_spells=private_state.dead_spells,
         log=private_state.log,
-        current_wizard = private_state.current_wizard
+        turn_count = private_state.turn_count
     )
 
 

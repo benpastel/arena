@@ -33,7 +33,7 @@ def _render_tiles(wizard: Wizard, state: State) -> str:
     spell_glyphs = [SPELL_GLYPHS[s] for s in state.wizard_spells[wizard]]
     return f'{wizard_glyph}: {" ".join(spell_glyphs)}'
 
-
+# TODO render row & column labels to make selection easier
 def display_state(state: State) -> None:
     board = [[EMPTY_SQUARE_GLYPH for c in range(COLUMNS)] for r in range(ROWS)]
 

@@ -5,6 +5,7 @@ from arena.state import (
     GameResult,
     Player,
     player_view,
+    ACTIONS_TO_SPELLS
 )
 from arena.actions import (
     affordable_actions,
@@ -31,15 +32,94 @@ from arena.logs import (
 )
 
 
-def _lose_spell(player: Player, state: State) -> None:
-    # Ask the player to choose between wizards & spells if more than one available
-    #
-    # flip the spell tile face-up
-    #
-    # if it's this wizard's last spell, kill the wizard
-    #
-    # log & display everything that happened
-    assert False, "TODO"
+def _select_action(state: State) -> Tuple[Action, Square | Wizard]:
+    '''
+    Prompt the player to choose a valid action & target square for this turn.
+    '''
+
+    # check which actions are possible for the current wizard
+    # they must have
+    #  - sufficient mana for the action
+    #  - at least one valid target for the action
+    ok_actions = [
+        a
+        for a in affordable_actions(state)
+        if valid_targets(state.current_wizard(), a, state.wizard_positions)
+    ]
+
+    # RULES: if no possible actions, the player loses or skips their turn?
+    assert ok_actions, "TODO: handle no possible action case"
+
+    action = None
+    target_square = None
+    while action is None or target is None:
+        # wait for the active player to tentatively select an action
+        # in the final UI this will be when the player mouses over an action
+        action = select_action(state.current_wizard(), ok_actions)
+
+        # show possible target squares
+        # and confirm or cancel
+        potential_targets = valid_targets(state.current_wizard, action, state.wizard_positions)
+        display_targets(potential_targets)
+        target_square = select_target_or_cancel(potential_targets)
+
+        # refresh the UI to remove targeting overlay
+        display_state(state)
+
+        # if target is None, they cancelled, so try again
+
+    # if the action targeted a wizard, return that wizard
+    for wizard, position in wizard_positions.item():
+        if position == target_square:
+            return action, wizard
+
+    # otherwise return the target coordinates
+    return action, target_square
+
+def _lose_spell(wizards: List[Wizard], state: State) -> None:
+    '''
+    Prompt the player to choose a spell to lose, and log the choice
+    '''
+    assert wizards
+
+    # flatten options
+    options = [
+        (wizard, spell, spell_idx)
+        for wizard in wizards
+        for spell_idx, spell in enumerate(wizard_spells[wizard])
+    ]
+
+    if len(options) == 0:
+        # these wizards have already lost all their spells; do nothing
+        return
+
+    if len(options) == 1:
+        # there's no choice
+        wizard, spell, spell_idx = options[0]
+
+    else:
+        # ask the player
+        wizard, spell, spell_idx = select_spell_to_lose(options)
+
+    # move the spell tile from live to dead
+    state.wizard_spells[wizard].pop(spell_idx)
+    dead_spells[wizard].append(spell)
+    log_spell_lost(wizard, spell)
+
+    # if this was the wizard's last spell, the wizard is now KO'd
+    if not wizard_spells[wizard]:
+        log_wizard_lost(wizard)
+
+
+def _resolve_action(action: Action, target: Square | Wizard, state: State) -> None:
+    # TODO maybe break this into pieces around moving, spending mana, destroying?
+
+    # the action may hit any number of
+    hit_wizards = do_action(action, target, state)
+
+    for hit_wizard in hit_wizards:
+        _lose_spell(hit_wizard, state)
+
 
 def _redraw_spell(wizard: Wizard, action: Action, state: State) -> None:
     # return the spell in state
@@ -48,118 +128,82 @@ def _redraw_spell(wizard: Wizard, action: Action, state: State) -> None:
     assert False, "TODO"
 
 
-
 def play_one_game():
-
-    # TODO: I think we'll also want to pass current player around, or get it
-    # more easily from state
 
     state = new_state()
 
     while check_game_result(state) == GameResult.ONGOING:
-        # check which actions are possible for the current wizard
-        # they must have
-        #  - sufficient mana for the action
-        #  - at least one valid target for the action
-        ok_actions = [
-            a
-            for a in affordable_actions(state)
-            if valid_targets(state.current_wizard, a, state.wizard_positions)
-        ]
-
-        action = None
-        target = None
-        while action is None or target is None:
-            # refresh the UI
-            # for debugging right now we display the full state
-            # TODO use `player_view`
-            display_state(state)
-
-            # wait for the active player to tentatively select an action
-            # in the final UI this will be when the player mouses over an action
-            action = select_action(state.current_wizard, ok_actions)
-
-            # show possible target squares
-            # and confirm or cancel
-            # if they cancelled, target is None and we'll continue around the loop
-            potential_targets = valid_targets(state.current_wizard, action, state.wizard_positions)
-            display_targets(potential_targets)
-            target = select_target_or_cancel(potential_targets)
-
-        claimed_spell = spell_for_action(action)
-
-        # reset UI to remove targeting
-        # TODO use `player_view`
         display_state(state)
+        check_consistency(state)
+
+        wizard = state.current_wizard()
+        action, target = _select_action(state)
+        claimed_spell = ACTIONS_TO_SPELLS.get(action)
+
+        if claimed_spell is None:
+            # the player didn't claim a spell
+            # i.e. they moved or smited
+            # so no possibility of challenge
+            log_action(action, target)
+            _resolve_action(action, target, state)
+            state.turn_count += 1
+            continue
 
         # show other player the proposed action
-        # and challenge or accept
-        log_proposed_action(state.current_wizard, action, target, claimed_spell)
-        display_proposed_action(state.current_wizard, action, target, claimed_spell)
+        # ask whether they accept, challenge, or block
+        log_proposed_action(wizard, action, target, claimed_spell)
+        display_proposed_action(wizard, action, target, claimed_spell)
 
-        # depending on the action, response may be to accept, challenge, or block by claiming
-        # a blocking spell
         potential_responses = valid_responses(action, target, state)
         response = choose_response(potential_responses)
         log_response(response)
 
         if response == Response.ACCEPT:
-            action_succeeds = True
+            _resolve_action(action, target, state)
 
         elif response == Response.CHALLENGE:
-
-            if is_challenge_successful(claimed_spell, state):
-                action_succeeds = False
-                log_challenge_success()
-                # RULES: change doc to allow either wizard to lose a spell on challenge success
-                _lose_spell(state.current_player())
-            else:
-                action_succeeds = True
+            if claimed_spell in state.wizard_spells[wizard]:
+                # the challenge fails
+                # the original action succeeds
                 log_challenge_failure()
-                _lose_spell(other_player(state.current_player()))
-                _redraw_spell()
+                _lose_spell(state.other_player(), state)
+                _redraw_spell(claimed_spell, state)
+                _resolve_action(action, target, state)
+            else:
+                # the challenge succeeds
+                # the original action fails
+                log_challenge_success()
+                _lose_spell(state.current_player(), state)
 
         else:
             # the response was to block
-            # the original player may challenge
-            # TODO: will need to move Response and Actions somewhere shared
+            # blocking means the target wizard is claiming a spell
+            # which the original player may challenge
+            assert isinstance(target, wizard)
+            target_claimed_spell = RESPONSE_TO_SPELL[response]
+            log_proposed_block(target, target_claimed_spell)
             response_to_block = choose_response([Response.ACCEPT, Response.CHALLENGE])
 
             if response_to_block == Response.ACCEPT:
                 log_block_success()
-                action_succeeds = False
+            elif target_claimed_spell in state.wizard_spells[target]:
+                # the challenge fails
+                # the block succeeds
+                # the original action fails
+                log_challenge_failure(target, target_claimed_spell)
+                _lose_spell(PLAYER_TO_WIZARD[state.current_player()], state)
+                _redraw_spell(target, target_claimed_spell)
             else:
-                claimed_spell_for_block = (
-                    Spell.GRAPPLING_HOOK response == Response.BLOCK_WITH_GRAPPLING_HOOK
-                    else Spell.BIRD_KNIGHT
-                )
-                if is_challenge_successful(claimed_spell_for_block, state):
-                    # this player successfully challenged the block, so the original
-                    # action succeeds
-                    log_challenge_success()
-                    _lose_spell(other_player(state.current_player()))
-                    action_succeeds = True
-                else:
-                    # the block succeeds
-                    log_challenge_failure()
-                    _lose_spell(state.current_player())
-                    action_succeeds = False
+                # the challenge succeeds
+                # the block fails
+                # the original action succeeds
+                log_challenge_success(target, target_claimed_spell)
+                _lose_spell(PLAYER_TO_WIZARD[state.other_player()], state)
+                _resolve_action(action, target, state)
 
-        # unless successfully challenged, do the action
-        # TODO: we need to check action is still valid
-        if action_succeeds:
-            hit_wizard = resolve_action()
-            log_action_result()
+        state.turn_count += 1
 
-            if hit_wizard:
-                # TODO this needs to be defined for both wizards and players
-                _lose_spell(hit_wizard)
-
-        display_state(state)
-
-        state.rotate_player(state)
-        check_consistency(state)
-
+    display_state(state)
     log_game_end()
 
     # later: prompt for a new game with starting player rotated

@@ -12,79 +12,11 @@ from arena.state import (
     PLAYER_TO_WIZARD,
     other_player,
     Player,
+    Action,
+    Response
 )
 
 ALL_SQUARES = [Square(r, c) for r in range(ROWS) for c in range(COLUMNS)]
-
-
-class Action(IntEnum):
-    """
-    Each turn, each Wizard takes one of these actions.
-
-    Most spells allow a single action, but Bamboo Knives allows 3,
-    so we list them all out separately here.
-
-    TODO: spells will also have "double" versions here where you claim two copies of a tile
-    which have a more powerful effect.
-    """
-
-    # Move 1 square and gain 1 mana
-    MOVE = 0
-
-    # Pay 7 mana to kill at any range.
-    # If a Wizard has above 10 mana they must smite on their turn.
-    SMITE = 1
-
-    # Move 1 and gain 3 mana.
-    FLOWER_POWER = 2
-
-    # Pull any enemy to you & steal 2 mana.
-    GRAPPLING_HOOK = 3
-
-    # Gain 1 mana & move 1-3 squares.
-    BIRD_KNIGHT = 4
-
-    # spend 3 mana to kill @ range 1
-    BAMBOO_KNIVES_RANGE_1 = 5
-
-    # spend 5 mana to kill @ range 2
-    BAMBOO_KNIVES_RANGE_2 = 6
-
-    # move 2 in any direction, without gaining any mana
-    BAMBOO_KNIVES_RUSH = 7
-
-    # target an empty square in a straight line 2 squares away
-    # kill in a 3x3 square
-    # RULES: change "empty" definition in google doc
-    CHROMATIC_GRENADES = 8
-
-
-class Response(IntEnum):
-    '''
-    A response by the other player to a proposed action.  Only some responses are valid
-    on any given move.
-
-    They choices are to accept, challenge, or block
-    but when blocking, the player must choose a blocking spell.
-
-    We flatten the choice of blocking spell into a single enum to simplify
-    the player input.
-
-    Only some options are valid on any given move.
-    '''
-
-    # accept the action as given
-    ACCEPT = 0
-
-    # challenge the action
-    CHALLENGE = 1
-
-    # block a grappling hook by claiming to have a grappling hook
-    BLOCK_WITH_GRAPPLING_HOOK = 2
-
-    # block a grappling hook by claiming to have a bird knight
-    BLOCK_WITH_BIRD_KNIGHT = 3
-
 
 def _all_distances(
     start: Square,
@@ -209,6 +141,10 @@ def valid_targets(
         ]
 
     raise ValueError(f"Unknown {action=}")
+
+
+def spell_for_action(action: Action) -> Spell:
+
 
 
 def take_action(wizard: Wizard, action: Action, state: State) -> None:
