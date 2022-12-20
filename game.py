@@ -132,12 +132,18 @@ def play_one_game():
 
     state = new_state()
 
+    # TODO
+    _place_spells(state, player.N)
+    _place_spells(state, player.S)
+
     while check_game_result(state) == GameResult.ONGOING:
         display_state(state)
         check_consistency(state)
 
-        wizard = state.current_wizard()
-        action, target = _select_action(state)
+        player = state.current_player()
+
+        source = _select_source(state)
+        action, target = _select_action(source_square, state)
         claimed_spell = ACTIONS_TO_SPELLS.get(action)
 
         if claimed_spell is None:
@@ -151,23 +157,22 @@ def play_one_game():
 
         # show other player the proposed action
         # ask whether they accept, challenge, or block
-        log_proposed_action(wizard, action, target, claimed_spell)
-        display_proposed_action(wizard, action, target, claimed_spell)
+        log_proposed_action(player, source, action, target, claimed_spell)
+        display_proposed_action(player, source, action, target, claimed_spell)
 
         potential_responses = valid_responses(action, target, state)
         response = choose_response(potential_responses)
         log_response(response)
 
         if response == Response.ACCEPT:
-            _resolve_action(action, target, state)
+            _resolve_action(source, action, target, state)
 
         elif response == Response.CHALLENGE:
-            if claimed_spell in state.wizard_spells[wizard]:
+            if claimed_spell == state.square_to_spell()[source]:
                 # the challenge fails
                 # the original action succeeds
                 log_challenge_failure()
                 _lose_spell(state.other_player(), state)
-                _redraw_spell(claimed_spell, state)
                 _resolve_action(action, target, state)
             else:
                 # the challenge succeeds
@@ -177,29 +182,30 @@ def play_one_game():
 
         else:
             # the response was to block
-            # blocking means the target wizard is claiming a spell
+            # blocking means the target is claiming a spell
             # which the original player may challenge
-            assert isinstance(target, wizard)
             target_claimed_spell = RESPONSE_TO_SPELL[response]
             log_proposed_block(target, target_claimed_spell)
             response_to_block = choose_response([Response.ACCEPT, Response.CHALLENGE])
 
             if response_to_block == Response.ACCEPT:
                 log_block_success()
-            elif target_claimed_spell in state.wizard_spells[target]:
+                # TODO: blocking Grappling Hook as Grappling Hook will steal 1 from the source
+
+            elif target_claimed_spell == state.square_to_spell()[target]:
                 # the challenge fails
                 # the block succeeds
                 # the original action fails
+                # TODO: blocking Grappling Hook as Grappling Hook will steal 1 from the source
                 log_challenge_failure(target, target_claimed_spell)
-                _lose_spell(PLAYER_TO_WIZARD[state.current_player()], state)
-                _redraw_spell(target, target_claimed_spell)
+                _lose_spell(state.current_player(), state)
             else:
                 # the challenge succeeds
                 # the block fails
                 # the original action succeeds
                 log_challenge_success(target, target_claimed_spell)
-                _lose_spell(PLAYER_TO_WIZARD[state.other_player()], state)
-                _resolve_action(action, target, state)
+                _lose_spell(state.other_player(), state)
+                _resolve_action(source, action, target, state)
 
         state.turn_count += 1
 

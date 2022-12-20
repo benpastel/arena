@@ -16,20 +16,6 @@ def other_player(p: Player) -> Player:
     return Player.S if p == Player.N else Player.N
 
 
-# Wizards move around the board, acquire mana, and cast spells to try to kill
-# each other.
-class Wizard(Enum):
-    NW = 0
-    NE = 1
-    SW = 2
-    SE = 3
-
-# which player controls which wizard
-PLAYER_TO_WIZARD = {Player.N: [Wizard.NW, Wizard.NE], Player.S: [Wizard.SW, Wizard.SE]}
-WIZARD_TO_PLAYER = {
-    wizard: player for player, wizards in PLAYER_TO_WIZARD.items() for wizard in wizards
-}
-
 ROWS = 5
 COLUMNS = 5
 
@@ -47,28 +33,28 @@ class Square(NamedTuple):
 #          columns
 #         0 1 2 3 4
 #        +---------+
-#      0 | |W| |W| |
+#      0 |S| | | |S|
 #      1 | | | | | |
-# rows 2 |S|B| |S|B|
+# rows 2 |B| |F| |B|
 #      3 | | | | | |
-#      4 | |W| |W| |
+#      4 |S| | | |S|
 #        +---------+
 #    South Player's Side
 #
-# Where W is a Wizard, S is a Sparkle, and is a Book.
+# Where S is a starting spell, F is the mana fountain, B and is a Book.
 
-# There are 2 books with 2 face-down spells each.
-# When a wizard moves onto a book, they can examine and swap spells.
-class Book(Enum):
-    W = 0
-    E = 1
+# There are two spells facedown on each book square.
+# when player moves onto a book square & ends their turn on a book square
+# they can freely swap that spell
+BOOK_POSITIONS = [Square(2, 0), Square(2, 4)]
 
+# The fountain gives +1 mana when someone moves onto it
+FOUNTAIN_POSITION = Square(2, 2)
 
-BOOK_POSITIONS = {Book.W: Square(2, 1), Book.E: Square(2, 4)}
-
-# sparkles give +1 when a wizard moves onto them
-# they are fixed on the board
-SPARKLE_POSITIONS = [Square(2, 0), Square(2, 3)]
+START_POSITIONS = {
+    Player.N: (Square(0, 0), Square(0, 4)),
+    Player.S: (Square(4, 0), Square(4, 4))
+}
 
 
 class Spell(Enum):
@@ -95,9 +81,6 @@ class Action(IntEnum):
 
     Most spells allow a single action, but Bamboo Knives allows 3,
     so we list them all out separately here.
-
-    TODO: spells will also have "double" versions here where you claim two copies of a tile
-    which have a more powerful effect.
     """
 
     # Move 1 square and gain 1 mana
@@ -110,7 +93,7 @@ class Action(IntEnum):
     # Move 1 and gain 3 mana.
     FLOWER_POWER = 2
 
-    # Pull any enemy to you & steal 2 mana.
+    # Pull yourself to any enemy & steal 2 mana.
     GRAPPLING_HOOK = 3
 
     # Gain 1 mana & move 1-3 squares.
@@ -122,13 +105,9 @@ class Action(IntEnum):
     # spend 5 mana to kill @ range 2
     BAMBOO_KNIVES_RANGE_2 = 6
 
-    # move 2 in any direction, without gaining any mana
-    BAMBOO_KNIVES_RUSH = 7
-
     # target an empty square in a straight line 2 squares away
-    # kill in a 3x3 square
-    # RULES: change "empty" definition in google doc
-    CHROMATIC_GRENADES = 8
+    # spend 3 mana to kill in a 3x3 square
+    CHROMATIC_GRENADES = 7
 
 # action -> spell enabling that action
 # MOVE and SMITE aren't in this dict because they are always enabled
@@ -138,7 +117,6 @@ ACTION_TO_SPELL = {
     Action.BIRD_KNIGHT: Spell.BIRD_KNIGHT,
     Action.BAMBOO_KNIVES_RANGE_1: Spell.BAMBOO_KNIVES,
     Action.BAMBOO_KNIVES_RANGE_2: Spell.BAMBOO_KNIVES,
-    Action.BAMBOO_KNIVES_RUSH: Spell.BAMBOO_KNIVES,
     Action.CHROMATIC_GRENADES: Spell.CHROMATIC_GRENADES
 }
 
@@ -197,32 +175,25 @@ class State:
         - each player's view on the state where some of the spells are hidden
     """
 
-    # wizard -> list of spells they have
-    # each player can only see the spells of their own wizard
-    #
-    # The number of spells per wizard is equivalent to the number of lives; they start at
-    # 2 and whenever they lose a life, that spell is removed from this list and added to
-    # `dead_spells`.
-    #
-    # When the list is empty, the wizard is dead.  When both of a player's wizards are dead,
-    # they lose.
-    wizard_spells: Dict[Wizard, List[Spell]]
+    # each player starts with 4 spells in hand.  They then place 2 on the board.
+    # when a player runs out of spells they lose.
+    spells_in_hand: Dict[Player, List[Spell]]
 
-    # Book -> The two spells on that square.
-    book_spells: Dict[Book, Tuple[Spell, Spell]]
+    # player -> (spell, position of that spell on the board)
+    spells_on_board: Dict[Player, List[Tuple[Spell, Square]]]
 
-    # The remaining spell tiles are hidden off-board.
-    # After an unsuccessful challenge, the challenged spell is first shuffled into this list,
-    # and then the wizard draws a new spell from this list.
-    hidden_spells: List[Spell]
+    # The two spells on each book square.
+    book_spells: Dict[Square, Tuple[Spell, Spell]]
 
-    # Wizard -> (row, col) position on the board
-    # when a wizard is killed they are removed from this dict
-    wizard_positions: Dict[Wizard, Square]
+    # The remaining spell tiles are hidden off-board and never revealed.
+    unused_spells: List[Spell]
 
-    # Wizard -> the list of spells that have been revealed when this wizard lost a life.
-    # these spells stay face-up and are never reshuffled.
-    dead_spells: Dict[Wizard, List[Spell]]
+    # The list of spells that have been revealed when a player lost a life.
+    # These spells stay face-up and are never reshuffled.
+    discard: List[Spell]
+
+    # points used to cast spells
+    mana: Dict[Player, int]
 
     # human-readable event log of public information
     log: List[str]
@@ -230,24 +201,28 @@ class State:
     # count of turns since beginning of game, starting at 0
     turn_count: int
 
-    def current_wizard(self) -> Wizard:
-        '''
-        For now the turn order is hardcoded to pass clockwise
-        North player starts with 1 turn, then each gets 2 consecutive turns to the end.
-        '''
-        order = [
-            Wizard.NE,
-            Wizard.SE,
-            Wizard.SW,
-            Wizard.NW
-        ]
-        return order[turn % 4]
-
     def current_player(self) -> Player:
-        return WIZARD_TO_PLAYER[self.current_wizard()]
+        ''' For now, North is hardcoded to go first. '''
+        order = [Player.N, Player.S]
+        return order[turn % 2]
 
     def other_player(self) -> Player:
         return other_player(self.current_player())
+
+    def spells_here(self) -> Dict[Square, Spell]:
+        ''' Square -> the spell occupying that square '''
+        return {
+            square: spell
+            for spell, square in spells_on_board.values()
+        }
+
+    def square_to_player(self) -> Dict[Square, Spell]:
+        ''' Square -> the player owning a spell on occupying that square '''
+        return {
+            square: player
+            for player in Player
+            for _, square in spells_on_board[player]
+        }
 
 
 def new_state() -> State:
@@ -259,27 +234,24 @@ def new_state() -> State:
 
     # check that we didn't change the count of stuff in the rules and forget to change this method
     assert len(spells) == 15
-    assert len(Wizard) == 4
-    assert len(Book) == 2
+    assert len(book_spells) == 2
 
     # shuffle, then deal out the cards from fixed indices
     shuffle(spells)
     return State(
-        wizard_spells={
-            Wizard.NW: spells[0:2],
-            Wizard.NE: spells[2:4],
-            Wizard.SW: spells[4:6],
-            Wizard.SE: spells[6:8],
+        spells_in_hand={
+            Player.N: spells[0:4],
+            Player.S: spells[4:8],
         },
-        book_spells={Book.W: (spells[8], spells[9]), Book.E: (spells[10], spells[11])},
-        hidden_spells=spells[12:15],
-        wizard_positions={
-            Wizard.NW: Square(0, 1),
-            Wizard.NE: Square(0, 3),
-            Wizard.SW: Square(4, 1),
-            Wizard.SE: Square(4, 3),
+        spells_on_board = {},
+        book_spells={
+            BOOK_POSITIONS[0]: (spells[8], spells[9]),
+            BOOK_POSITIONS[1]: (spells[10], spells[11])
         },
-        dead_spells={wizard: [] for wizard in Wizard},
+        unused_spells=spells[12:15],
+        discard=[],
+        # first player starts with 1 fewer mana
+        mana={Player.N: 1, Player.S: 2},
         log=[],
         turn_count = 0
     )
@@ -291,27 +263,38 @@ def player_view(private_state: State, player: Player) -> State:
 
     This represents the player's knowledge of the state.
     """
-    wizard_spells = {}
-    for wizard, spells in private_state.wizard_spells.items():
-        if wizard in PLAYER_TO_WIZARD[player]:
-            # we can see our wizards' spells
-            wizard_spells[wizard] = spells
-        else:
-            # opponent's wizards' spells are hidden
-            wizard_spells[wizard] = [Spell.HIDDEN for _ in spells]
+    opponent = other_player(player)
+
+    # we know the number of spells in the opponent's hand but not their identity
+    opponent_hand = [
+        Spell.HIDDEN
+        for spell in private_state.spells_in_hand[opponent]
+    ]
+    # we know the number and location of spells on the opponent's board but not their
+    # identity
+    opponent_board = [
+        (Spell.HIDDEN, square)
+        for spell, square in private_state.spells_on_board[opponent]
+    ]
 
     return State(
-        wizard_spells=wizard_spells,
+        spells_in_hand={
+            player: private_state.spells_in_hand[player],
+            opponent: opponent_hand,
+        },
+        spells_on_board={
+            player: private_state.spells_on_board[player],
+            opponent: opponent_board
+        },
         # we can't see the book spells
         book_spells={
             Book.W: (Spell.HIDDEN, Spell.HIDDEN),
             Book.E: (Spell.HIDDEN, Spell.HIDDEN),
         },
-        # we can't see the hidden spells
-        hidden_spells=[Spell.HIDDEN, Spell.HIDDEN, Spell.HIDDEN],
+        # we can't see the unused spells
+        unused_spells=[Spell.HIDDEN, Spell.HIDDEN, Spell.HIDDEN],
         # we can see everything else
-        wizard_positions=private_state.wizard_positions,
-        dead_spells=private_state.dead_spells,
+        discard=private_state.discard,
         log=private_state.log,
         turn_count = private_state.turn_count
     )
@@ -319,27 +302,30 @@ def player_view(private_state: State, player: Player) -> State:
 
 def check_consistency(private_state: State) -> None:
     """
-    Check that the spells, wizard lives, and positions are consistent.
+    Check that the spells are consistent.
     """
 
     # check there are exactly 3 of each spell
     spell_counts = {spell: 0 for spell in Spell}
-    for spell_list in private_state.wizard_spells.values():
+    for spell_list in private_state.spells_in_hand.values():
         assert 0 <= len(spell_list) <= 2
         for spell in spell_list:
             spell_counts[spell] += 1
 
-    for spell_list in private_state.dead_spells.values():
+    for spell_list in private_state.spells_on_board.values():
         assert 0 <= len(spell_list) <= 2
         for spell in spell_list:
             spell_counts[spell] += 1
+
+    for spell in private_state.discard:
+        spell_counts[spell] += 1
 
     for spell_1, spell_2 in private_state.book_spells.values():
         spell_counts[spell_1] += 1
         spell_counts[spell_2] += 1
 
-    assert len(private_state.hidden_spells) == 3
-    for spell in private_state.hidden_spells:
+    assert len(private_state.unused_spells) == 3
+    for spell in private_state.unused_spells:
         spell_counts[spell] += 1
 
     for spell in Spell:
@@ -348,36 +334,16 @@ def check_consistency(private_state: State) -> None:
         else:
             assert spell_counts[spell] == 3
 
-    for wizard in Wizard:
-        # each wizard should have 2 alive or dead spells
-        assert (
-            len(private_state.wizard_spells[wizard])
-            + len(private_state.dead_spells[wizard])
-            == 2
-        )
-
-        # wizards have a position if and only if they are alive
-        assert (len(private_state.wizard_spells[wizard]) > 0) == (
-            wizard in private_state.wizard_positions
-        )
-
-    # check no wizards on the same square
-    assert len(private_state.wizard_positions.values()) == len(
-        set(private_state.wizard_positions.values())
-    )
-
 
 def check_game_result(state: State) -> GameResult:
     """
     See if anyone has won the game.
     """
     north_dead = (
-        Wizard.NW not in state.wizard_positions
-        and Wizard.NE not in state.wizard_positions
+        len(spells_on_board[Player.N]) + len(spells_in_hand[Player.N]) == 0
     )
     south_dead = (
-        Wizard.SW not in state.wizard_positions
-        and Wizard.SE not in state.wizard_positions
+        len(spells_on_board[Player.S]) + len(spells_in_hand[Player.S]) == 0
     )
     if north_dead and south_dead:
         return GameResult.DRAW
