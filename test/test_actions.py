@@ -90,7 +90,7 @@ def test_valid_targets():
         ],
     )
     _assert_targets(
-        Action.FLOWER_POWER,
+        Action.FLOWER,
         [
             Square(2, 0),
             Square(2, 2),
@@ -105,7 +105,7 @@ def test_valid_targets():
         ],
     )
     _assert_targets(
-        Action.BIRD_KNIGHT,
+        Action.BIRD,
         [
             Square(0, 0),
             Square(1, 0),
@@ -121,10 +121,10 @@ def test_valid_targets():
             Square(2, 4),
         ],
     )
-    _assert_targets(Action.BAMBOO_KNIVES_RANGE_1, [Square(1, 1)])
-    _assert_targets(Action.BAMBOO_KNIVES_RANGE_2, [Square(3, 2)])
+    _assert_targets(Action.KNIVES_RANGE_1, [Square(1, 1)])
+    _assert_targets(Action.KNIVES_RANGE_2, [Square(3, 2)])
     _assert_targets(
-        Action.BAMBOO_KNIVES_RUSH,
+        Action.KNIVES_RUSH,
         [
             Square(1, 0),
             Square(2, 0),
@@ -135,7 +135,7 @@ def test_valid_targets():
         ],
     )
     _assert_targets(
-        Action.CHROMATIC_GRENADES,
+        Action.GRENADES,
         [
             Square(2, 3),
         ],

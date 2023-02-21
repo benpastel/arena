@@ -64,11 +64,11 @@ class Spell(Enum):
     See actions.py for descriptions and effects.
     """
 
-    FLOWER_POWER = "🀥"
-    GRAPPLING_HOOK = "🀍"
-    BIRD_KNIGHT = "🀐"
-    CHROMATIC_GRENADES = "🀛"
-    BAMBOO_KNIVES = "🀒"
+    FLOWER = "🀥"
+    HOOK = "🀍"
+    BIRD = "🀐"
+    GRENADES = "🀛"
+    KNIVES = "🀒"
 
     # This represents a face-down spell tile, where the value is unknown to a player
     HIDDEN = "🀫"
@@ -91,33 +91,33 @@ class Action(IntEnum):
     SMITE = 1
 
     # Move 1 and gain 3 mana.
-    FLOWER_POWER = 2
+    FLOWER = 2
 
     # Pull yourself to any enemy & steal 2 mana.
-    GRAPPLING_HOOK = 3
+    HOOK = 3
 
     # Gain 1 mana & move 1-3 squares.
-    BIRD_KNIGHT = 4
+    BIRD = 4
 
     # spend 3 mana to kill @ range 1
-    BAMBOO_KNIVES_RANGE_1 = 5
+    KNIVES_RANGE_1 = 5
 
     # spend 5 mana to kill @ range 2
-    BAMBOO_KNIVES_RANGE_2 = 6
+    KNIVES_RANGE_2 = 6
 
     # target an empty square in a straight line 2 squares away
     # spend 3 mana to kill in a 3x3 square
-    CHROMATIC_GRENADES = 7
+    GRENADES = 7
 
 # action -> spell enabling that action
 # MOVE and SMITE aren't in this dict because they are always enabled
 ACTION_TO_SPELL = {
-    Action.FLOWER_POWER: Spell.FLOWER_POWER,
-    Action.GRAPPLING_HOOK: Spell.GRAPPLING_HOOK,
-    Action.BIRD_KNIGHT: Spell.BIRD_KNIGHT,
-    Action.BAMBOO_KNIVES_RANGE_1: Spell.BAMBOO_KNIVES,
-    Action.BAMBOO_KNIVES_RANGE_2: Spell.BAMBOO_KNIVES,
-    Action.CHROMATIC_GRENADES: Spell.CHROMATIC_GRENADES
+    Action.FLOWER: Spell.FLOWER,
+    Action.HOOK: Spell.HOOK,
+    Action.BIRD: Spell.BIRD,
+    Action.KNIVES_RANGE_1: Spell.KNIVES,
+    Action.KNIVES_RANGE_2: Spell.KNIVES,
+    Action.GRENADES: Spell.GRENADES
 }
 
 
@@ -142,17 +142,17 @@ class Response(IntEnum):
     CHALLENGE = 1
 
     # block a grappling hook by claiming to have a grappling hook
-    BLOCK_WITH_GRAPPLING_HOOK = 2
+    BLOCK_WITH_HOOK = 2
 
     # block a grappling hook by claiming to have a bird knight
-    BLOCK_WITH_BIRD_KNIGHT = 3
+    BLOCK_WITH_BIRD = 3
 
 
 # response -> spell enabling that response
 # ACCEPT and CHALLENGE are always enabled
 RESPONSE_TO_SPELL = {
-    Response.BLOCK_WITH_GRAPPLING_HOOK: Spell.GRAPPLING_HOOK,
-    Response.BLOCK_WITH_BIRD_KNIGHT: Spell.BIRD_KNIGHT
+    Response.BLOCK_WITH_HOOK: Spell.HOOK,
+    Response.BLOCK_WITH_BIRD: Spell.BIRD
 }
 
 

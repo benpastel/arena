@@ -111,9 +111,9 @@ def valid_targets(
         return [s for s, dist in empty_targets.items() if dist == 1]
     elif action == Action.SMITE:
         return list(enemy_targets.keys())
-    elif action == Action.FLOWER_POWER:
+    elif action == Action.FLOWER:
         return [s for s, dist in empty_targets.items() if dist == 1]
-    elif action == Action.GRAPPLING_HOOK:
+    elif action == Action.HOOK:
         # can grapple any enemy
         # unless the square we would pull them into is occupied by someone else
         # RULES: consider forcing target in LOS
@@ -124,15 +124,15 @@ def valid_targets(
             or _grapple_end_square(start, s) == s
         ]
 
-    elif action == Action.BIRD_KNIGHT:
+    elif action == Action.BIRD:
         return [s for s, dist in empty_targets.items() if 1 <= dist <= 3]
-    elif action == Action.BAMBOO_KNIVES_RANGE_1:
+    elif action == Action.KNIVES_RANGE_1:
         return [s for s, dist in enemy_targets.items() if dist == 1]
-    elif action == Action.BAMBOO_KNIVES_RANGE_2:
+    elif action == Action.KNIVES_RANGE_2:
         return [s for s, dist in enemy_targets.items() if dist == 2]
-    elif action == Action.BAMBOO_KNIVES_RUSH:
+    elif action == Action.KNIVES_RUSH:
         return [s for s, dist in empty_targets.items() if 1 <= dist <= 2]
-    elif action == Action.CHROMATIC_GRENADES:
+    elif action == Action.GRENADES:
         # empty straight line distance 2
         return [
             s

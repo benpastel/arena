@@ -5,7 +5,8 @@ from arena.state import (
     GameResult,
     Player,
     player_view,
-    ACTIONS_TO_SPELLS
+    ACTIONS_TO_SPELLS,
+    RESPONSE_TO_SPELL
 )
 from arena.actions import (
     affordable_actions,

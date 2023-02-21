@@ -16,11 +16,11 @@ WIZARD_GLYPHS = {
 }
 
 SPELL_GLYPHS = {
-    Spell.FLOWER_POWER: "🀥",
-    Spell.GRAPPLING_HOOK: "🀍",
-    Spell.BIRD_KNIGHT: "🀐",
-    Spell.CHROMATIC_GRENADES: "🀛",
-    Spell.BAMBOO_KNIVES: "🀒",
+    Spell.FLOWER: "🀥",
+    Spell.HOOK: "🀍",
+    Spell.BIRD: "🀐",
+    Spell.GRENADES: "🀛",
+    Spell.KNIVES: "🀒",
     Spell.HIDDEN: "🀫",
 }
 SPARKLE_GLYPH = "✨"
