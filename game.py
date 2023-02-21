@@ -32,6 +32,9 @@ from arena.logs import (
     log_action_result
 )
 
+# TODO this is stale with new state representation
+# finish actions.py first!
+
 
 def _select_action(state: State) -> Tuple[Action, Square | Wizard]:
     '''

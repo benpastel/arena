@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, auto
 from typing import Tuple, List, Dict, NamedTuple
 from random import shuffle
 from dataclasses import dataclass
@@ -25,6 +25,9 @@ class Square(NamedTuple):
 
     row: int
     col: int
+
+    def on_board(self) -> bool:
+        return 0 <= self.row < ROWS and 0 <= self.col < COLUMNS
 
 
 # Board setup looks like this:
@@ -61,64 +64,58 @@ class Tile(Enum):
     """
     The game pieces.
 
-    See actions.py for descriptions and effects.
+    Each tile enables one special action.
+
+    You can always do the special action of any tile, but will lose a life
+    if challenged and you aren't that tile.
     """
 
+    # move 1 & gain 3 mana
     FLOWER = "🀥"
+
+    # pull yourself to any enemy & steal 2 mana
     HOOK = "🀍"
+
+    # move 1-2 & gain 2 mana
     BIRD = "🀐"
+
+    # spend 3 mana to kill in a 3x3 square
     GRENADES = "🀛"
+
+    # spend:
+    #   - 3 mana to kill @ range 1
+    #   - 5 mana to kill @ range 2
     KNIVES = "🀒"
 
-    # This represents a face-down tile tile, where the value is unknown to a player
+    # Represents a tile with value unknown to a player
+    # there is a private state known only to the game engine with no hidden tiles;
+    # each player has a view with some of the tiles replaced with HIDDEN
     HIDDEN = "🀫"
 
 
-
-class Action(IntEnum):
+class OtherAction(Enum):
     """
-    Each turn, each player chooses one tile in play to take one of these actions.
-
-    Most tiles allow a single action, but Bamboo Knives allows 3,
-    so we list them all out separately here.
+    These actions are always allowed for any tile.
     """
 
     # Move 1 square and gain 1 mana
-    MOVE = 0
+    MOVE = "move"
 
     # Pay 7 mana to kill at any range.
     # If a player has above 10 mana they must smite on their turn.
-    SMITE = 1
+    SMITE = "smite"
 
-    # Move 1 and gain 3 mana.
-    FLOWER = 2
 
-    # Pull yourself to any enemy & steal 2 mana.
-    HOOK = 3
-
-    # Gain 2 mana & move 1-2 squares.
-    BIRD = 4
-
-    # spend 3 mana to kill @ range 1
-    KNIVES_RANGE_1 = 5
-
-    # spend 5 mana to kill @ range 2
-    KNIVES_RANGE_2 = 6
-
-    # target an empty square in a straight line 2 squares away
-    # spend 3 mana to kill in a 3x3 square
-    GRENADES = 7
-
-# action -> tile enabling that action
-# MOVE and SMITE aren't in this dict because they are always enabled
-ACTION_TO_TILE = {
-    Action.FLOWER: Tile.FLOWER,
-    Action.HOOK: Tile.HOOK,
-    Action.BIRD: Tile.BIRD,
-    Action.KNIVES_RANGE_1: Tile.KNIVES,
-    Action.KNIVES_RANGE_2: Tile.KNIVES,
-    Action.GRENADES: Tile.GRENADES
-}
+# An action is: use a tile power, move, or smite.
+Action = (
+    Tile.FLOWER
+    | Tile.HOOK
+    | Tile.BIRD
+    | Tile.GRENADES
+    | Tile.KNIVES
+    | OtherAction.MOVE
+    | OtherAction.SMITE
+)
 
 
 class Response(IntEnum):
@@ -142,7 +139,7 @@ class Response(IntEnum):
     CHALLENGE = 1
 
     # block a grappling hook by claiming to have a grappling hook
-    BLOCK_WITH_HOOK = 2
+    BLOCK = 2
 
 
 class GameResult(Enum):
@@ -164,12 +161,17 @@ class State:
         - each player's view on the state where some of the tiles are hidden
     """
 
-    # each player starts with 4 tiles in hand.  They then place 2 on the board.
-    # when a player runs out of tiles they lose.
+    # Each player starts with 4 tiles in hand.  They then place 2 on the board.
+    # When a player runs out of tiles they lose.
     tiles_in_hand: Dict[Player, List[Tile]]
 
-    # player -> (tile, position of that tile on the board)
-    tiles_on_board: Dict[Player, List[Tuple[Tile, Square]]]
+    # The tiles in play on the board for each player.
+    # See `positions` for the corresponding tile locations.
+    tiles_on_board: Dict[Player, List[Tile]]
+
+    # The square of each tile in play on the board for each player.
+    # See `tiles_on_board` for the corresponding tile.
+    positions: Dict[Player, List[Square]]
 
     # The two tiles on each book square.
     book_tiles: Dict[Square, Tuple[Tile, Tile]]
@@ -202,7 +204,8 @@ class State:
         ''' Square -> the tile occupying that square '''
         return {
             square: tile
-            for tile, square in tiles_on_board.values()
+            for player in Player
+            for tile, square in zip(self.tiles_on_board[player], self.positions[player])
         }
 
     def square_to_player(self) -> Dict[Square, Tile]:
@@ -210,8 +213,12 @@ class State:
         return {
             square: player
             for player in Player
-            for _, square in tiles_on_board[player]
+            for square in self.positions[player]
         }
+
+    def all_positions(self) -> List[Square]:
+        ''' All squares with a tile on board, regardless of player '''
+        return list(self.square_to_player().keys())
 
 
 def new_state() -> State:
@@ -233,6 +240,7 @@ def new_state() -> State:
             Player.S: tiles[4:8],
         },
         tiles_on_board = {},
+        positions = {},
         book_tiles={
             BOOK_POSITIONS[0]: (tiles[8], tiles[9]),
             BOOK_POSITIONS[1]: (tiles[10], tiles[11])
@@ -262,8 +270,8 @@ def player_view(private_state: State, player: Player) -> State:
     # we know the number and location of tiles on the opponent's board but not their
     # identity
     opponent_board = [
-        (Tile.HIDDEN, square)
-        for tile, square in private_state.tiles_on_board[opponent]
+        Tile.HIDDEN
+        for tile in private_state.tiles_on_board[opponent]
     ]
 
     return State(
@@ -275,6 +283,8 @@ def player_view(private_state: State, player: Player) -> State:
             player: private_state.tiles_on_board[player],
             opponent: opponent_board
         },
+        # all tile positions are public knowledge
+        positions=positions,
         # we can't see the book tiles
         book_tiles={
             Book.W: (Tile.HIDDEN, Tile.HIDDEN),
@@ -332,23 +342,25 @@ def check_consistency(private_state: State) -> None:
             # losing tiles on board
             assert len(private_state.tiles_in_hand[player]) == 0
 
+    # check location for each tile on board
+    for player in Player:
+        for tile, square in zip(
+            private_state.tiles_on_board[player],
+            private_state.positions[player],
+            strict=True
+        ):
+            assert square.on_board()
+
     # check tile locations are unique
-    assert len(private_state.tiles_here()) == sum(
-        len(private_state.tiles_on_board[player])
-        for player in Player
-    )
+    assert len(all_positions) == len(set(all_positions))
 
 
 def check_game_result(state: State) -> GameResult:
     """
     See if anyone has won the game.
     """
-    north_dead = (
-        len(tiles_on_board[Player.N]) + len(tiles_in_hand[Player.N]) == 0
-    )
-    south_dead = (
-        len(tiles_on_board[Player.S]) + len(tiles_in_hand[Player.S]) == 0
-    )
+    north_dead = len(tiles_on_board[Player.N]) == 0
+    south_dead = len(tiles_on_board[Player.S]) == 0
     if north_dead and south_dead:
         return GameResult.DRAW
     elif south_dead:
