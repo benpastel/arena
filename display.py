@@ -30,8 +30,8 @@ EMPTY_SQUARE_GLYPH = "  "  # two spaces matches unicode display width on my term
 
 def _render_tiles(wizard: Wizard, state: State) -> str:
     wizard_glyph = WIZARD_GLYPHS[wizard]
-    spell_glyphs = [SPELL_GLYPHS[s] for s in state.wizard_spells[wizard]]
-    return f'{wizard_glyph}: {" ".join(spell_glyphs)}'
+    tile_glyphs = [SPELL_GLYPHS[s] for s in state.wizard_tiles[wizard]]
+    return f'{wizard_glyph}: {" ".join(tile_glyphs)}'
 
 # TODO render row & column labels to make selection easier
 def display_state(state: State) -> None:

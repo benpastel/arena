@@ -88,7 +88,7 @@ def valid_targets(
     """
     If `wizard` were to take `action` in the current `state`,
     which squares would be valid targets of the action?  E.g. squares the wizard can move
-    onto, or squares containing enemy wizards that this wizard can hit with a spell.
+    onto, or squares containing enemy wizards that this wizard can hit with a tile.
 
     The returned list may be empty, which means the action would be invalid because there is no
     legal target.
@@ -143,7 +143,7 @@ def valid_targets(
     raise ValueError(f"Unknown {action=}")
 
 
-def spell_for_action(action: Action) -> Tile:
+def tile_for_action(action: Action) -> Tile:
 
 
 

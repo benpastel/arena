@@ -5,7 +5,7 @@ from arena.state import (
     GameResult,
     Player,
     player_view,
-    ACTIONS_TO_SPELLS,
+    ACTION_TO_TILES,
     RESPONSE_TO_SPELL
 )
 from arena.actions import (
@@ -77,38 +77,38 @@ def _select_action(state: State) -> Tuple[Action, Square | Wizard]:
     # otherwise return the target coordinates
     return action, target_square
 
-def _lose_spell(wizards: List[Wizard], state: State) -> None:
+def _lose_tile(wizards: List[Wizard], state: State) -> None:
     '''
-    Prompt the player to choose a spell to lose, and log the choice
+    Prompt the player to choose a tile to lose, and log the choice
     '''
     assert wizards
 
     # flatten options
     options = [
-        (wizard, spell, spell_idx)
+        (wizard, tile, tile_idx)
         for wizard in wizards
-        for spell_idx, spell in enumerate(wizard_spells[wizard])
+        for tile_idx, tile in enumerate(wizard_tiles[wizard])
     ]
 
     if len(options) == 0:
-        # these wizards have already lost all their spells; do nothing
+        # these wizards have already lost all their tiles; do nothing
         return
 
     if len(options) == 1:
         # there's no choice
-        wizard, spell, spell_idx = options[0]
+        wizard, tile, tile_idx = options[0]
 
     else:
         # ask the player
-        wizard, spell, spell_idx = select_spell_to_lose(options)
+        wizard, tile, tile_idx = select_tile_to_lose(options)
 
-    # move the spell tile from live to dead
-    state.wizard_spells[wizard].pop(spell_idx)
-    dead_spells[wizard].append(spell)
-    log_spell_lost(wizard, spell)
+    # move the tile tile from live to dead
+    state.wizard_tiles[wizard].pop(tile_idx)
+    dead_tiles[wizard].append(tile)
+    log_tile_lost(wizard, tile)
 
-    # if this was the wizard's last spell, the wizard is now KO'd
-    if not wizard_spells[wizard]:
+    # if this was the wizard's last tile, the wizard is now KO'd
+    if not wizard_tiles[wizard]:
         log_wizard_lost(wizard)
 
 
@@ -119,12 +119,12 @@ def _resolve_action(action: Action, target: Square | Wizard, state: State) -> No
     hit_wizards = do_action(action, target, state)
 
     for hit_wizard in hit_wizards:
-        _lose_spell(hit_wizard, state)
+        _lose_tile(hit_wizard, state)
 
 
-def _redraw_spell(wizard: Wizard, action: Action, state: State) -> None:
-    # return the spell in state
-    # draw a new spell at random
+def _redraw_tile(wizard: Wizard, action: Action, state: State) -> None:
+    # return the tile in state
+    # draw a new tile at random
     # display & log this for the player who can see it
     assert False, "TODO"
 
@@ -134,8 +134,8 @@ def play_one_game():
     state = new_state()
 
     # TODO
-    _place_spells(state, player.N)
-    _place_spells(state, player.S)
+    _place_tiles(state, player.N)
+    _place_tiles(state, player.S)
 
     while check_game_result(state) == GameResult.ONGOING:
         display_state(state)
@@ -145,10 +145,10 @@ def play_one_game():
 
         source = _select_source(state)
         action, target = _select_action(source_square, state)
-        claimed_spell = ACTIONS_TO_SPELLS.get(action)
+        claimed_tile = ACTION_TO_TILES.get(action)
 
-        if claimed_spell is None:
-            # the player didn't claim a spell
+        if claimed_tile is None:
+            # the player didn't claim a tile
             # i.e. they moved or smited
             # so no possibility of challenge
             log_action(action, target)
@@ -158,8 +158,8 @@ def play_one_game():
 
         # show other player the proposed action
         # ask whether they accept, challenge, or block
-        log_proposed_action(player, source, action, target, claimed_spell)
-        display_proposed_action(player, source, action, target, claimed_spell)
+        log_proposed_action(player, source, action, target, claimed_tile)
+        display_proposed_action(player, source, action, target, claimed_tile)
 
         potential_responses = valid_responses(action, target, state)
         response = choose_response(potential_responses)
@@ -169,43 +169,43 @@ def play_one_game():
             _resolve_action(source, action, target, state)
 
         elif response == Response.CHALLENGE:
-            if claimed_spell == state.square_to_spell()[source]:
+            if claimed_tile == state.square_to_tile()[source]:
                 # the challenge fails
                 # the original action succeeds
                 log_challenge_failure()
-                _lose_spell(state.other_player(), state)
+                _lose_tile(state.other_player(), state)
                 _resolve_action(action, target, state)
             else:
                 # the challenge succeeds
                 # the original action fails
                 log_challenge_success()
-                _lose_spell(state.current_player(), state)
+                _lose_tile(state.current_player(), state)
 
         else:
             # the response was to block
-            # blocking means the target is claiming a spell
+            # blocking means the target is claiming a tile
             # which the original player may challenge
-            target_claimed_spell = RESPONSE_TO_SPELL[response]
-            log_proposed_block(target, target_claimed_spell)
+            target_claimed_tile = RESPONSE_TO_SPELL[response]
+            log_proposed_block(target, target_claimed_tile)
             response_to_block = choose_response([Response.ACCEPT, Response.CHALLENGE])
 
             if response_to_block == Response.ACCEPT:
                 log_block_success()
                 # TODO: blocking Grappling Hook as Grappling Hook will steal 1 from the source
 
-            elif target_claimed_spell == state.square_to_spell()[target]:
+            elif target_claimed_tile == state.square_to_tile()[target]:
                 # the challenge fails
                 # the block succeeds
                 # the original action fails
                 # TODO: blocking Grappling Hook as Grappling Hook will steal 1 from the source
-                log_challenge_failure(target, target_claimed_spell)
-                _lose_spell(state.current_player(), state)
+                log_challenge_failure(target, target_claimed_tile)
+                _lose_tile(state.current_player(), state)
             else:
                 # the challenge succeeds
                 # the block fails
                 # the original action succeeds
-                log_challenge_success(target, target_claimed_spell)
-                _lose_spell(state.other_player(), state)
+                log_challenge_success(target, target_claimed_tile)
+                _lose_tile(state.other_player(), state)
                 _resolve_action(source, action, target, state)
 
         state.turn_count += 1
