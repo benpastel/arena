@@ -2,7 +2,7 @@ from typing import List, Dict
 from enum import IntEnum
 
 from arena.state import (
-    Spell,
+    Tile,
     Wizard,
     State,
     Square,
@@ -143,7 +143,7 @@ def valid_targets(
     raise ValueError(f"Unknown {action=}")
 
 
-def spell_for_action(action: Action) -> Spell:
+def spell_for_action(action: Action) -> Tile:
 
 
 

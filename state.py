@@ -57,7 +57,7 @@ START_POSITIONS = {
 }
 
 
-class Spell(Enum):
+class Tile(Enum):
     """
     The spells and their tile representations.
 
@@ -112,12 +112,12 @@ class Action(IntEnum):
 # action -> spell enabling that action
 # MOVE and SMITE aren't in this dict because they are always enabled
 ACTION_TO_SPELL = {
-    Action.FLOWER: Spell.FLOWER,
-    Action.HOOK: Spell.HOOK,
-    Action.BIRD: Spell.BIRD,
-    Action.KNIVES_RANGE_1: Spell.KNIVES,
-    Action.KNIVES_RANGE_2: Spell.KNIVES,
-    Action.GRENADES: Spell.GRENADES
+    Action.FLOWER: Tile.FLOWER,
+    Action.HOOK: Tile.HOOK,
+    Action.BIRD: Tile.BIRD,
+    Action.KNIVES_RANGE_1: Tile.KNIVES,
+    Action.KNIVES_RANGE_2: Tile.KNIVES,
+    Action.GRENADES: Tile.GRENADES
 }
 
 
@@ -151,8 +151,8 @@ class Response(IntEnum):
 # response -> spell enabling that response
 # ACCEPT and CHALLENGE are always enabled
 RESPONSE_TO_SPELL = {
-    Response.BLOCK_WITH_HOOK: Spell.HOOK,
-    Response.BLOCK_WITH_BIRD: Spell.BIRD
+    Response.BLOCK_WITH_HOOK: Tile.HOOK,
+    Response.BLOCK_WITH_BIRD: Tile.BIRD
 }
 
 
@@ -177,20 +177,20 @@ class State:
 
     # each player starts with 4 spells in hand.  They then place 2 on the board.
     # when a player runs out of spells they lose.
-    spells_in_hand: Dict[Player, List[Spell]]
+    spells_in_hand: Dict[Player, List[Tile]]
 
     # player -> (spell, position of that spell on the board)
-    spells_on_board: Dict[Player, List[Tuple[Spell, Square]]]
+    spells_on_board: Dict[Player, List[Tuple[Tile, Square]]]
 
     # The two spells on each book square.
-    book_spells: Dict[Square, Tuple[Spell, Spell]]
+    book_spells: Dict[Square, Tuple[Tile, Tile]]
 
     # The remaining spell tiles are hidden off-board and never revealed.
-    unused_spells: List[Spell]
+    unused_spells: List[Tile]
 
     # The list of spells that have been revealed when a player lost a life.
     # These spells stay face-up and are never reshuffled.
-    discard: List[Spell]
+    discard: List[Tile]
 
     # points used to cast spells
     mana: Dict[Player, int]
@@ -209,14 +209,14 @@ class State:
     def other_player(self) -> Player:
         return other_player(self.current_player())
 
-    def spells_here(self) -> Dict[Square, Spell]:
+    def spells_here(self) -> Dict[Square, Tile]:
         ''' Square -> the spell occupying that square '''
         return {
             square: spell
             for spell, square in spells_on_board.values()
         }
 
-    def square_to_player(self) -> Dict[Square, Spell]:
+    def square_to_player(self) -> Dict[Square, Tile]:
         ''' Square -> the player owning a spell on occupying that square '''
         return {
             square: player
@@ -230,7 +230,7 @@ def new_state() -> State:
     Return a new state with the spells randomly dealt.
     """
     # 3 copies of each spell
-    spells = [spell for spell in Spell for s in range(3) if spell != Spell.HIDDEN]
+    spells = [spell for spell in Tile for s in range(3) if spell != Tile.HIDDEN]
 
     # check that we didn't change the count of stuff in the rules and forget to change this method
     assert len(spells) == 15
@@ -259,7 +259,7 @@ def new_state() -> State:
 
 def player_view(private_state: State, player: Player) -> State:
     """
-    Return a copy of private_state with all hidden spells replaced by Spell.HIDDEN
+    Return a copy of private_state with all hidden spells replaced by Tile.HIDDEN
 
     This represents the player's knowledge of the state.
     """
@@ -267,13 +267,13 @@ def player_view(private_state: State, player: Player) -> State:
 
     # we know the number of spells in the opponent's hand but not their identity
     opponent_hand = [
-        Spell.HIDDEN
+        Tile.HIDDEN
         for spell in private_state.spells_in_hand[opponent]
     ]
     # we know the number and location of spells on the opponent's board but not their
     # identity
     opponent_board = [
-        (Spell.HIDDEN, square)
+        (Tile.HIDDEN, square)
         for spell, square in private_state.spells_on_board[opponent]
     ]
 
@@ -288,11 +288,11 @@ def player_view(private_state: State, player: Player) -> State:
         },
         # we can't see the book spells
         book_spells={
-            Book.W: (Spell.HIDDEN, Spell.HIDDEN),
-            Book.E: (Spell.HIDDEN, Spell.HIDDEN),
+            Book.W: (Tile.HIDDEN, Tile.HIDDEN),
+            Book.E: (Tile.HIDDEN, Tile.HIDDEN),
         },
         # we can't see the unused spells
-        unused_spells=[Spell.HIDDEN, Spell.HIDDEN, Spell.HIDDEN],
+        unused_spells=[Tile.HIDDEN, Tile.HIDDEN, Tile.HIDDEN],
         # we can see everything else
         discard=private_state.discard,
         log=private_state.log,
@@ -306,7 +306,7 @@ def check_consistency(private_state: State) -> None:
     """
 
     # check there are exactly 3 of each spell
-    spell_counts = {spell: 0 for spell in Spell}
+    spell_counts = {spell: 0 for spell in Tile}
     for spell_list in private_state.spells_in_hand.values():
         assert 0 <= len(spell_list) <= 2
         for spell in spell_list:
@@ -328,8 +328,8 @@ def check_consistency(private_state: State) -> None:
     for spell in private_state.unused_spells:
         spell_counts[spell] += 1
 
-    for spell in Spell:
-        if spell == Spell.HIDDEN:
+    for spell in Tile:
+        if spell == Tile.HIDDEN:
             assert spell_counts[spell] == 0
         else:
             assert spell_counts[spell] == 3

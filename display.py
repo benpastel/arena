@@ -1,6 +1,6 @@
 from arena.state import (
     State,
-    Spell,
+    Tile,
     Wizard,
     BOOK_POSITIONS,
     SPARKLE_POSITIONS,
@@ -16,12 +16,12 @@ WIZARD_GLYPHS = {
 }
 
 SPELL_GLYPHS = {
-    Spell.FLOWER: "🀥",
-    Spell.HOOK: "🀍",
-    Spell.BIRD: "🀐",
-    Spell.GRENADES: "🀛",
-    Spell.KNIVES: "🀒",
-    Spell.HIDDEN: "🀫",
+    Tile.FLOWER: "🀥",
+    Tile.HOOK: "🀍",
+    Tile.BIRD: "🀐",
+    Tile.GRENADES: "🀛",
+    Tile.KNIVES: "🀒",
+    Tile.HIDDEN: "🀫",
 }
 SPARKLE_GLYPH = "✨"
 BOOK_GLYPH = "📖"
