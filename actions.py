@@ -62,12 +62,14 @@ def _grapple_end_square(
     obstructions: List[Square]
 ) -> Optional[Square]:
     """
-    If `start` grapples `target`, what square do they end up?
+    If the grapple is valid, return the square `start` ends up after grappling.
+    Otherwise return None.
 
-    Return the square adjacent to `start` which is nearest `target`.
+    A grapple is valid if the target is a Queen move away (straight line or diagonal)
+    and the enemy is in line of sight.
 
-    Return None if the grapple is illegal.  Grapples are in straight lines or
-    diagonals (like a chess Queen) and blocked by other players.
+    The end square the square adjacent to `target` which is nearest to `start` -
+    i.e. the penultimate square along the line of sight.
     """
     row_diff = target.row - start.row
     col_diff = target.col - start.col
@@ -106,28 +108,58 @@ def _grapple_end_square(
         current_square = next_square
 
 
+def _grenade_targets(
+        start: Square,
+        obstructions: List[Square],
+        enemy_targets: List[Square]
+    ) -> List[Square]:
+    """
+    Return a possibly-empty list of grenade target squares.
+
+    Grenades can be thrown exactly 2 squares in a cardinal direction onto an empty square.
+    They ignore LOS (i.e. they can go over obstructions).
+
+    For now we restrict to squares that hit at least one enemy to reduce misclicks.
+    They kill in a 3x3 square centered on the impact.
+    """
+    assert len(enemy_targets) > 0
+    assert all(e in obstructions for e in empty_targets)
+
+    targets = []
+
+    for target in [
+        Square(start.row + 2, start.col),
+        Square(start.row - 2, start.col),
+        Square(start.row, start.col + 2),
+        Square(start.row, start.col - 2),
+    ]:
+        if not target.on_board() or target in obstructions:
+            continue
+
+        # it's a valid place to throw the grenade
+        # check whether it hits any enemies in a 3x3 explosion
+        if any(
+            abs(target.row - enemy.row) <= 1
+            and abs(target.col - enemy.col) <= 1
+            for enemy in enemy_targets
+        ):
+            targets.append(target)
+
+    return targets
+
+
 def valid_targets(
-    start: Square, action: Action, state: State
+    start: Square, state: State
 ) -> Dict[Action, List[Square]]:
     """
-    If the tile on `start` were to take `action` in the current `state`,
-    which squares would be valid targets of the action?  E.g. squares the tile can move
-    onto, or squares containing enemy tiles that this tile can hit.
+    What are the valid actions for the current player from the start square,
+    and what squares are those actions allowed to target?
 
-    The returned list may be empty, which means the action would be invalid because there
-    is no legal target.
-
-    TODO: LEFT OFF HERE
-    just had the idea of redefining this as a dict Action -> List[Square]
-    so we can see the full list of valid actions based on mana AND obstructions
-    e.g. if mana > 10 you must smite and nothing else is valid
-    this should simplify the game loop
-
-    (also just redefined action type)
+    The square lists will be non-empty; if an action has no valid target, then
+    it's not currently a valid action.
     """
 
     # all other tiles are obstructions that block line of site
-    # TODO grenades not blocked by LOS
     obstructions = [s for s in state.all_positions() if s != start]
     distances = _all_distances(start, obstructions)
 
@@ -140,46 +172,58 @@ def valid_targets(
     }
     enemy_targets = {s: dist for s, dist in distances.items() if s in enemy_positions}
 
-    if action == OtherAction.MOVE:
-        return [s for s, dist in empty_targets.items() if dist == 1]
-    elif action == OtherAction.SMITE:
-        if mana >= 7:
+    # there must be enemies or the game would have ended
+    assert len(enemy_targets) > 0
 
-        return list(enemy_targets.keys())
-    elif action == Tile.FLOWER:
-        return [s for s, dist in empty_targets.items() if dist == 1]
-    elif action == Tile.HOOK:
-        return [
-            s
-            for s in enemy_targets
-            if _grapple_end_square(start, s, obstructions)
+    # MUST smite at 10 or more mana
+    if mana >= 10:
+        return {OtherAction.SMITE: list(enemy_targets.keys())}
+
+    # move, FLOWER, and BIRD cost no mana
+    # and move to any empty square at some distance
+    #
+    # for now we'll allow empty lists when there is no valid target square;
+    # we'll drop those keys at the end
+    actions = {
+        OtherAction.MOVE: [s for s, dist in empty_targets.items() if dist == 1],
+        Tile.FLOWER: [s for s, dist in empty_targets.items() if dist == 1],
+        Tile.BIRD: [s for s, dist in empty_targets.items() if 1 <= dist <= 2],
+    }
+
+    # see `_grapple_end_square` for the definition of valid grapple targets
+    actions[Tile.HOOK] = [
+        s
+        for s in enemy_targets
+        if _grapple_end_square(start, s, obstructions)
+    ]
+
+    if mana >= 7:
+        # can smite any enemy
+        actions[OtherAction.SMITE] = list(enemy_targets.keys())
+
+    if mana >= 5:
+        # KNIVES at range 1-2
+        actions[Tile.KNIVES] = [
+            s for s, dist in enemy_targets.items() if 1 <= dist <= 2
+        ]
+    elif mana >= 3:
+        # KNIVES at range 1
+        actions[Tile.KNIVES] = [
+            s for s, dist in enemy_targets.items() if 1 <= dist <= 2
         ]
 
-    elif action == Tile.BIRD:
-        return [s for s, dist in empty_targets.items() if 1 <= dist <= 3]
-    elif action == Tile.KNIVES:
-        return [s for s, dist in enemy_targets.items() if dist == 1]
-    elif action == Action.KNIVES_RANGE_2:
-        return [s for s, dist in enemy_targets.items() if dist == 2]
-    elif action == Action.KNIVES_RUSH:
-        return [s for s, dist in empty_targets.items() if 1 <= dist <= 2]
-    elif action == Action.GRENADES:
-        # grenades do not require line of sight
-        # they require an empty square at distance exactly 2
-        return [
-            s
-            for s, dist in empty_targets.items()
-            if dist == 2 and (s.row == start.row or s.col == start.col)
-        ]
+    if mana >= 3:
+        # see `_grenade_targets` for the definition of valid grenade targets
+        actions[Tile.GRENADES] = _grenade_targets(s, obstructions, enemy_positions)
 
-    raise ValueError(f"Unknown {action=}")
+    # drop actions with no valid targets
+    return {
+        a: targets for a, targets in actions.items()
+        if len(targets) > 0
+    }
 
 
-def tile_for_action(action: Action) -> Tile:
-
-
-
-def take_action(wizard: Wizard, action: Action, state: State) -> None:
+def take_action(start: Square, action: Action, target:Square, state: State) -> None:
     """
     Updates the state with the result of wizard taking action.
     Assumes the action is valid.

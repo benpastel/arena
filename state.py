@@ -30,6 +30,7 @@ class Square(NamedTuple):
         return 0 <= self.row < ROWS and 0 <= self.col < COLUMNS
 
 
+
 # Board setup looks like this:
 #
 #     North Player's Side
@@ -73,13 +74,14 @@ class Tile(Enum):
     # move 1 & gain 3 mana
     FLOWER = "🀥"
 
-    # pull yourself to any enemy & steal 2 mana
+    # pull yourself to any enemy at a Queen move & steal 2 mana
     HOOK = "🀍"
 
     # move 1-2 & gain 2 mana
     BIRD = "🀐"
 
     # spend 3 mana to kill in a 3x3 square
+    # around an empty square 2 squares away in a cardinal direction
     GRENADES = "🀛"
 
     # spend:
