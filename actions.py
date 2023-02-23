@@ -3,20 +3,28 @@ from enum import IntEnum
 
 from arena.state import (
     Tile,
-    Wizard,
     State,
     Square,
+    Player,
+    OtherAction,
     ROWS,
     COLUMNS,
-    WIZARD_TO_PLAYER,
-    PLAYER_TO_WIZARD,
-    other_player,
-    Player,
-    Action,
-    Response
 )
 
-ALL_SQUARES = [Square(r, c) for r in range(ROWS) for c in range(COLUMNS)]
+
+'''Mana gains & costs'''
+MANA_GAIN = {
+    OtherAction.MOVE: 1,
+    Tile.BIRD: 2,
+    Tile.FLOWER: 3,
+}
+SMITE_COST = 7
+GRENADES_COST = 3
+KNIVES_RANGE_1_COST = 3
+KNIVES_RANGE_2_COST = 5
+GRAPPLE_STEAL_AMOUNT = 2
+MUST_SMITE_AT = 10
+
 
 def _all_distances(
     start: Square,
@@ -108,44 +116,54 @@ def _grapple_end_square(
         current_square = next_square
 
 
+def _grenade_hits(
+    center: Square,
+    positions: List[Square]
+) -> List[Square]:
+    """
+    Return a possibly-empty list of tile positions hit by the grenade.
+
+    Grenades hit a 3x3 area centered on `center`.
+    """
+    return [
+        hit for hit in positions
+        if abs(center.row - hit.row) <= 1
+           and abs(center.col - hit.col) <= 1
+    ]
+
+
 def _grenade_targets(
         start: Square,
-        obstructions: List[Square],
-        enemy_targets: List[Square]
+        all_positions: List[Square],
+        enemy_positions: List[Square]
     ) -> List[Square]:
     """
-    Return a possibly-empty list of grenade target squares.
+    Return a possibly-empty list of valid squares to target a grenade.
 
     Grenades can be thrown exactly 2 squares in a cardinal direction onto an empty square.
     They ignore LOS (i.e. they can go over obstructions).
 
     For now we restrict to squares that hit at least one enemy to reduce misclicks.
-    They kill in a 3x3 square centered on the impact.
     """
-    assert len(enemy_targets) > 0
-    assert all(e in obstructions for e in empty_targets)
+    assert len(enemy_positions) > 0
+    assert all(e in all_positions for e in enemy_positions)
 
-    targets = []
+    # start with the empty squares at range
+    potential_targets = [
+        t for t in [
+            Square(start.row + 2, start.col),
+            Square(start.row - 2, start.col),
+            Square(start.row, start.col + 2),
+            Square(start.row, start.col - 2),
+        ]
+        if t.on_board() and not t in all_positions
+    ]
 
-    for target in [
-        Square(start.row + 2, start.col),
-        Square(start.row - 2, start.col),
-        Square(start.row, start.col + 2),
-        Square(start.row, start.col - 2),
-    ]:
-        if not target.on_board() or target in obstructions:
-            continue
-
-        # it's a valid place to throw the grenade
-        # check whether it hits any enemies in a 3x3 explosion
-        if any(
-            abs(target.row - enemy.row) <= 1
-            and abs(target.col - enemy.col) <= 1
-            for enemy in enemy_targets
-        ):
-            targets.append(target)
-
-    return targets
+    # filter to ones that hit at least one enemy
+    return [
+        target for target in potential_targets
+        if any(hit in enemy_positions for hit in _grenade_hits(target))
+    ]
 
 
 def valid_targets(
@@ -175,8 +193,8 @@ def valid_targets(
     # there must be enemies or the game would have ended
     assert len(enemy_targets) > 0
 
-    # MUST smite at 10 or more mana
-    if mana >= 10:
+    if mana >= MUST_SMITE_AT:
+        # smiting is the only valid action
         return {OtherAction.SMITE: list(enemy_targets.keys())}
 
     # move, FLOWER, and BIRD cost no mana
@@ -197,22 +215,20 @@ def valid_targets(
         if _grapple_end_square(start, s, obstructions)
     ]
 
-    if mana >= 7:
+    if mana >= SMITE_COST:
         # can smite any enemy
         actions[OtherAction.SMITE] = list(enemy_targets.keys())
 
-    if mana >= 5:
-        # KNIVES at range 1-2
+    if mana >= KNIVES_RANGE_2_COST:
         actions[Tile.KNIVES] = [
             s for s, dist in enemy_targets.items() if 1 <= dist <= 2
         ]
-    elif mana >= 3:
-        # KNIVES at range 1
+    elif mana >= KNIVES_RANGE_1_COST:
         actions[Tile.KNIVES] = [
             s for s, dist in enemy_targets.items() if 1 <= dist <= 2
         ]
 
-    if mana >= 3:
+    if mana >= GRENADES_COST:
         # see `_grenade_targets` for the definition of valid grenade targets
         actions[Tile.GRENADES] = _grenade_targets(s, obstructions, enemy_positions)
 
@@ -223,9 +239,63 @@ def valid_targets(
     }
 
 
-def take_action(start: Square, action: Action, target:Square, state: State) -> None:
+def take_action(start: Square, action: Action, target: Square, state: State) -> List[Square]:
     """
-    Updates the state with the result of wizard taking action.
+    Updates the state with the result of the action.
     Assumes the action is valid.
+
+    Returns a possibly-empty list of casualties (positions of tiles that got killed)
     """
-    assert False  # TODO
+    player = state.current_player()
+    enemy = state.other_player()
+
+    if action in (OtherAction.MOVE, Tile.FLOWER, Tile.BIRD):
+        # move to the target square
+        state.positions[player].remove(start)
+        state.positions[player].add(target)
+
+        # gain mana
+        state.mana[player] += MANA_GAIN[action]
+
+        # kill nobody
+        return []
+
+    if action == Tile.HOOK:
+        # move next to target
+        end_square = _grapple_end_square(start, target, obstructions=[])
+
+        # steal
+        steal_amount = min(GRAPPLE_STEAL_AMOUNT, state.mana[enemy])
+        state.mana[player] += steal_amount
+        state.mana[enemy] -= steal_amount
+
+        # kill noboby
+        return []
+
+    if action == OtherAction.SMITE:
+        # pay cost
+        state.mana[player] -= SMITE_COST
+
+        # kill target
+        return [target]
+
+    if action == Tile.GRENADES:
+        # pay cost
+        state.mana[player] -= GRENADES_COST
+
+        # see `_grenate_hits` for definition of who dies
+        return _grenade_hits(state.all_positions())
+
+    if action == Tile.KNIVES:
+        # cost depends on distance to target
+        dist = max(abs(start.row - target.row), abs(start.col - target.col))
+        if dist == 2:
+            state.mana[player] -= KNIVES_RANGE_2_COST
+        else:
+            assert dist == 1
+            state.mana[player] -= KNIVES_RANGE_1_COST
+
+        # kill target
+        return [target]
+
+    assert False, f"unknown {action=}"

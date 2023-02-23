@@ -173,6 +173,7 @@ class State:
 
     # The square of each tile in play on the board for each player.
     # See `tiles_on_board` for the corresponding tile.
+    # TODO: maybe simpler to put Player in separate flat list?
     positions: Dict[Player, List[Square]]
 
     # The two tiles on each book square.
@@ -345,16 +346,24 @@ def check_consistency(private_state: State) -> None:
             assert len(private_state.tiles_in_hand[player]) == 0
 
     # check location for each tile on board
-    for player in Player:
+    assert all(
+        square.on_board()
+        for player in Player
         for tile, square in zip(
             private_state.tiles_on_board[player],
             private_state.positions[player],
             strict=True
-        ):
-            assert square.on_board()
+        )
+    )
 
     # check tile locations are unique
     assert len(all_positions) == len(set(all_positions))
+
+    # check mana non-negative
+    assert all(
+        private_state.mana[player] >= 0
+        for player in Player
+    )
 
 
 def check_game_result(state: State) -> GameResult:
