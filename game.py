@@ -32,53 +32,51 @@ from arena.logs import (
     log_action_result
 )
 
-# TODO this is stale with new state representation
-# finish actions.py first!
 
-
-def _select_action(state: State) -> Tuple[Action, Square | Wizard]:
+def _select_action(state: State) -> Tuple[Square, Action, Square]:
     '''
-    Prompt the player to choose a valid action & target square for this turn.
+    Prompt the player to choose the action for their turn.
+
+    Returns:
+        - square of the tile that's taking the action
+        - the action
+        - target square of the action
     '''
+    player = state.current_player()
 
-    # check which actions are possible for the current wizard
-    # they must have
-    #  - sufficient mana for the action
-    #  - at least one valid target for the action
-    ok_actions = [
-        a
-        for a in affordable_actions(state)
-        if valid_targets(state.current_wizard(), a, state.wizard_positions)
-    ]
-
-    # RULES: if no possible actions, the player loses or skips their turn?
-    assert ok_actions, "TODO: handle no possible action case"
-
+    start = None
     action = None
-    target_square = None
-    while action is None or target is None:
-        # wait for the active player to tentatively select an action
-        # in the final UI this will be when the player mouses over an action
-        action = select_action(state.current_wizard(), ok_actions)
+    target = None
 
-        # show possible target squares
-        # and confirm or cancel
-        potential_targets = valid_targets(state.current_wizard, action, state.wizard_positions)
-        display_targets(potential_targets)
-        target_square = select_target_or_cancel(potential_targets)
+    # choose start, action, and target in a loop
+    # to enable canceling our choice and trying again
+    while target is None:
 
-        # refresh the UI to remove targeting overlay
-        display_state(state)
+        if start is None:
+            # choose a start square
+            possible_starts = state.tiles_on_board[player]
 
-        # if target is None, they cancelled, so try again
+            assert 1 <= len(possible_starts) <= 2
+            if len(possible_starts) == 1:
+                start = possible_starts[0]
+            else:
+                start = choose_square(
+                    possible_starts,
+                    "Choose the tile that will take an action this turn."
+                    allow_cancel = False
+                )
 
-    # if the action targeted a wizard, return that wizard
-    for wizard, position in wizard_positions.item():
-        if position == target_square:
-            return action, wizard
+        assert start
+        if action is None:
+            # TODO left off here
+            # get the action dict, or cancel
+            # if None, continue
 
-    # otherwise return the target coordinates
-    return action, target_square
+
+        # choose a target
+        # if None, go back around loop
+
+    return start, action, target
 
 def _lose_tile(wizards: List[Wizard], state: State) -> None:
     '''
