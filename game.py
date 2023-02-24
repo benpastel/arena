@@ -94,71 +94,129 @@ def _select_action(state: State) -> Tuple[Square, Action, Square]:
         return start, action, target
 
 
-
-def _lose_tile(wizards: List[Wizard], state: State) -> None:
+def _lose_tile(player_or_square: Player | Square, state: State) -> None:
     '''
-    Prompt the player to choose a tile to lose, and log the choice
+     - Prompt the player to choose a tile to lose
+     - choose the tile to replace it
+     - log the lost tile
+     - update state
 
-    TODO rewrite
+    If `player_or_square` is a square, the player must lose the tile on that square.
+    (E.g. when that tile was hit by an attack.)
+
+    If `player_or_square` is a player, the player chooses one tile on board to lose.
+    (E.g. when the player lost a challenge.)
+    We allow the player to cancel and retry that choice when they get to the replacement
+    tile.
     '''
-    assert wizards
 
-    # flatten options
-    options = [
-        (wizard, tile, tile_idx)
-        for wizard in wizards
-        for tile_idx, tile in enumerate(wizard_tiles[wizard])
-    ]
+    # inside a loop to enable canceling and retrying
+    while True:
 
-    if len(options) == 0:
-        # these wizards have already lost all their tiles; do nothing
-        return
+        # select which tile on board is lost
+        # in some cases the player gets a choice
+        if isinstance(player_or_square, Square):
+            square = player_or_square
+            player = state.player_at(square)
+            allow_cancel_later = False
+        elif player_or_square in Player and len(state.positions[player]) == 1:
+            # the player only has one tile on board, so they get no choice
+            player = player_or_square
+            square = state.positions[player][0]
+            allow_cancel_later = False
+        else:
+            # the player gets to choose which to lose
+            player = player_or_square
+            square = choose_square(
+                state.positions[player],
+                state.player_view(player),
+                "Choose which tile to lose.",
+                allow_cancel = False
+            )
+            allow_cancel_later = True
 
-    if len(options) == 1:
-        # there's no choice
-        wizard, tile, tile_idx = options[0]
+        tile = state.tile_at(square)
 
-    else:
-        # ask the player
-        wizard, tile, tile_idx = select_tile_to_lose(options)
+        # select which tile from hand replaces it, if applicable
+        if len(state.tiles_in_hand[player]) == 0:
+            # the player has no tiles in hand
+            replacement = None
 
-    # move the tile tile from live to dead
-    state.wizard_tiles[wizard].pop(tile_idx)
-    dead_tiles[wizard].append(tile)
-    log_tile_lost(wizard, tile)
+        elif len(state.tiles_in_hand[player]) == 1:
+            # the player only has one tile in hand, so no choice
+            replacement = state.tiles_in_hand[player][0]
 
-    # if this was the wizard's last tile, the wizard is now KO'd
-    if not wizard_tiles[wizard]:
-        log_wizard_lost(wizard)
+        else:
+            # the player gets to choose the replacement tile
+            replacement = choose_tile(
+                state.tiles_in_hand[player],
+                state.player_view(player),
+                f"Choose which tile to replace {tile.value}.",
+                allow_cancel = True
+            )
+            if replacement is None:
+                # they canceled
+                # try again from the start
+                continue
+
+        # we've successfully chosen a square to lose & replacement tile if applicable
+        break
+
+    state.log(f"{player} lost {tile} at {square}.")
+
+    # move the tile from alive to dead
+    state.tiles_on_board[player].remove(tile)
+    state.positions[player].remove(square)
+    discard.append(tile)
+
+    # move the replacement tile if applicable
+    if replacement:
+        state.tiles_in_hand[player].remove(replacement)
+        state.tiles_on_board[player].append(replacement)
+        state.positions[player].append(square)
 
 
-def _resolve_action(action: Action, target: Square | Wizard, state: State) -> None:
-    log_action(start, action, target, state)
 
-    # the action may hit any number of
-    hit_wizards = take_action(source, action, target)
+def _resolve_action(start: Square, action: Action, target: Square, state: State) -> None:
 
-    for hit_wizard in hit_wizards:
-        _lose_tile(hit_wizard, state)
+    # `hits` is a possibly-empty list of tiles hit by the action
+    hits = take_action(start, action, target, state)
+
+    # log what happened
+    match action:
+        case OtherAction.MOVE:
+            state.log(f"{start} moves to {target}")
+        case OtherAction.SMITE:
+            state.log(f"{start} smites {target}")
+        case Tile.FLOWER | Tile.BIRD:
+            state.log(f"{start} uses {action} to move to {target}")
+        case Tile.HOOK:
+            state.log(f"{start} hooks {target}")
+        case Tile.GRENADES:
+            state.log(f"{start} throws a grenade at {target}, hitting {hits}")
+        case Tile.KNIVES:
+            state.log(f"{start} hits {target} with a knife")
+        case _:
+            assert False
+
+    for hit in hits:
+        _lose_tile(hit, state)
 
 
-def _redraw_tile(wizard: Wizard, action: Action, state: State) -> None:
-    # return the tile in state
-    # draw a new tile at random
-    # display & log this for the player who can see it
+def _place_tiles(player: Player, state: State) -> None:
     assert False, "TODO"
 
 
 def play_one_game():
     state = new_state()
 
-    # TODO
     _place_tiles(player.N, state)
     _place_tiles(player.S, state)
 
     while check_game_result(state) == GameResult.ONGOING:
         check_consistency(state)
 
+        # current player chooses their move
         start, action, target = _select_action(state)
 
         if not action in Tile:
@@ -182,6 +240,8 @@ def play_one_game():
             if action == state.tile_at(start):
                 # challenge fails
                 # original action succeeds
+                # LEFT OFF HERE: replacing all the "log" placeholders with actual log messages
+                #
                 log_challenge_failure(action)
                 _lose_tile(state.other_player(), state)
                 _resolve_action(action, target, state)

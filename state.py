@@ -29,6 +29,8 @@ class Square(NamedTuple):
     def on_board(self) -> bool:
         return 0 <= self.row < ROWS and 0 <= self.col < COLUMNS
 
+    def __repr__(self) -> str:
+        return f"({row}, {col})"
 
 
 # Board setup looks like this:
@@ -94,6 +96,9 @@ class Tile(Enum):
     # each player has a view with some of the tiles replaced with HIDDEN
     HIDDEN = "🀫"
 
+    def __repr__(self) -> str:
+        return f"{self.value} ({self.name.lower()})"
+
 
 class OtherAction(Enum):
     """
@@ -106,6 +111,9 @@ class OtherAction(Enum):
     # Pay 7 mana to kill at any range.
     # If a player has above 10 mana they must smite on their turn.
     SMITE = "smite"
+
+    def __repr__(self) -> str:
+        return f"{self.value} ({self.name.lower()})"
 
 
 # An action is: use a tile power, move, or smite.
@@ -173,7 +181,6 @@ class State:
 
     # The square of each tile in play on the board for each player.
     # See `tiles_on_board` for the corresponding tile.
-    # TODO: maybe simpler to put Player in separate flat list?
     positions: Dict[Player, List[Square]]
 
     # The two tiles on each book square.
@@ -211,17 +218,23 @@ class State:
                     return self.tiles_on_board[s]
         return None
 
-    def square_to_player(self) -> Dict[Square, Tile]:
-        ''' Square -> the player owning a tile on occupying that square '''
-        return {
-            square: player
-            for player in Player
-            for square in self.positions[player]
-        }
+    def player_at(self, square: Square) -> Optional[Player]:
+        '''
+        Square -> the player owning a tile occupying that square,
+        or None if there isn't one
+        '''
+        for player in Player:
+            for s, other_square in enumerate(self.positions[player]):
+                if other_square == square:
+                    return player
+        return None
 
     def all_positions(self) -> List[Square]:
         ''' All squares with a tile on board, regardless of player '''
         return list(self.square_to_player().keys())
+
+    def log(self, msg: str) -> None:
+        self.log.append(msg)
 
 
 def new_state() -> State:
@@ -369,6 +382,8 @@ def check_consistency(private_state: State) -> None:
 def check_game_result(state: State) -> GameResult:
     """
     See if anyone has won the game.
+
+    TODO: also draw after x turns
     """
     north_dead = len(tiles_on_board[Player.N]) == 0
     south_dead = len(tiles_on_board[Player.S]) == 0
