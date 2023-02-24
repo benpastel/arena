@@ -43,44 +43,63 @@ def _select_action(state: State) -> Tuple[Square, Action, Square]:
         - target square of the action
     '''
     player = state.current_player()
+    player_view = state.player_view(player)
 
-    start = None
-    action = None
-    target = None
+    # choose in a loop
+    # to enable canceling our choice and trying again indefinitely
+    while True:
+        # choose the start square
+        possible_starts = state.tiles_on_board[player]
 
-    # choose start, action, and target in a loop
-    # to enable canceling our choice and trying again
-    while target is None:
+        assert 1 <= len(possible_starts) <= 2
+        if len(possible_starts) == 1:
+            # only one choice
+            start = possible_starts[0]
+        else:
+            start = choose_square(
+                possible_starts,
+                player_view,
+                "Choose the tile that will take an action this turn.",
+                allow_cancel = False
+            )
+            assert start
 
-        if start is None:
-            # choose a start square
-            possible_starts = state.tiles_on_board[player]
-
-            assert 1 <= len(possible_starts) <= 2
-            if len(possible_starts) == 1:
-                start = possible_starts[0]
-            else:
-                start = choose_square(
-                    possible_starts,
-                    "Choose the tile that will take an action this turn."
-                    allow_cancel = False
-                )
-
-        assert start
+        # choose the action, or cancel
+        actions_and_targets = valid_targets(start, state)
+        action = choose_action(
+            actions_and_targets.keys(),
+            player_view,
+            f"Choose the action for {state.tile_at(start).value}.",
+            allow_cancel = True
+        )
         if action is None:
-            # TODO left off here
-            # get the action dict, or cancel
-            # if None, continue
+            # they canceled
+            # try again from the start
+            continue
+
+        # choose the target square for the action, or cancel
+        target = choose_square(
+            actions_and_targets[action],
+            player_view,
+            f"Choose the target square for {action.name}.",
+            allow_cancel = True
+        )
+
+        if target is None:
+            # they canceled
+            # try again for the start
+            continue
+
+        # they've chosen everything without canceling
+        return start, action, target
 
 
-        # choose a target
-        # if None, go back around loop
-
-    return start, action, target
 
 def _lose_tile(wizards: List[Wizard], state: State) -> None:
     '''
     Prompt the player to choose a tile to lose, and log the choice
+
+    TODO rewrite
     '''
     assert wizards
 
@@ -114,10 +133,10 @@ def _lose_tile(wizards: List[Wizard], state: State) -> None:
 
 
 def _resolve_action(action: Action, target: Square | Wizard, state: State) -> None:
-    # TODO maybe break this into pieces around moving, spending mana, destroying?
+    log_action(start, action, target, state)
 
     # the action may hit any number of
-    hit_wizards = do_action(action, target, state)
+    hit_wizards = take_action(source, action, target)
 
     for hit_wizard in hit_wizards:
         _lose_tile(hit_wizard, state)
@@ -131,83 +150,70 @@ def _redraw_tile(wizard: Wizard, action: Action, state: State) -> None:
 
 
 def play_one_game():
-
     state = new_state()
 
     # TODO
-    _place_tiles(state, player.N)
-    _place_tiles(state, player.S)
+    _place_tiles(player.N, state)
+    _place_tiles(player.S, state)
 
     while check_game_result(state) == GameResult.ONGOING:
-        display_state(state)
         check_consistency(state)
 
-        player = state.current_player()
+        start, action, target = _select_action(state)
 
-        source = _select_source(state)
-        action, target = _select_action(source_square, state)
-        claimed_tile = ACTION_TO_TILES.get(action)
-
-        if claimed_tile is None:
+        if not action in Tile:
+            assert action in OtherAction
             # the player didn't claim a tile
             # i.e. they moved or smited
             # so no possibility of challenge
-            log_action(action, target)
-            _resolve_action(action, target, state)
+            _resolve_action(start, action, target, state)
             state.turn_count += 1
             continue
 
         # show other player the proposed action
         # ask whether they accept, challenge, or block
-        log_proposed_action(player, source, action, target, claimed_tile)
-        display_proposed_action(player, source, action, target, claimed_tile)
-
-        potential_responses = valid_responses(action, target, state)
-        response = choose_response(potential_responses)
-        log_response(response)
+        response = _select_response(start, action, target, state)
 
         if response == Response.ACCEPT:
-            _resolve_action(source, action, target, state)
+            # other player allows the action to proceed
+            _resolve_action(start, action, target, state)
 
         elif response == Response.CHALLENGE:
-            if claimed_tile == state.square_to_tile()[source]:
-                # the challenge fails
-                # the original action succeeds
-                log_challenge_failure()
+            if action == state.tile_at(start):
+                # challenge fails
+                # original action succeeds
+                log_challenge_failure(action)
                 _lose_tile(state.other_player(), state)
                 _resolve_action(action, target, state)
             else:
-                # the challenge succeeds
-                # the original action fails
-                log_challenge_success()
+                # challenge succeeds
+                # original action fails
+                log_challenge_success(start, action)
                 _lose_tile(state.current_player(), state)
-
         else:
             # the response was to block
-            # blocking means the target is claiming a tile
+            # blocking means the target is Tile.HOOK in response to a HOOK
             # which the original player may challenge
-            target_claimed_tile = RESPONSE_TO_SPELL[response]
-            log_proposed_block(target, target_claimed_tile)
-            response_to_block = choose_response([Response.ACCEPT, Response.CHALLENGE])
+            block_response = _select_block_response(target, state)
 
-            if response_to_block == Response.ACCEPT:
+            if block_response == Response.ACCEPT:
+                # block succeeds
+                # original action fails
                 log_block_success()
-                # TODO: blocking Grappling Hook as Grappling Hook will steal 1 from the source
 
-            elif target_claimed_tile == state.square_to_tile()[target]:
-                # the challenge fails
-                # the block succeeds
-                # the original action fails
-                # TODO: blocking Grappling Hook as Grappling Hook will steal 1 from the source
-                log_challenge_failure(target, target_claimed_tile)
+            elif state.tile_at(target) == Tile.HOOK:
+                # challenge fails
+                # block succeeds
+                # original action fails
+                log_challenge_failure(target, Tile.HOOK)
                 _lose_tile(state.current_player(), state)
             else:
-                # the challenge succeeds
-                # the block fails
-                # the original action succeeds
-                log_challenge_success(target, target_claimed_tile)
+                # challenge succeeds
+                # block fails
+                # original action succeeds
+                log_challenge_success(target, Tile.HOOK)
                 _lose_tile(state.other_player(), state)
-                _resolve_action(source, action, target, state)
+                _resolve_action(start, action, target, state)
 
         state.turn_count += 1
 

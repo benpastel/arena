@@ -203,13 +203,13 @@ class State:
     def other_player(self) -> Player:
         return other_player(self.current_player())
 
-    def tiles_here(self) -> Dict[Square, Tile]:
-        ''' Square -> the tile occupying that square '''
-        return {
-            square: tile
-            for player in Player
-            for tile, square in zip(self.tiles_on_board[player], self.positions[player])
-        }
+    def tile_at(self, square: Square) -> Optional[Tile]:
+        ''' The tile occupying on the board at this square, or None if there isn't one'''
+        for player in Player:
+            for s, other_square in enumerate(self.positions[player]):
+                if other_square == square:
+                    return self.tiles_on_board[s]
+        return None
 
     def square_to_player(self) -> Dict[Square, Tile]:
         ''' Square -> the player owning a tile on occupying that square '''
