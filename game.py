@@ -1,35 +1,22 @@
 from arena.state import (
     new_state,
     check_consistency,
-    check_game_result,
     GameResult,
     Player,
+    Tile,
+    Square,
     player_view,
-    ACTION_TO_TILES,
-    RESPONSE_TO_SPELL
 )
 from arena.actions import (
-    affordable_actions,
     valid_targets,
-    is_challenge_successful,
-    resolve_action
+    take_action,
 )
-from arena.display import (
+from arena.ui import (
     display_state,
-    display_targets,
-    display_proposed_action
-)
-
-from arena.inputs import (
-    select_action,
-    select_target_or_cancel,
-    challenge_or_accept
-)
-from arena.logs import (
-    log_proposed_action,
-    log_challenge_success,
-    log_challenge_failure,
-    log_action_result
+    place_tiles,
+    choose_square,
+    choose_action,
+    choose_tile,
 )
 
 
@@ -92,6 +79,15 @@ def _select_action(state: State) -> Tuple[Square, Action, Square]:
 
         # they've chosen everything without canceling
         return start, action, target
+
+
+def _select_response(start: Square, action: Action, target: Square, state: State) -> Response:
+    assert False, "TODO"
+
+
+def _select_block_response(target: Square, state: State) -> Response:
+    assert False, "TODO"
+
 
 
 def _lose_tile(player_or_square: Player | Square, state: State) -> None:
@@ -176,7 +172,6 @@ def _lose_tile(player_or_square: Player | Square, state: State) -> None:
         state.positions[player].append(square)
 
 
-
 def _resolve_action(start: Square, action: Action, target: Square, state: State) -> None:
 
     # `hits` is a possibly-empty list of tiles hit by the action
@@ -203,17 +198,15 @@ def _resolve_action(start: Square, action: Action, target: Square, state: State)
         _lose_tile(hit, state)
 
 
-def _place_tiles(player: Player, state: State) -> None:
-    assert False, "TODO"
 
 
 def play_one_game():
     state = new_state()
 
-    _place_tiles(player.N, state)
-    _place_tiles(player.S, state)
+    place_tiles(player.N, state)
+    place_tiles(player.S, state)
 
-    while check_game_result(state) == GameResult.ONGOING:
+    while state.game_result() == GameResult.ONGOING:
         check_consistency(state)
 
         # current player chooses their move
@@ -240,15 +233,13 @@ def play_one_game():
             if action == state.tile_at(start):
                 # challenge fails
                 # original action succeeds
-                # LEFT OFF HERE: replacing all the "log" placeholders with actual log messages
-                #
-                log_challenge_failure(action)
+                state.log(f"Challenge failed because {start} is a {action}.")
                 _lose_tile(state.other_player(), state)
                 _resolve_action(action, target, state)
             else:
                 # challenge succeeds
                 # original action fails
-                log_challenge_success(start, action)
+                state.log(f"Challenge succeeded because {start} is a {action}.")
                 _lose_tile(state.current_player(), state)
         else:
             # the response was to block
@@ -259,27 +250,25 @@ def play_one_game():
             if block_response == Response.ACCEPT:
                 # block succeeds
                 # original action fails
-                log_block_success()
-
+                state.log("Hook blocked.")
             elif state.tile_at(target) == Tile.HOOK:
                 # challenge fails
                 # block succeeds
                 # original action fails
-                log_challenge_failure(target, Tile.HOOK)
+                state.log(f"Challenge failed because {target} is a {Tile.HOOK}.")
                 _lose_tile(state.current_player(), state)
             else:
                 # challenge succeeds
                 # block fails
                 # original action succeeds
-                log_challenge_success(target, Tile.HOOK)
+                state.log(f"Challenge succeeded because {target} is a {Tile.HOOK}.")
                 _lose_tile(state.other_player(), state)
                 _resolve_action(start, action, target, state)
 
         state.turn_count += 1
 
     display_state(state)
-    log_game_end()
-
+    state.log(f"Game over!  {state.game_result()}!")
     # later: prompt for a new game with starting player rotated
     # also keep a running total score for longer matches
 

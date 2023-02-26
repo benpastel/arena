@@ -236,6 +236,23 @@ class State:
     def log(self, msg: str) -> None:
         self.log.append(msg)
 
+    def game_result(self) -> GameResult:
+        """
+        See if anyone has won the game.
+
+        TODO: also draw after x turns
+        """
+        north_dead = len(self.tiles_on_board[Player.N]) == 0
+        south_dead = len(self.tiles_on_board[Player.S]) == 0
+        if north_dead and south_dead:
+            return GameResult.DRAW
+        elif south_dead:
+            return GameResult.NORTH_WINS
+        elif north_dead:
+            return GameResult.SOUTH_WINS
+        else:
+            return GameResult.ONGOING
+
 
 def new_state() -> State:
     """
@@ -378,20 +395,3 @@ def check_consistency(private_state: State) -> None:
         for player in Player
     )
 
-
-def check_game_result(state: State) -> GameResult:
-    """
-    See if anyone has won the game.
-
-    TODO: also draw after x turns
-    """
-    north_dead = len(tiles_on_board[Player.N]) == 0
-    south_dead = len(tiles_on_board[Player.S]) == 0
-    if north_dead and south_dead:
-        return GameResult.DRAW
-    elif south_dead:
-        return GameResult.NORTH_WINS
-    elif north_dead:
-        return GameResult.SOUTH_WINS
-    else:
-        return GameResult.ONGOING

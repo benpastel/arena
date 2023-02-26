@@ -29,12 +29,14 @@ EMPTY_SQUARE_GLYPH = "  "  # two spaces matches unicode display width on my term
 
 
 def _render_tiles(wizard: Wizard, state: State) -> str:
+    # TODO update
     wizard_glyph = WIZARD_GLYPHS[wizard]
     tile_glyphs = [SPELL_GLYPHS[s] for s in state.wizard_tiles[wizard]]
     return f'{wizard_glyph}: {" ".join(tile_glyphs)}'
 
-# TODO render row & column labels to make selection easier
+
 def display_state(state: State) -> None:
+    # TODO update
     board = [[EMPTY_SQUARE_GLYPH for c in range(COLUMNS)] for r in range(ROWS)]
 
     # add sparkles and books first
@@ -56,3 +58,34 @@ def display_state(state: State) -> None:
     print("  " + "+--" * COLUMNS + "+")
     print("")
     print(f"{_render_tiles(Wizard.SW, state):16}{_render_tiles(Wizard.SE, state):16}")
+
+
+def place_tiles(player: Player, state: State) -> None:
+    assert False, "TODO"
+
+
+def choose_square(
+    options: List[Square],
+    player_view: State,
+    prompt: str,
+    allow_cancel: bool
+) -> Optional[Square]:
+    assert False, "TODO"
+
+
+def choose_action(
+    options: List[Action],
+    player_view: State,
+    prompt: str,
+    allow_cancel: bool
+) -> Optional[Action]:
+    assert False, "TODO"
+
+
+def choose_tile(
+    options: List[Tile],
+    player_view: State,
+    prompt: str,
+    allow_cancel: bool
+) -> Optional[Tile]:
+    assert False, "TODO"
