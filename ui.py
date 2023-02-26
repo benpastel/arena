@@ -1,3 +1,4 @@
+import os
 from typing import TypeVar
 
 from arena.state import (
@@ -11,12 +12,26 @@ from arena.state import (
 
 FOUNTAIN_GLYPH = "✨"
 BOOK_GLYPH = "📖"
-EMPTY_SQUARE_GLYPH = "  "  # two spaces matches unicode display width on my termina
+EMPTY_SQUARE_GLYPH = "  "  # two spaces matches unicode display width on my terminal
+
+
+def _clear_terminal() -> None:
+    """Clear the terminal on unix-like or Windows systems."""
+    os.system("cls||clear")
+
 
 def _render_hand(player: Player, state: State) -> str:
-    return f"{player}'s hand: {state.tiles_in_hand[player].join(" ")}"
+    return f"{player}'s hand: {' '.join(state.tiles_in_hand[player])}"
+
 
 def display_state(state: State) -> None:
+    """
+    Clear the terminal and display the entire board state, including hands.
+
+    To hide the information a player shouldn't see, pass the result of `player_view()`
+    instead of the private state.
+    """
+    _clear_terminal()
     board = [[EMPTY_SQUARE_GLYPH for c in range(COLUMNS)] for r in range(ROWS)]
 
     # add fountains and books first
@@ -29,9 +44,7 @@ def display_state(state: State) -> None:
     # add tiles on board, allowing them to cover the books & fountains
     for player in Player:
         for tile, (r, c) in zip(
-            state.tiles_on_board[player],
-            state.positions[player],
-            strict=True
+            state.tiles_on_board[player], state.positions[player], strict=True
         ):
             board[r][c] = tile.value
 
@@ -45,7 +58,9 @@ def display_state(state: State) -> None:
     print(_render_hand(Player.S), state)
 
 
-T = TypeVar('T')
+T = TypeVar("T")
+
+
 def choose_option(
     options: List[T],
     player_view: State,
@@ -54,6 +69,7 @@ def choose_option(
     """
     Prompt the player to choose amongst `options` and returns the chosen option.
     """
+    display_state(player_view)
     print(prompt)
     for t, option in enumerate(options):
         print(f"({t+1}): {option}")
@@ -69,7 +85,7 @@ def choose_option(
         # the input was invalid; ask again
 
 
-''' Special option indicating the player wants to cancel previous selections. '''
+""" Special option indicating the player wants to cancel previous selections. """
 CANCEL = "Cancel"
 
 
@@ -87,21 +103,17 @@ def choose_option_or_cancel(
 
 
 def place_tiles(player: Player, state: State) -> None:
-    '''
-    Choose which tiles start on the board.
-    '''
+    """
+    Prompt the player to choose their starting tiles from their hand.
+    """
     assert len(START_POSITIONS[player]) == 2
 
-    # choose in a loop to enable canceling
-    while True:
-        first_position = START_POSITIONS[player][0]
-        first_tile = choose_option(
+    for target in START_POSITIONS[player]:
+        tile = choose_option(
             state.tiles_in_hand[player],
             player_view(player, state),
-            f"Choose a tile to start on {first_position}",
-
-        # TODO left off here
-
-
-    assert False, "TODO"
-
+            f"Choose a tile to start on {target}",
+        )
+        state.tiles_in_hand[player].remove(tile)
+        state.tiles_on_board[player].append(tile)
+        state.positions[player].append(target)

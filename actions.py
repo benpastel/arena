@@ -12,7 +12,7 @@ from arena.state import (
 )
 
 
-'''Mana gains & costs'''
+"""Mana gains & costs"""
 MANA_GAIN = {
     OtherAction.MOVE: 1,
     Tile.BIRD: 2,
@@ -65,9 +65,7 @@ def _all_distances(
 
 
 def _grapple_end_square(
-    start: Square,
-    target: Square,
-    obstructions: List[Square]
+    start: Square, target: Square, obstructions: List[Square]
 ) -> Optional[Square]:
     """
     If the grapple is valid, return the square `start` ends up after grappling.
@@ -83,8 +81,10 @@ def _grapple_end_square(
     col_diff = target.col - start.col
 
     if not (
-        row_diff == 0 and col_diff != 0
-        or row_diff != 0 and col_diff == 0
+        row_diff == 0
+        and col_diff != 0
+        or row_diff != 0
+        and col_diff == 0
         or row_diff == col_diff
     ):
         # not in a straight line / diagonal
@@ -98,8 +98,7 @@ def _grapple_end_square(
     current_square = start
     while True:
         next_square = Square(
-            row=current_square.row + row_step,
-            col=current_square.col + col_step
+            row=current_square.row + row_step, col=current_square.col + col_step
         )
         # should never walk off board without hitting target
         assert 0 <= next_square.row < ROWS
@@ -116,27 +115,22 @@ def _grapple_end_square(
         current_square = next_square
 
 
-def _grenade_hits(
-    center: Square,
-    positions: List[Square]
-) -> List[Square]:
+def _grenade_hits(center: Square, positions: List[Square]) -> List[Square]:
     """
     Return a possibly-empty list of tile positions hit by the grenade.
 
     Grenades hit a 3x3 area centered on `center`.
     """
     return [
-        hit for hit in positions
-        if abs(center.row - hit.row) <= 1
-           and abs(center.col - hit.col) <= 1
+        hit
+        for hit in positions
+        if abs(center.row - hit.row) <= 1 and abs(center.col - hit.col) <= 1
     ]
 
 
 def _grenade_targets(
-        start: Square,
-        all_positions: List[Square],
-        enemy_positions: List[Square]
-    ) -> List[Square]:
+    start: Square, all_positions: List[Square], enemy_positions: List[Square]
+) -> List[Square]:
     """
     Return a possibly-empty list of valid squares to target a grenade.
 
@@ -150,7 +144,8 @@ def _grenade_targets(
 
     # start with the empty squares at range
     potential_targets = [
-        t for t in [
+        t
+        for t in [
             Square(start.row + 2, start.col),
             Square(start.row - 2, start.col),
             Square(start.row, start.col + 2),
@@ -161,14 +156,13 @@ def _grenade_targets(
 
     # filter to ones that hit at least one enemy
     return [
-        target for target in potential_targets
+        target
+        for target in potential_targets
         if any(hit in enemy_positions for hit in _grenade_hits(target))
     ]
 
 
-def valid_targets(
-    start: Square, state: State
-) -> Dict[Action, List[Square]]:
+def valid_targets(start: Square, state: State) -> Dict[Action, List[Square]]:
     """
     What are the valid actions for the current player from the start square,
     and what squares are those actions allowed to target?
@@ -185,9 +179,7 @@ def valid_targets(
 
     enemy_positions = state.positions[state.other_player()]
 
-    empty_targets = {
-        s: dist for s, dist in distances.items() if s not in obstructions
-    }
+    empty_targets = {s: dist for s, dist in distances.items() if s not in obstructions}
     enemy_targets = {s: dist for s, dist in distances.items() if s in enemy_positions}
 
     # there must be enemies or the game would have ended
@@ -210,9 +202,7 @@ def valid_targets(
 
     # see `_grapple_end_square` for the definition of valid grapple targets
     actions[Tile.HOOK] = [
-        s
-        for s in enemy_targets
-        if _grapple_end_square(start, s, obstructions)
+        s for s in enemy_targets if _grapple_end_square(start, s, obstructions)
     ]
 
     if mana >= SMITE_COST:
@@ -233,13 +223,12 @@ def valid_targets(
         actions[Tile.GRENADES] = _grenade_targets(s, obstructions, enemy_positions)
 
     # drop actions with no valid targets
-    return {
-        a: targets for a, targets in actions.items()
-        if len(targets) > 0
-    }
+    return {a: targets for a, targets in actions.items() if len(targets) > 0}
 
 
-def take_action(start: Square, action: Action, target: Square, state: State) -> List[Square]:
+def take_action(
+    start: Square, action: Action, target: Square, state: State
+) -> List[Square]:
     """
     Updates the state with the result of the action.
     Assumes the action is valid.

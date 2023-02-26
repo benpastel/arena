@@ -52,6 +52,8 @@ def test_grapple_end_square():
 
 
 def test_valid_targets():
+    # TODO redo
+
     # Test case looks like:
     #
     #   . . . . .

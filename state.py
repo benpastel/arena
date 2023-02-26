@@ -59,7 +59,7 @@ FOUNTAIN_POSITION = Square(2, 2)
 
 START_POSITIONS = {
     Player.N: (Square(0, 0), Square(0, 4)),
-    Player.S: (Square(4, 0), Square(4, 4))
+    Player.S: (Square(4, 0), Square(4, 4)),
 }
 
 
@@ -127,6 +127,7 @@ Action = (
     | OtherAction.SMITE
 )
 
+
 class GameResult(Enum):
     ONGOING = auto()
     NORTH_WINS = auto()
@@ -178,7 +179,7 @@ class State:
     turn_count: int
 
     def current_player(self) -> Player:
-        ''' For now, North is hardcoded to go first. '''
+        """For now, North is hardcoded to go first."""
         order = [Player.N, Player.S]
         return order[turn % 2]
 
@@ -186,7 +187,7 @@ class State:
         return other_player(self.current_player())
 
     def tile_at(self, square: Square) -> Optional[Tile]:
-        ''' The tile occupying on the board at this square, or None if there isn't one'''
+        """The tile occupying on the board at this square, or None if there isn't one"""
         for player in Player:
             for s, other_square in enumerate(self.positions[player]):
                 if other_square == square:
@@ -194,10 +195,10 @@ class State:
         return None
 
     def player_at(self, square: Square) -> Optional[Player]:
-        '''
+        """
         Square -> the player owning a tile occupying that square,
         or None if there isn't one
-        '''
+        """
         for player in Player:
             for s, other_square in enumerate(self.positions[player]):
                 if other_square == square:
@@ -205,7 +206,7 @@ class State:
         return None
 
     def all_positions(self) -> List[Square]:
-        ''' All squares with a tile on board, regardless of player '''
+        """All squares with a tile on board, regardless of player"""
         return list(self.square_to_player().keys())
 
     def log(self, msg: str) -> None:
@@ -247,18 +248,18 @@ def new_state() -> State:
             Player.N: tiles[0:4],
             Player.S: tiles[4:8],
         },
-        tiles_on_board = {},
-        positions = {},
+        tiles_on_board={},
+        positions={},
         book_tiles={
             BOOK_POSITIONS[0]: (tiles[8], tiles[9]),
-            BOOK_POSITIONS[1]: (tiles[10], tiles[11])
+            BOOK_POSITIONS[1]: (tiles[10], tiles[11]),
         },
         unused_tiles=tiles[12:15],
         discard=[],
         # first player starts with 1 fewer mana
         mana={Player.N: 1, Player.S: 2},
         log=[],
-        turn_count = 0
+        turn_count=0,
     )
 
 
@@ -271,16 +272,10 @@ def player_view(private_state: State, player: Player) -> State:
     opponent = other_player(player)
 
     # we know the number of tiles in the opponent's hand but not their identity
-    opponent_hand = [
-        Tile.HIDDEN
-        for tile in private_state.tiles_in_hand[opponent]
-    ]
+    opponent_hand = [Tile.HIDDEN for tile in private_state.tiles_in_hand[opponent]]
     # we know the number and location of tiles on the opponent's board but not their
     # identity
-    opponent_board = [
-        Tile.HIDDEN
-        for tile in private_state.tiles_on_board[opponent]
-    ]
+    opponent_board = [Tile.HIDDEN for tile in private_state.tiles_on_board[opponent]]
 
     return State(
         tiles_in_hand={
@@ -289,7 +284,7 @@ def player_view(private_state: State, player: Player) -> State:
         },
         tiles_on_board={
             player: private_state.tiles_on_board[player],
-            opponent: opponent_board
+            opponent: opponent_board,
         },
         # all tile positions are public knowledge
         positions=positions,
@@ -303,7 +298,7 @@ def player_view(private_state: State, player: Player) -> State:
         # we can see everything else
         discard=private_state.discard,
         log=private_state.log,
-        turn_count = private_state.turn_count
+        turn_count=private_state.turn_count,
     )
 
 
@@ -357,7 +352,7 @@ def check_consistency(private_state: State) -> None:
         for tile, square in zip(
             private_state.tiles_on_board[player],
             private_state.positions[player],
-            strict=True
+            strict=True,
         )
     )
 
@@ -365,8 +360,4 @@ def check_consistency(private_state: State) -> None:
     assert len(all_positions) == len(set(all_positions))
 
     # check mana non-negative
-    assert all(
-        private_state.mana[player] >= 0
-        for player in Player
-    )
-
+    assert all(private_state.mana[player] >= 0 for player in Player)
