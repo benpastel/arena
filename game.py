@@ -1,3 +1,5 @@
+from enum import Enum, auto
+
 from arena.state import (
     new_state,
     check_consistency,
@@ -14,10 +16,37 @@ from arena.actions import (
 from arena.ui import (
     display_state,
     place_tiles,
-    choose_square,
-    choose_action,
-    choose_tile,
+    choose_option,
+    choose_option_or_cancel,
+    CANCEL
 )
+
+
+class Response(Enum):
+    '''
+    A response by the other player to a proposed action.  Only some responses are valid
+    on any given move.
+
+    They choices are to accept, challenge, or block
+    but when blocking, the player must choose a blocking tile.
+
+    We flatten the choice of blocking tile into a single enum to simplify
+    the player input.
+
+    Only some options are valid on any given move.
+    '''
+
+    # accept the action as given
+    ACCEPT = "ACCEPT"
+
+    # challenge the action
+    CHALLENGE = "CHALLENGE"
+
+    # block a grappling hook by claiming to have a grappling hook
+    BLOCK = f"BLOCK AS {Tile.HOOK}"
+
+    def __repr__(self) -> str:
+        return self.value
 
 
 def _select_action(state: State) -> Tuple[Square, Action, Square]:
@@ -43,37 +72,30 @@ def _select_action(state: State) -> Tuple[Square, Action, Square]:
             # only one choice
             start = possible_starts[0]
         else:
-            start = choose_square(
+            start = choose_option(
                 possible_starts,
                 player_view,
                 "Choose the tile that will take an action this turn.",
-                allow_cancel = False
             )
-            assert start
 
         # choose the action, or cancel
         actions_and_targets = valid_targets(start, state)
-        action = choose_action(
-            actions_and_targets.keys(),
+        action = choose_option_or_cancel(
+            list(actions_and_targets.keys()),
             player_view,
             f"Choose the action for {state.tile_at(start).value}.",
-            allow_cancel = True
         )
-        if action is None:
-            # they canceled
+        if action is CANCEL:
             # try again from the start
             continue
 
         # choose the target square for the action, or cancel
-        target = choose_square(
+        target = choose_option_or_cancel(
             actions_and_targets[action],
             player_view,
-            f"Choose the target square for {action.name}.",
-            allow_cancel = True
+            f"Choose the target square for {action.name}."
         )
-
-        if target is None:
-            # they canceled
+        if target is CANCEL:
             # try again for the start
             continue
 
@@ -81,13 +103,52 @@ def _select_action(state: State) -> Tuple[Square, Action, Square]:
         return start, action, target
 
 
-def _select_response(start: Square, action: Action, target: Square, state: State) -> Response:
-    assert False, "TODO"
+def _select_response(
+    start: Square,
+    action: Action,
+    target: Square,
+    state: State,
+) -> Response:
+    if action not in Tile:
+        # the action doesn't require a response
+        # (i.e. moving or smiting)
+        return Response.ACCEPT
+
+    msg = f"{start} claims to be {action} and "
+    match action:
+        case Tile.FLOWER | Tile.BIRD:
+            msg += f"wants to move to {target}."
+        case Tile.HOOK:
+            msg += f"wants to hook {target}."
+        case Tile.GRENADES:
+            msg += f"wants to throw a grenade at {target}."
+        case Tile.KNIVES:
+            msg += f"wants to stab {target}."
+        case _:
+            assert False
+    state.log(msg)
+
+    options = [Response.ACCEPT, Response.CHALLENGE]
+    if action == Tile.HOOK:
+        options.append(Response.BLOCK)
+
+    response = choose_option(
+        options,
+        player_view(state, state.other_player()),
+        "Choose your response.",
+    )
+    return response
 
 
 def _select_block_response(target: Square, state: State) -> Response:
-    assert False, "TODO"
+    state.log(f"{target} claims to be {Tile.HOOK} and wants to block.")
 
+    response = choose_option(
+        [Response.ACCEPT, Response.CHALLENGE],
+        player_view(state, state.current_player()),
+        "Choose your response.",
+    )
+    return response
 
 
 def _lose_tile(player_or_square: Player | Square, state: State) -> None:
@@ -114,22 +175,18 @@ def _lose_tile(player_or_square: Player | Square, state: State) -> None:
         if isinstance(player_or_square, Square):
             square = player_or_square
             player = state.player_at(square)
-            allow_cancel_later = False
         elif player_or_square in Player and len(state.positions[player]) == 1:
             # the player only has one tile on board, so they get no choice
             player = player_or_square
             square = state.positions[player][0]
-            allow_cancel_later = False
         else:
             # the player gets to choose which to lose
             player = player_or_square
-            square = choose_square(
+            square = choose_option(
                 state.positions[player],
                 state.player_view(player),
                 "Choose which tile to lose.",
-                allow_cancel = False
             )
-            allow_cancel_later = True
 
         tile = state.tile_at(square)
 
@@ -144,14 +201,13 @@ def _lose_tile(player_or_square: Player | Square, state: State) -> None:
 
         else:
             # the player gets to choose the replacement tile
-            replacement = choose_tile(
+            replacement = choose_option_or_cancel(
                 state.tiles_in_hand[player],
                 state.player_view(player),
                 f"Choose which tile to replace {tile.value}.",
                 allow_cancel = True
             )
-            if replacement is None:
-                # they canceled
+            if replacement is CANCEL:
                 # try again from the start
                 continue
 
@@ -173,11 +229,9 @@ def _lose_tile(player_or_square: Player | Square, state: State) -> None:
 
 
 def _resolve_action(start: Square, action: Action, target: Square, state: State) -> None:
-
     # `hits` is a possibly-empty list of tiles hit by the action
     hits = take_action(start, action, target, state)
 
-    # log what happened
     match action:
         case OtherAction.MOVE:
             state.log(f"{start} moves to {target}")
@@ -190,13 +244,12 @@ def _resolve_action(start: Square, action: Action, target: Square, state: State)
         case Tile.GRENADES:
             state.log(f"{start} throws a grenade at {target}, hitting {hits}")
         case Tile.KNIVES:
-            state.log(f"{start} hits {target} with a knife")
+            state.log(f"{start} stabs {target}")
         case _:
             assert False
 
     for hit in hits:
         _lose_tile(hit, state)
-
 
 
 
@@ -222,7 +275,7 @@ def play_one_game():
             continue
 
         # show other player the proposed action
-        # ask whether they accept, challenge, or block
+        # ask whether they accept, challenge, or block as appropriate
         response = _select_response(start, action, target, state)
 
         if response == Response.ACCEPT:

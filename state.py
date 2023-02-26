@@ -127,38 +127,13 @@ Action = (
     | OtherAction.SMITE
 )
 
-
-class Response(IntEnum):
-    '''
-    A response by the other player to a proposed action.  Only some responses are valid
-    on any given move.
-
-    They choices are to accept, challenge, or block
-    but when blocking, the player must choose a blocking tile.
-
-    We flatten the choice of blocking tile into a single enum to simplify
-    the player input.
-
-    Only some options are valid on any given move.
-    '''
-
-    # accept the action as given
-    ACCEPT = 0
-
-    # challenge the action
-    CHALLENGE = 1
-
-    # block a grappling hook by claiming to have a grappling hook
-    BLOCK = 2
-
-
 class GameResult(Enum):
-    ONGOING = 0
-    NORTH_WINS = 1
-    SOUTH_WINS = 2
+    ONGOING = auto()
+    NORTH_WINS = auto()
+    SOUTH_WINS = auto()
 
     # a draw is possible if both players are simultaneously killed by a chromatic grenade
-    DRAW = 3
+    DRAW = auto()
 
 
 @dataclass
