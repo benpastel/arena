@@ -1,7 +1,7 @@
 # from typing import List
 
-# from arena.state import State, Wizard, Square
-# from arena.actions import Action, _all_distances, _grapple_end_square, valid_targets
+# from arena.state import State, Square, Action
+# from arena.actions import _all_distances, _grapple_end_square, valid_targets
 
 
 # def test_all_distances():
@@ -37,41 +37,31 @@
 #     }
 
 
-# def test_grapple_end_square():
-#     # north
-#     assert _grapple_end_square(Square(3, 4), Square(0, 1)) == Square(2, 4)
-
-#     # south
-#     assert _grapple_end_square(Square(3, 4), Square(6, 1)) == Square(4, 4)
-
-#     # east
-#     assert _grapple_end_square(Square(3, 4), Square(4, 7)) == Square(3, 5)
-
-#     # west
-#     assert _grapple_end_square(Square(3, 4), Square(2, 4)) == Square(2, 4)
-
-
 # def test_valid_targets():
-#     # TODO redo
-
-#     # Test case looks like:
-#     #
-#     #   . . . . .
-#     #   . E . . .
-#     #   . W . . .
-#     #   . F E . .
-#     #   . . . . .
+#     # Test board looks like:
+#     #      1 2 3 4 5
+#     # A |  . F . . .
+#     # B |  . E . . .
+#     # C |  . S . . E
+#     # D |  . F F . .
+#     # E |  . . . . .
 #     #
 #     # Where:
-#     #   - W is the wizard whose turn it is (SW)
-#     #   - E is an enemy (NW, NE)
-#     #   - F is a friend (SE)
-#     positions = {
-#         Wizard.SW: Square(2, 1),
-#         Wizard.SE: Square(3, 1),
-#         Wizard.NW: Square(1, 1),
-#         Wizard.NE: Square(3, 2),
-#     }
+#     #   - S is the start square
+#     #   - E is an enemy tile (Player.S)
+#     #   - F is a friendly tile (Player.N)
+
+#     # TODO LEFT OFF HERE
+#     s_positions = [
+
+#     ]
+
+#     state = State(
+#         turn_count = 0,
+#         positions = {Player.N: [Square(
+
+
+#     )
 
 #     def _assert_targets(action: Action, expected: List[Square]) -> None:
 #         actual = valid_targets(Wizard.SW, action, positions)

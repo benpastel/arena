@@ -7,13 +7,14 @@ from arena.state import (
     BOOK_POSITIONS,
     FOUNTAIN_POSITION,
     ROWS,
+    ROW_NAMES,
     COLUMNS,
     Player,
 )
 
-FOUNTAIN_GLYPH = "✨"
-BOOK_GLYPH = "📖"
-EMPTY_SQUARE_GLYPH = "  "  # two spaces matches unicode display width on my terminal
+FOUNTAIN_GLYPH = "+"
+BOOK_GLYPH = "#"
+EMPTY_SQUARE_GLYPH = " "
 
 
 def _clear_terminal() -> None:
@@ -50,12 +51,15 @@ def display_state(state: State) -> None:
         ):
             board[r][c] = tile.value
 
+    column_labels = [str(c + 1) for c in range(COLUMNS)]
+
     print(_render_hand(Player.N, state))
     print("")
-    print("  " + "+--" * COLUMNS + "+")
+    print("    " + " ".join(column_labels))
+    print("   " + "+-" * COLUMNS + "+")
     for r in range(ROWS):
-        print("  |" + "|".join(board[r]) + "|")
-    print("  " + "+--" * COLUMNS + "+")
+        print(f" {ROW_NAMES[r]} |" + "|".join(board[r]) + "|")
+    print("   " + "+-" * COLUMNS + "+")
     print("")
     print(_render_hand(Player.S, state))
 

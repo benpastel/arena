@@ -28,19 +28,33 @@ class Square(NamedTuple):
     col: int
 
     def on_board(self) -> bool:
+        """True if the square is in-bounds on the board."""
         return 0 <= self.row < ROWS and 0 <= self.col < COLUMNS
 
+    @classmethod
+    def parse(cls, coord_string: str) -> "Square":
+        """
+        Parse a display-formatted name like B3 -> Square(1, 2)
+        """
+        assert len(coord_string) == 2
+        row = ROW_NAMES.index(coord_string[0])
+        col = int(coord_string[1]) - 1  # 0 indexed internally; 1 indexed in UI
+        return cls(row, col)
+
     def __repr__(self) -> str:
-        """Human-readable square name like "B2" """
+        """
+        Convert to a display-formatted square name like B3
+        """
         row_char = ROW_NAMES[self.row]
-        return f"{row_char}{self.col}"
+        col_char = self.col + 1  # 0 indexed internally; 1 indexed in UI
+        return f"{row_char}{col_char}"
 
 
 # Board setup looks like this:
 #
 #     North Player's Side
 #          columns
-#         0 1 2 3 4
+#         1 2 3 4 5
 #        +---------+
 #      A |S| | | |S|
 #      B | | | | | |
@@ -348,8 +362,8 @@ def new_state() -> State:
             Player.N: tiles[0:4],
             Player.S: tiles[4:8],
         },
-        tiles_on_board={},
-        positions={},
+        tiles_on_board={Player.N: [], Player.S: []},
+        positions={Player.N: [], Player.S: []},
         book_tiles={
             BOOK_POSITIONS[0]: (tiles[8], tiles[9]),
             BOOK_POSITIONS[1]: (tiles[10], tiles[11]),

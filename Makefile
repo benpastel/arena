@@ -10,5 +10,5 @@ test: lint
 	pytest . -vv
 
 .PHONY: run
-run: test
-	cd .. && python -m arena.game
+run: lint
+	cd .. && python3 -m arena.game
