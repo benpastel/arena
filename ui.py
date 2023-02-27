@@ -15,6 +15,7 @@ from arena.state import (
 FOUNTAIN_GLYPH = "+"
 BOOK_GLYPH = "#"
 EMPTY_SQUARE_GLYPH = " "
+MAX_LOGS_TO_DISPLAY = 10
 
 
 def _clear_terminal() -> None:
@@ -24,7 +25,7 @@ def _clear_terminal() -> None:
 
 def _render_hand(player: Player, state: State) -> str:
     tile_strings = [str(tile) for tile in state.tiles_in_hand[player]]
-    return f"{player}'s hand: {' '.join(tile_strings)}"
+    return f"{player}'s hand: {' '.join(tile_strings)}.  {state.mana[player]} mana"
 
 
 def display_state(state: State) -> None:
@@ -62,6 +63,10 @@ def display_state(state: State) -> None:
     print("   " + "+-" * COLUMNS + "+")
     print("")
     print(_render_hand(Player.S, state))
+    print("")
+    for line in state.public_log[-MAX_LOGS_TO_DISPLAY:]:
+        print(f"  - {line}")
+    print()
 
 
 T = TypeVar("T")
@@ -100,7 +105,7 @@ def choose_option_or_cancel(
     Prompt the player to choose amongst `options` or cancel.
     Returns the chosen option or None if they canceled.
     """
-    options_or_cancel = cast(List[T | Literal["Cancel"]], [options] + ["Cancel"])
+    options_or_cancel = cast(List[T | Literal["Cancel"]], options + ["Cancel"])
     choice = choose_option(options_or_cancel, player_view, prompt)
     if choice == "Cancel":
         return None

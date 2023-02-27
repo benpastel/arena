@@ -1,42 +1,41 @@
-# from typing import List
-
-# from arena.state import State, Square, Action
-# from arena.actions import _all_distances, _grapple_end_square, valid_targets
+from arena.state import Square
+from arena.actions import _all_distances
 
 
-# def test_all_distances():
-#     # Test case looks like:
-#     #
-#     #   . O O
-#     #   O . X
-#     #   . O .
-#     #   . . .
-#     #
-#     # where X is the start square and Os are obstructions.
+def test_all_distances():
+    # Test case looks like:
+    #
+    #   . O O
+    #   O . X
+    #   . O .
+    #   . . .
+    #
+    # where X is the start square and Os are obstructions.
 
-#     start = Square(1, 2)
-#     obstructions = [
-#         Square(0, 1),
-#         Square(0, 2),
-#         Square(1, 0),
-#         Square(2, 1),
-#     ]
-#     dists = _all_distances(start, obstructions, rows=4, cols=3)
-#     assert dists == {
-#         start: 0,
-#         Square(0, 2): 1,
-#         Square(1, 1): 1,
-#         Square(2, 2): 1,
-#         Square(3, 2): 2,
-#         Square(0, 1): 2,
-#         Square(1, 0): 2,
-#         Square(2, 1): 2,
-#         Square(3, 1): 3,
-#         Square(3, 0): 4,
-#         Square(2, 0): 5,
-#     }
+    start = Square(1, 2)
+    obstructions = [
+        Square(0, 1),
+        Square(0, 2),
+        Square(1, 0),
+        Square(2, 1),
+    ]
+    dists = _all_distances(start, obstructions, rows=4, cols=3)
+    assert dists == {
+        start: 0,
+        Square(0, 2): 1,
+        Square(1, 1): 1,
+        Square(2, 2): 1,
+        Square(3, 2): 2,
+        Square(0, 1): 2,
+        Square(1, 0): 2,
+        Square(2, 1): 2,
+        Square(3, 1): 3,
+        Square(3, 0): 4,
+        Square(2, 0): 5,
+    }
 
 
+# TODO finish this test at some point
 # def test_valid_targets():
 #     # Test board looks like:
 #     #      1 2 3 4 5
@@ -50,8 +49,6 @@
 #     #   - S is the start square
 #     #   - E is an enemy tile (Player.S)
 #     #   - F is a friendly tile (Player.N)
-
-#     # TODO LEFT OFF HERE
 #     s_positions = [
 
 #     ]

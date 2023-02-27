@@ -177,7 +177,7 @@ def _lose_tile(player_or_square: Player | Square, state: State) -> None:
         if isinstance(player_or_square, Square):
             square = player_or_square
             player = state.player_at(square)
-        elif player_or_square in Player and len(state.positions[player]) == 1:
+        elif player_or_square in Player and len(state.positions[player_or_square]) == 1:
             # the player only has one tile on board, so they get no choice
             player = player_or_square
             square = state.positions[player][0]
@@ -288,28 +288,30 @@ def play_one_game():
             _resolve_action(start, action, target, state)
 
         elif response == Response.CHALLENGE:
-            if action == state.tile_at(start):
+            start_tile = state.tile_at(start)
+            if action == start_tile:
                 # challenge fails
                 # original action succeeds
-                state.log(f"Challenge failed because {start} is a {action}.")
+                state.log(f"Challenge failed because {start} is a {start_tile}.")
                 _lose_tile(state.other_player(), state)
-                _resolve_action(action, target, state)
+                _resolve_action(start, action, target, state)
             else:
                 # challenge succeeds
                 # original action fails
-                state.log(f"Challenge succeeded because {start} is a {action}.")
+                state.log(f"Challenge succeeded because {start} is a {start_tile}.")
                 _lose_tile(state.current_player(), state)
         else:
             # the response was to block
             # blocking means the target is Tile.HOOK in response to a HOOK
             # which the original player may challenge
             block_response = _select_block_response(target, state)
+            target_tile = state.tile_at(target)
 
             if block_response == Response.ACCEPT:
                 # block succeeds
                 # original action fails
                 state.log("Hook blocked.")
-            elif state.tile_at(target) == Tile.HOOK:
+            elif target_tile == Tile.HOOK:
                 # challenge fails
                 # block succeeds
                 # original action fails
@@ -319,7 +321,7 @@ def play_one_game():
                 # challenge succeeds
                 # block fails
                 # original action succeeds
-                state.log(f"Challenge succeeded because {target} is a {Tile.HOOK}.")
+                state.log(f"Challenge succeeded because {target} is a {target_tile}.")
                 _lose_tile(state.other_player(), state)
                 _resolve_action(start, action, target, state)
 

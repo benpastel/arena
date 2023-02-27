@@ -189,6 +189,7 @@ class State:
     mana: Dict[Player, int]
 
     # human-readable event log of public information
+    # TODO: nested indentation
     public_log: List[str]
 
     # count of turns since beginning of game, starting at 0
