@@ -1,13 +1,15 @@
 import os
-from typing import TypeVar
+from typing import TypeVar, List, Literal
 
 from arena.state import (
     State,
-    Tile,
+    START_POSITIONS,
     BOOK_POSITIONS,
-    FOUNTAIN_POSITIONS,
+    FOUNTAIN_POSITION,
     ROWS,
     COLUMNS,
+    Player,
+    player_view,
 )
 
 FOUNTAIN_GLYPH = "✨"
@@ -21,7 +23,8 @@ def _clear_terminal() -> None:
 
 
 def _render_hand(player: Player, state: State) -> str:
-    return f"{player}'s hand: {' '.join(state.tiles_in_hand[player])}"
+    tile_strings = [str(tile) for tile in state.tiles_in_hand[player]]
+    return f"{player}'s hand: {' '.join(tile_strings)}"
 
 
 def display_state(state: State) -> None:
@@ -35,11 +38,11 @@ def display_state(state: State) -> None:
     board = [[EMPTY_SQUARE_GLYPH for c in range(COLUMNS)] for r in range(ROWS)]
 
     # add fountains and books first
-    for r, c in BOOK_POSITIONS.values():
+    for r, c in BOOK_POSITIONS:
         board[r][c] = BOOK_GLYPH
 
-    for r, c in FOUNTAIN_POSITIONS:
-        board[r][c] = FOUNTAIN_GLYPH
+    r, c = FOUNTAIN_POSITION
+    board[r][c] = FOUNTAIN_GLYPH
 
     # add tiles on board, allowing them to cover the books & fountains
     for player in Player:
@@ -48,14 +51,14 @@ def display_state(state: State) -> None:
         ):
             board[r][c] = tile.value
 
-    print(_render_hand(Player.N), state)
+    print(_render_hand(Player.N, state))
     print("")
     print("  " + "+--" * COLUMNS + "+")
     for r in range(ROWS):
         print("  |" + "|".join(board[r]) + "|")
     print("  " + "+--" * COLUMNS + "+")
     print("")
-    print(_render_hand(Player.S), state)
+    print(_render_hand(Player.S, state))
 
 
 T = TypeVar("T")
@@ -87,18 +90,20 @@ def choose_option(
 
 """ Special option indicating the player wants to cancel previous selections. """
 CANCEL = "Cancel"
+CANCEL_TYPE = Literal["Cancel"]
 
 
 def choose_option_or_cancel(
     options: List[T],
     player_view: State,
     prompt: str,
-) -> T | Literal[CANCEL]:
+) -> T | CANCEL_TYPE:
     """
     Prompt the player to choose amongst `options` or cancel.
     Returns the chosen option or None if they canceled.
     """
-    options_or_cancel: List[T | Literal[Cancel]] = [options] + [CANCEL]
+    # TODO: figure out typing here
+    options_or_cancel: List[T | CANCEL_TYPE] = [options] + [CANCEL]
     return choose_option(options_or_cancel, player_view, prompt)
 
 

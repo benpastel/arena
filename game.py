@@ -1,4 +1,5 @@
-from enum import Enum, auto
+from enum import Enum
+from typing import Tuple
 
 from arena.state import (
     new_state,
@@ -8,6 +9,9 @@ from arena.state import (
     Tile,
     Square,
     player_view,
+    State,
+    Action,
+    OtherAction,
 )
 from arena.actions import (
     valid_targets,
@@ -18,12 +22,12 @@ from arena.ui import (
     place_tiles,
     choose_option,
     choose_option_or_cancel,
-    CANCEL
+    CANCEL,
 )
 
 
 class Response(Enum):
-    '''
+    """
     A response by the other player to a proposed action.  Only some responses are valid
     on any given move.
 
@@ -34,7 +38,7 @@ class Response(Enum):
     the player input.
 
     Only some options are valid on any given move.
-    '''
+    """
 
     # accept the action as given
     ACCEPT = "ACCEPT"
@@ -50,14 +54,14 @@ class Response(Enum):
 
 
 def _select_action(state: State) -> Tuple[Square, Action, Square]:
-    '''
+    """
     Prompt the player to choose the action for their turn.
 
     Returns:
         - square of the tile that's taking the action
         - the action
         - target square of the action
-    '''
+    """
     player = state.current_player()
     player_view = state.player_view(player)
 
@@ -93,7 +97,7 @@ def _select_action(state: State) -> Tuple[Square, Action, Square]:
         target = choose_option_or_cancel(
             actions_and_targets[action],
             player_view,
-            f"Choose the target square for {action.name}."
+            f"Choose the target square for {action.name}.",
         )
         if target is CANCEL:
             # try again for the start
@@ -152,7 +156,7 @@ def _select_block_response(target: Square, state: State) -> Response:
 
 
 def _lose_tile(player_or_square: Player | Square, state: State) -> None:
-    '''
+    """
      - Prompt the player to choose a tile to lose
      - choose the tile to replace it
      - log the lost tile
@@ -165,11 +169,10 @@ def _lose_tile(player_or_square: Player | Square, state: State) -> None:
     (E.g. when the player lost a challenge.)
     We allow the player to cancel and retry that choice when they get to the replacement
     tile.
-    '''
+    """
 
     # inside a loop to enable canceling and retrying
     while True:
-
         # select which tile on board is lost
         # in some cases the player gets a choice
         if isinstance(player_or_square, Square):
@@ -205,7 +208,7 @@ def _lose_tile(player_or_square: Player | Square, state: State) -> None:
                 state.tiles_in_hand[player],
                 state.player_view(player),
                 f"Choose which tile to replace {tile.value}.",
-                allow_cancel = True
+                allow_cancel=True,
             )
             if replacement is CANCEL:
                 # try again from the start
@@ -219,7 +222,7 @@ def _lose_tile(player_or_square: Player | Square, state: State) -> None:
     # move the tile from alive to dead
     state.tiles_on_board[player].remove(tile)
     state.positions[player].remove(square)
-    discard.append(tile)
+    state.discard.append(tile)
 
     # move the replacement tile if applicable
     if replacement:
@@ -228,7 +231,9 @@ def _lose_tile(player_or_square: Player | Square, state: State) -> None:
         state.positions[player].append(square)
 
 
-def _resolve_action(start: Square, action: Action, target: Square, state: State) -> None:
+def _resolve_action(
+    start: Square, action: Action, target: Square, state: State
+) -> None:
     # `hits` is a possibly-empty list of tiles hit by the action
     hits = take_action(start, action, target, state)
 
@@ -252,12 +257,13 @@ def _resolve_action(start: Square, action: Action, target: Square, state: State)
         _lose_tile(hit, state)
 
 
-
 def play_one_game():
+    # TODO: handle fountain & book tiles
+
     state = new_state()
 
-    place_tiles(player.N, state)
-    place_tiles(player.S, state)
+    place_tiles(Player.N, state)
+    place_tiles(Player.S, state)
 
     while state.game_result() == GameResult.ONGOING:
         check_consistency(state)
@@ -327,10 +333,10 @@ def play_one_game():
 
 
 def show_start_views():
-    ''' Start a new game and show both players' views, for debugging. '''
+    """Start a new game and show both players' views, for debugging."""
     state = new_state()
     check_consistency(state)
-    assert check_game_result(state) == GameResult.ONGOING
+    assert state.game_result() == GameResult.ONGOING
 
     print("Private server state:")
     display_state(state)

@@ -1,11 +1,10 @@
-from typing import List, Dict
-from enum import IntEnum
+from typing import List, Dict, Optional
 
 from arena.state import (
     Tile,
     State,
     Square,
-    Player,
+    Action,
     OtherAction,
     ROWS,
     COLUMNS,
@@ -220,7 +219,7 @@ def valid_targets(start: Square, state: State) -> Dict[Action, List[Square]]:
 
     if mana >= GRENADES_COST:
         # see `_grenade_targets` for the definition of valid grenade targets
-        actions[Tile.GRENADES] = _grenade_targets(s, obstructions, enemy_positions)
+        actions[Tile.GRENADES] = _grenade_targets(start, obstructions, enemy_positions)
 
     # drop actions with no valid targets
     return {a: targets for a, targets in actions.items() if len(targets) > 0}
@@ -252,6 +251,8 @@ def take_action(
     if action == Tile.HOOK:
         # move next to target
         end_square = _grapple_end_square(start, target, obstructions=[])
+        state.positions[player].remove(start)
+        state.positions[player].add(end_square)
 
         # steal
         steal_amount = min(GRAPPLE_STEAL_AMOUNT, state.mana[enemy])

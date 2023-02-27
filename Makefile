@@ -1,7 +1,9 @@
 .PHONY: lint
 lint:
-	cd .. && mypy -p arena
 	black .
+	pyflakes .
+	cd .. && mypy -p arena
+
 
 .PHONY: test
 test: lint
