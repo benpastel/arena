@@ -90,8 +90,8 @@ def _grapple_end_square(
         return None
 
     # which direction is a single step from start towards target?
-    row_step = row_diff / abs(row_diff) if row_diff != 0 else 0
-    col_step = col_diff / abs(col_diff) if col_diff != 0 else 0
+    row_step = row_diff // abs(row_diff) if row_diff != 0 else 0
+    col_step = col_diff // abs(col_diff) if col_diff != 0 else 0
     assert row_step != 0 or col_step != 0
 
     current_square = start
@@ -157,7 +157,7 @@ def _grenade_targets(
     return [
         target
         for target in potential_targets
-        if any(hit in enemy_positions for hit in _grenade_hits(target))
+        if any(hit in enemy_positions for hit in _grenade_hits(target, all_positions))
     ]
 
 
@@ -193,7 +193,7 @@ def valid_targets(start: Square, state: State) -> Dict[Action, List[Square]]:
     #
     # for now we'll allow empty lists when there is no valid target square;
     # we'll drop those keys at the end
-    actions = {
+    actions: Dict[Action, List[Square]] = {
         OtherAction.MOVE: [s for s, dist in empty_targets.items() if dist == 1],
         Tile.FLOWER: [s for s, dist in empty_targets.items() if dist == 1],
         Tile.BIRD: [s for s, dist in empty_targets.items() if 1 <= dist <= 2],
@@ -240,7 +240,7 @@ def take_action(
     if action in (OtherAction.MOVE, Tile.FLOWER, Tile.BIRD):
         # move to the target square
         state.positions[player].remove(start)
-        state.positions[player].add(target)
+        state.positions[player].append(target)
 
         # gain mana
         state.mana[player] += MANA_GAIN[action]
@@ -251,8 +251,9 @@ def take_action(
     if action == Tile.HOOK:
         # move next to target
         end_square = _grapple_end_square(start, target, obstructions=[])
+        assert end_square
         state.positions[player].remove(start)
-        state.positions[player].add(end_square)
+        state.positions[player].append(end_square)
 
         # steal
         steal_amount = min(GRAPPLE_STEAL_AMOUNT, state.mana[enemy])
@@ -274,7 +275,7 @@ def take_action(
         state.mana[player] -= GRENADES_COST
 
         # see `_grenate_hits` for definition of who dies
-        return _grenade_hits(state.all_positions())
+        return _grenade_hits(target, state.all_positions())
 
     if action == Tile.KNIVES:
         # cost depends on distance to target

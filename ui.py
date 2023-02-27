@@ -1,5 +1,5 @@
 import os
-from typing import TypeVar, List, Literal
+from typing import TypeVar, List, Literal, cast, Optional
 
 from arena.state import (
     State,
@@ -9,7 +9,6 @@ from arena.state import (
     ROWS,
     COLUMNS,
     Player,
-    player_view,
 )
 
 FOUNTAIN_GLYPH = "✨"
@@ -88,23 +87,21 @@ def choose_option(
         # the input was invalid; ask again
 
 
-""" Special option indicating the player wants to cancel previous selections. """
-CANCEL = "Cancel"
-CANCEL_TYPE = Literal["Cancel"]
-
-
 def choose_option_or_cancel(
     options: List[T],
     player_view: State,
     prompt: str,
-) -> T | CANCEL_TYPE:
+) -> Optional[T]:
     """
     Prompt the player to choose amongst `options` or cancel.
     Returns the chosen option or None if they canceled.
     """
-    # TODO: figure out typing here
-    options_or_cancel: List[T | CANCEL_TYPE] = [options] + [CANCEL]
-    return choose_option(options_or_cancel, player_view, prompt)
+    options_or_cancel = cast(List[T | Literal["Cancel"]], [options] + ["Cancel"])
+    choice = choose_option(options_or_cancel, player_view, prompt)
+    if choice == "Cancel":
+        return None
+    else:
+        return cast(T, choice)
 
 
 def place_tiles(player: Player, state: State) -> None:
@@ -116,7 +113,7 @@ def place_tiles(player: Player, state: State) -> None:
     for target in START_POSITIONS[player]:
         tile = choose_option(
             state.tiles_in_hand[player],
-            player_view(player, state),
+            state.player_view(player),
             f"Choose a tile to start on {target}",
         )
         state.tiles_in_hand[player].remove(tile)

@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from typing import Tuple, List, Dict, NamedTuple, Optional, Literal
+from typing import Tuple, List, Dict, NamedTuple, Literal
 from random import shuffle
 from dataclasses import dataclass
 
@@ -18,6 +18,7 @@ def other_player(p: Player) -> Player:
 
 ROWS = 5
 COLUMNS = 5
+ROW_NAMES = "ABCDE"
 
 
 class Square(NamedTuple):
@@ -30,7 +31,9 @@ class Square(NamedTuple):
         return 0 <= self.row < ROWS and 0 <= self.col < COLUMNS
 
     def __repr__(self) -> str:
-        return f"({self.row}, {self.col})"
+        """Human-readable square name like "B2" """
+        row_char = ROW_NAMES[self.row]
+        return f"{row_char}{self.col}"
 
 
 # Board setup looks like this:
@@ -39,11 +42,11 @@ class Square(NamedTuple):
 #          columns
 #         0 1 2 3 4
 #        +---------+
-#      0 |S| | | |S|
-#      1 | | | | | |
-# rows 2 |B| |F| |B|
-#      3 | | | | | |
-#      4 |S| | | |S|
+#      A |S| | | |S|
+#      B | | | | | |
+# rows C |B| |F| |B|
+#      D | | | | | |
+#      E |S| | | |S|
 #        +---------+
 #    South Player's Side
 #
@@ -185,24 +188,23 @@ class State:
     def other_player(self) -> Player:
         return other_player(self.current_player())
 
-    def tile_at(self, square: Square) -> Optional[Tile]:
-        """The tile occupying on the board at this square, or None if there isn't one"""
+    def tile_at(self, square: Square) -> Tile:
+        """The tile occupying on the board at this square.  Error if there isn't one."""
         for player in Player:
             for s, other_square in enumerate(self.positions[player]):
                 if other_square == square:
                     return self.tiles_on_board[player][s]
-        return None
+        raise ValueError(f"Expected tile at {square}")
 
-    def player_at(self, square: Square) -> Optional[Player]:
+    def player_at(self, square: Square) -> Player:
         """
-        Square -> the player owning a tile occupying that square,
-        or None if there isn't one
+        The player owning a tile occupying that square. Error if there isn't one.
         """
         for player in Player:
             for s, other_square in enumerate(self.positions[player]):
                 if other_square == square:
                     return player
-        return None
+        raise ValueError(f"Expected tile at {square}")
 
     def all_positions(self) -> List[Square]:
         """All squares with a tile on board, regardless of player"""
@@ -227,6 +229,105 @@ class State:
             return GameResult.SOUTH_WINS
         else:
             return GameResult.ONGOING
+
+    def player_view(self, player: Player) -> "State":
+        """
+        Return a copy of self with all hidden tiles replaced by Tile.HIDDEN
+
+        This represents the player's knowledge of the state.
+        """
+        opponent = other_player(player)
+
+        # we know the number of tiles in the opponent's hand but not their identity
+        opponent_hand = [Tile.HIDDEN for tile in self.tiles_in_hand[opponent]]
+        # we know the number and location of tiles on the opponent's board but not their
+        # identity
+        opponent_board = [Tile.HIDDEN for tile in self.tiles_on_board[opponent]]
+
+        return State(
+            tiles_in_hand={
+                player: self.tiles_in_hand[player],
+                opponent: opponent_hand,
+            },
+            tiles_on_board={
+                player: self.tiles_on_board[player],
+                opponent: opponent_board,
+            },
+            # all tile positions are public knowledge
+            positions=self.positions,
+            # we can't see the book tiles
+            book_tiles={
+                BOOK_POSITIONS[0]: (Tile.HIDDEN, Tile.HIDDEN),
+                BOOK_POSITIONS[1]: (Tile.HIDDEN, Tile.HIDDEN),
+            },
+            # we can't see the unused tiles
+            unused_tiles=[Tile.HIDDEN, Tile.HIDDEN, Tile.HIDDEN],
+            # we can see everything else
+            discard=self.discard,
+            public_log=self.public_log,
+            turn_count=self.turn_count,
+            mana=self.mana,
+        )
+
+    def check_consistency(self) -> None:
+        """
+        Check that the tiles are consistent.
+        """
+
+        # check there are exactly 3 of each tile
+        tile_counts = {tile: 0 for tile in Tile}
+        for tile_list in self.tiles_in_hand.values():
+            assert 0 <= len(tile_list) <= 2
+            for tile in tile_list:
+                tile_counts[tile] += 1
+
+        for tile_list in self.tiles_on_board.values():
+            assert 0 <= len(tile_list) <= 2
+            for tile in tile_list:
+                tile_counts[tile] += 1
+
+        for tile in self.discard:
+            tile_counts[tile] += 1
+
+        for tile_1, tile_2 in self.book_tiles.values():
+            tile_counts[tile_1] += 1
+            tile_counts[tile_2] += 1
+
+        assert len(self.unused_tiles) == 3
+        for tile in self.unused_tiles:
+            tile_counts[tile] += 1
+
+        for tile in Tile:
+            if tile == Tile.HIDDEN:
+                assert tile_counts[tile] == 0
+            else:
+                assert tile_counts[tile] == 3
+
+        # check 0-2 tiles on board and in hand per player
+        for player in Player:
+            assert 0 <= len(self.tiles_in_hand[player]) <= 2
+            assert 0 <= len(self.tiles_on_board[player]) <= 2
+            if len(self.tiles_on_board[player]) < 2:
+                # tiles in hand should have been exhausted before the player starts
+                # losing tiles on board
+                assert len(self.tiles_in_hand[player]) == 0
+
+        # check location for each tile on board
+        assert all(
+            square.on_board()
+            for player in Player
+            for tile, square in zip(
+                self.tiles_on_board[player],
+                self.positions[player],
+                strict=True,
+            )
+        )
+
+        # check tile locations are unique
+        assert len(self.all_positions()) == len(set(self.all_positions()))
+
+        # check mana non-negative
+        assert all(self.mana[player] >= 0 for player in Player)
 
 
 def new_state() -> State:
@@ -260,104 +361,3 @@ def new_state() -> State:
         public_log=[],
         turn_count=0,
     )
-
-
-def player_view(private_state: State, player: Player) -> State:
-    """
-    Return a copy of private_state with all hidden tiles replaced by Tile.HIDDEN
-
-    This represents the player's knowledge of the state.
-    """
-    opponent = other_player(player)
-
-    # we know the number of tiles in the opponent's hand but not their identity
-    opponent_hand = [Tile.HIDDEN for tile in private_state.tiles_in_hand[opponent]]
-    # we know the number and location of tiles on the opponent's board but not their
-    # identity
-    opponent_board = [Tile.HIDDEN for tile in private_state.tiles_on_board[opponent]]
-
-    return State(
-        tiles_in_hand={
-            player: private_state.tiles_in_hand[player],
-            opponent: opponent_hand,
-        },
-        tiles_on_board={
-            player: private_state.tiles_on_board[player],
-            opponent: opponent_board,
-        },
-        # all tile positions are public knowledge
-        positions=private_state.positions,
-        # we can't see the book tiles
-        book_tiles={
-            BOOK_POSITIONS[0]: (Tile.HIDDEN, Tile.HIDDEN),
-            BOOK_POSITIONS[1]: (Tile.HIDDEN, Tile.HIDDEN),
-        },
-        # we can't see the unused tiles
-        unused_tiles=[Tile.HIDDEN, Tile.HIDDEN, Tile.HIDDEN],
-        # we can see everything else
-        discard=private_state.discard,
-        public_log=private_state.public_log,
-        turn_count=private_state.turn_count,
-        mana=private_state.mana,
-    )
-
-
-def check_consistency(private_state: State) -> None:
-    """
-    Check that the tiles are consistent.
-    """
-
-    # check there are exactly 3 of each tile
-    tile_counts = {tile: 0 for tile in Tile}
-    for tile_list in private_state.tiles_in_hand.values():
-        assert 0 <= len(tile_list) <= 2
-        for tile in tile_list:
-            tile_counts[tile] += 1
-
-    for tile_list in private_state.tiles_on_board.values():
-        assert 0 <= len(tile_list) <= 2
-        for tile in tile_list:
-            tile_counts[tile] += 1
-
-    for tile in private_state.discard:
-        tile_counts[tile] += 1
-
-    for tile_1, tile_2 in private_state.book_tiles.values():
-        tile_counts[tile_1] += 1
-        tile_counts[tile_2] += 1
-
-    assert len(private_state.unused_tiles) == 3
-    for tile in private_state.unused_tiles:
-        tile_counts[tile] += 1
-
-    for tile in Tile:
-        if tile == Tile.HIDDEN:
-            assert tile_counts[tile] == 0
-        else:
-            assert tile_counts[tile] == 3
-
-    # check 0-2 tiles on board and in hand per player
-    for player in Player:
-        assert 0 <= len(private_state.tiles_in_hand[player]) <= 2
-        assert 0 <= len(private_state.tiles_on_board[player]) <= 2
-        if len(private_state.tiles_on_board[player]) < 2:
-            # tiles in hand should have been exhausted before the player starts
-            # losing tiles on board
-            assert len(private_state.tiles_in_hand[player]) == 0
-
-    # check location for each tile on board
-    assert all(
-        square.on_board()
-        for player in Player
-        for tile, square in zip(
-            private_state.tiles_on_board[player],
-            private_state.positions[player],
-            strict=True,
-        )
-    )
-
-    # check tile locations are unique
-    assert len(private_state.all_positions()) == len(set(private_state.all_positions()))
-
-    # check mana non-negative
-    assert all(private_state.mana[player] >= 0 for player in Player)

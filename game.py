@@ -3,12 +3,10 @@ from typing import Tuple
 
 from arena.state import (
     new_state,
-    check_consistency,
     GameResult,
     Player,
     Tile,
     Square,
-    player_view,
     State,
     Action,
     OtherAction,
@@ -22,7 +20,6 @@ from arena.ui import (
     place_tiles,
     choose_option,
     choose_option_or_cancel,
-    CANCEL,
 )
 
 
@@ -69,7 +66,7 @@ def _select_action(state: State) -> Tuple[Square, Action, Square]:
     # to enable canceling our choice and trying again indefinitely
     while True:
         # choose the start square
-        possible_starts = state.tiles_on_board[player]
+        possible_starts = state.positions[player]
 
         assert 1 <= len(possible_starts) <= 2
         if len(possible_starts) == 1:
@@ -89,7 +86,8 @@ def _select_action(state: State) -> Tuple[Square, Action, Square]:
             player_view,
             f"Choose the action for {state.tile_at(start).value}.",
         )
-        if action is CANCEL:
+        if not action:
+            # they canceled
             # try again from the start
             continue
 
@@ -99,7 +97,8 @@ def _select_action(state: State) -> Tuple[Square, Action, Square]:
             player_view,
             f"Choose the target square for {action.name}.",
         )
-        if target is CANCEL:
+        if not target:
+            # they canceled
             # try again for the start
             continue
 
@@ -138,7 +137,7 @@ def _select_response(
 
     response = choose_option(
         options,
-        player_view(state, state.other_player()),
+        state.player_view(state.other_player()),
         "Choose your response.",
     )
     return response
@@ -149,7 +148,7 @@ def _select_block_response(target: Square, state: State) -> Response:
 
     response = choose_option(
         [Response.ACCEPT, Response.CHALLENGE],
-        player_view(state, state.current_player()),
+        state.player_view(state.current_player()),
         "Choose your response.",
     )
     return response
@@ -208,9 +207,9 @@ def _lose_tile(player_or_square: Player | Square, state: State) -> None:
                 state.tiles_in_hand[player],
                 state.player_view(player),
                 f"Choose which tile to replace {tile.value}.",
-                allow_cancel=True,
             )
-            if replacement is CANCEL:
+            if replacement is None:
+                # they canceled
                 # try again from the start
                 continue
 
@@ -266,7 +265,7 @@ def play_one_game():
     place_tiles(Player.S, state)
 
     while state.game_result() == GameResult.ONGOING:
-        check_consistency(state)
+        state.check_consistency()
 
         # current player chooses their move
         start, action, target = _select_action(state)
@@ -335,17 +334,17 @@ def play_one_game():
 def show_start_views():
     """Start a new game and show both players' views, for debugging."""
     state = new_state()
-    check_consistency(state)
+    state.check_consistency()
     assert state.game_result() == GameResult.ONGOING
 
     print("Private server state:")
     display_state(state)
 
     print("\n\n\nNorth's view:")
-    display_state(player_view(state, Player.N))
+    display_state(state.player_view(Player.N))
 
     print("\n\n\nSouth's view:")
-    display_state(player_view(state, Player.S))
+    display_state(state.player_view(Player.S))
 
 
 if __name__ == "__main__":
