@@ -41,7 +41,7 @@ class Square(NamedTuple):
         col = int(coord_string[1]) - 1  # 0 indexed internally; 1 indexed in UI
         return cls(row, col)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         """
         Convert to a display-formatted square name like B3
         """
@@ -113,7 +113,7 @@ class Tile(Enum):
     # each player has a view with some of the tiles replaced with HIDDEN
     HIDDEN = "🀫"
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return f"{self.value} ({self.name.lower()})"
 
 
@@ -129,7 +129,7 @@ class OtherAction(Enum):
     # If a player has above 10 mana they must smite on their turn.
     SMITE = "smite"
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return f"{self.value} ({self.name.lower()})"
 
 
