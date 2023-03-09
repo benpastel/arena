@@ -9,15 +9,17 @@ lint:
 test: lint
 	pytest . -vv
 
+
 .PHONY: run
 run: lint
 	cd .. && python3 -m arena.game
 
 
 .PHONY: serve-http
-serve-http:
-	cd web && python3 -m http.server
+serve-http: lint
+	cd .. && python3 -m arena.web.http.server
+
 
 .PHONY: serve-websockets
-serve-websockets:
-	cd web && python3 -m app
+serve-websockets: lint
+	cd .. && python3 -m arena.web.app

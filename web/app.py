@@ -5,7 +5,8 @@ import json
 
 import websockets
 
-from connect4 import Connect4, PLAYER1, PLAYER2
+from arena.web.connect4 import Connect4
+
 
 async def handler(websocket):
     print("New game")
@@ -22,10 +23,7 @@ async def handler(websocket):
         try:
             row = game.play(player, column)
         except:
-            error_event = {
-                "type": "error",
-                "message": "invalid move"
-            }
+            error_event = {"type": "error", "message": "invalid move"}
             await websocket.send(json.dumps(error_event))
             continue
 
@@ -41,9 +39,12 @@ async def handler(websocket):
         if game.last_player_won:
             win_event = {
                 "type": "win",
-                "player": PLAYER1,
+                "player": game.last_player,
             }
             await websocket.send(json.dumps(win_event))
+            break
+
+    print("Game over")
 
 
 async def main():
