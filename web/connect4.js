@@ -2,6 +2,9 @@ const PLAYER1 = "red";
 
 const PLAYER2 = "yellow";
 
+const ROWS = 5;
+const COLUMNS = 5;
+
 function createBoard(board) {
   // Inject stylesheet.
   const linkElement = document.createElement("link");
@@ -9,13 +12,14 @@ function createBoard(board) {
   linkElement.rel = "stylesheet";
   document.head.append(linkElement);
   // Generate board.
-  for (let column = 0; column < 7; column++) {
+  for (let column = 0; column < COLUMNS; column++) {
     const columnElement = document.createElement("div");
     columnElement.className = "column";
     columnElement.dataset.column = column;
-    for (let row = 0; row < 6; row++) {
+    for (let row = 0; row < ROWS; row++) {
       const cellElement = document.createElement("div");
       cellElement.className = "cell empty";
+      cellElement.dataset.row = row;
       cellElement.dataset.column = column;
       columnElement.append(cellElement);
     }

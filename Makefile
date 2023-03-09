@@ -17,7 +17,7 @@ run: lint
 
 .PHONY: serve-http
 serve-http: lint
-	cd .. && python3 -m arena.web.http.server
+	cd web && python3 -m http.server
 
 
 .PHONY: serve-websockets
