@@ -1,15 +1,16 @@
-from enum import Enum, auto
-from typing import Tuple, List, Dict, NamedTuple, Literal
+from enum import Enum
+from typing import Tuple, List, Dict, Literal, NamedTuple
 from random import shuffle
-from dataclasses import dataclass
+
+from pydantic import BaseModel
 
 
 # There are two players:
 #   North - displayed on top
 #   South - displayed on bottom
-class Player(Enum):
-    N = 0
-    S = 1
+class Player(str, Enum):
+    N = "North Player"
+    S = "South Player"
 
 
 def other_player(p: Player) -> Player:
@@ -80,7 +81,7 @@ START_POSITIONS = {
 }
 
 
-class Tile(Enum):
+class Tile(str, Enum):
     """
     The game pieces.
 
@@ -117,7 +118,7 @@ class Tile(Enum):
         return f"{self.value} ({self.name.lower()})"
 
 
-class OtherAction(Enum):
+class OtherAction(str, Enum):
     """
     These actions are always allowed for any tile.
     """
@@ -144,17 +145,16 @@ Action = (
 )
 
 
-class GameResult(Enum):
-    ONGOING = auto()
-    NORTH_WINS = auto()
-    SOUTH_WINS = auto()
+class GameResult(str, Enum):
+    ONGOING = "Ongoing"
+    NORTH_WINS = "North Player Wins!"
+    SOUTH_WINS = "South Player Wins!"
 
     # a draw is possible if both players are simultaneously killed by a chromatic grenade
-    DRAW = auto()
+    DRAW = "Draw"
 
 
-@dataclass
-class State:
+class State(BaseModel):
     """
     This fully represents a game's state.
 
@@ -176,7 +176,8 @@ class State:
     positions: Dict[Player, List[Square]]
 
     # The two tiles on each book square.
-    book_tiles: Dict[Square, Tuple[Tile, Tile]]
+    # These correspond by position to BOOK_POSITIONS.
+    book_tiles: List[Tuple[Tile, Tile]]
 
     # The remaining tile tiles are hidden off-board and never revealed.
     unused_tiles: List[Tile]
@@ -271,10 +272,10 @@ class State:
             # all tile positions are public knowledge
             positions=self.positions,
             # we can't see the book tiles
-            book_tiles={
-                BOOK_POSITIONS[0]: (Tile.HIDDEN, Tile.HIDDEN),
-                BOOK_POSITIONS[1]: (Tile.HIDDEN, Tile.HIDDEN),
-            },
+            book_tiles=[
+                (Tile.HIDDEN, Tile.HIDDEN),
+                (Tile.HIDDEN, Tile.HIDDEN),
+            ],
             # we can't see the unused tiles
             unused_tiles=[Tile.HIDDEN, Tile.HIDDEN, Tile.HIDDEN],
             # we can see everything else
@@ -304,7 +305,7 @@ class State:
         for tile in self.discard:
             tile_counts[tile] += 1
 
-        for tile_1, tile_2 in self.book_tiles.values():
+        for tile_1, tile_2 in self.book_tiles:
             tile_counts[tile_1] += 1
             tile_counts[tile_2] += 1
 
@@ -365,10 +366,10 @@ def new_state() -> State:
         },
         tiles_on_board={Player.N: [], Player.S: []},
         positions={Player.N: [], Player.S: []},
-        book_tiles={
-            BOOK_POSITIONS[0]: (tiles[8], tiles[9]),
-            BOOK_POSITIONS[1]: (tiles[10], tiles[11]),
-        },
+        book_tiles=[
+            (tiles[8], tiles[9]),
+            (tiles[10], tiles[11]),
+        ],
         unused_tiles=tiles[12:15],
         discard=[],
         # first player starts with 1 fewer mana

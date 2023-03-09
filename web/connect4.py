@@ -1,4 +1,6 @@
-# following along the websockets tutorial from
+# following along the websockets tutorial
+# https://websockets.readthedocs.io/en/stable/intro/tutorial3.html
+
 __all__ = ["PLAYER1", "PLAYER2", "Connect4"]
 
 PLAYER1, PLAYER2 = "red", "yellow"

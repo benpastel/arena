@@ -327,26 +327,10 @@ def play_one_game():
 
         state.turn_count += 1
 
-    display_state(state)
+    display_state(state.json())
     state.log(f"Game over!  {state.game_result()}!")
     # later: prompt for a new game with starting player rotated
     # also keep a running total score for longer matches
-
-
-def show_start_views():
-    """Start a new game and show both players' views, for debugging."""
-    state = new_state()
-    state.check_consistency()
-    assert state.game_result() == GameResult.ONGOING
-
-    print("Private server state:")
-    display_state(state)
-
-    print("\n\n\nNorth's view:")
-    display_state(state.player_view(Player.N))
-
-    print("\n\n\nSouth's view:")
-    display_state(state.player_view(Player.S))
 
 
 if __name__ == "__main__":

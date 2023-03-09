@@ -1,4 +1,5 @@
 import os
+import json
 from typing import TypeVar, List, Literal, cast, Optional
 
 from arena.state import (
@@ -23,12 +24,12 @@ def _clear_terminal() -> None:
     os.system("cls||clear")
 
 
-def _render_hand(player: Player, state: State) -> str:
-    tile_strings = [str(tile) for tile in state.tiles_in_hand[player]]
-    return f"{player}'s hand: {' '.join(tile_strings)}.  {state.mana[player]} mana"
+def _render_hand(player: Player, state: dict) -> str:
+    tile_strings = [str(tile) for tile in state["tiles_in_hand"][player]]
+    return f"{player}'s hand: {' '.join(tile_strings)}.  {state['mana'][player]} mana"
 
 
-def display_state(state: State) -> None:
+def display_state(state_json: str) -> None:
     """
     Clear the terminal and display the entire board state, including hands.
 
@@ -36,6 +37,9 @@ def display_state(state: State) -> None:
     instead of the private state.
     """
     _clear_terminal()
+
+    state = json.loads(state_json)
+
     board = [[EMPTY_SQUARE_GLYPH for c in range(COLUMNS)] for r in range(ROWS)]
 
     # add fountains and books first
@@ -48,9 +52,9 @@ def display_state(state: State) -> None:
     # add tiles on board, allowing them to cover the books & fountains
     for player in Player:
         for tile, (r, c) in zip(
-            state.tiles_on_board[player], state.positions[player], strict=True
+            state["tiles_on_board"][player], state["positions"][player], strict=True
         ):
-            board[r][c] = tile.value
+            board[r][c] = tile
 
     column_labels = [str(c + 1) for c in range(COLUMNS)]
 
@@ -64,7 +68,7 @@ def display_state(state: State) -> None:
     print("")
     print(_render_hand(Player.S, state))
     print("")
-    for line in state.public_log[-MAX_LOGS_TO_DISPLAY:]:
+    for line in state["public_log"][-MAX_LOGS_TO_DISPLAY:]:
         print(f"  - {line}")
     print()
 
@@ -80,7 +84,7 @@ def choose_option(
     """
     Prompt the player to choose amongst `options` and returns the chosen option.
     """
-    display_state(player_view)
+    display_state(player_view.json())
     print(prompt)
     for t, option in enumerate(options):
         print(f"({t+1}): {option}")
