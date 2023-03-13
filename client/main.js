@@ -1,4 +1,7 @@
-import { createBoard, playMove } from "./connect4.js";
+// this websocket client runs in the player's browser
+// it initializes the board, listens for moves, and sends moves to the server
+
+import { createBoard, playMove } from "./board.js";
 
 window.addEventListener("DOMContentLoaded", () => {
   // Initialize the UI.

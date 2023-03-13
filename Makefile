@@ -15,11 +15,11 @@ run: lint
 	cd .. && python3 -m arena.game
 
 
-.PHONY: serve-http
-serve-http: lint
-	cd web && python3 -m http.server
+.PHONY: run-client
+run-client:
+	cd client && python3 -m http.server
 
 
-.PHONY: serve-websockets
-serve-websockets: lint
-	cd .. && python3 -m arena.web.app
+.PHONY: run-server
+run-server: lint
+	cd .. && python3 -m arena.server.app
