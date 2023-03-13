@@ -58,7 +58,6 @@ Each column contains ROW rows.
   flex-direction: row;
   padding: 2% 2%;
   position: relative;
-
   border: 1px solid gray;
 }
 
@@ -70,6 +69,7 @@ Each column contains ROW rows.
 .cell {
   box-sizing: border-box;
   height: 20%; /* TODO assumes 5 rows */
+  border: 1px solid gray;
 }
 
 .empty {
