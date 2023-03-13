@@ -1,5 +1,10 @@
+"use strict";
+
 const ROWS = 5;
 const COLUMNS = 5;
+
+const NORTH_PLAYER = "north-player";
+const SOUTH_PLAYER = "south-player";
 
 function createBoard(board) {
   // Generate board.
@@ -26,17 +31,19 @@ function renderBoard(board, tiles) {
     for (let r = 0; r < ROWS; r++) {
       const cellElement = columnElement.querySelectorAll(".cell")[r];
       cellElement.innerHTML = "";
+      cellElement.classList = "cell empty";
     }
   }
 
-  // set non-empty tiles
-  for (const [row, col, char] of tiles) {
+  // set player tiles
+  for (const [row, col, char, player] of tiles) {
     const columnElement = board.querySelectorAll(".column")[col];
     const cellElement = columnElement.querySelectorAll(".cell")[row];
     if (!cellElement) {
       throw new Error(`${row}, ${col} out of bounds`);
     }
     cellElement.innerHTML = char;
+    cellElement.classList = `cell ${player}`;
   }
 }
 

@@ -44,7 +44,7 @@ body {
   grid-row: 4 / 5;
 }
 /*
-The board is a flexbox.  The sizing assumes a 5x5 board.
+The board is a flexbox with cells in columns.  The sizing assumes a 5x5 board.
 */
 
 .board {
@@ -71,6 +71,17 @@ The board is a flexbox.  The sizing assumes a 5x5 board.
   border: 1px solid gray;
   background-color: white;
 
+  line-height: 14vmin;
   font-size: 14vmin;
+  font-family: 'Courier New';
+  font-weight: normal;
   text-align: center;
+}
+
+.north-player {
+  color: red
+}
+
+.south-player {
+  color: blue
 }

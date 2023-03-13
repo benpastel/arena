@@ -10,8 +10,10 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // TODO: get tiles from server instead
   const tiles = [
-    [1, 2, "🀥"],
-    [3, 3, "🀛"],
+    [0, 0, "🀫", "north-player"],
+    [0, 4, "🀫", "north-player"],
+    [4, 0, "🀥", "south-player"],
+    [4, 4, "🀛", "south-player"],
   ]
 
   renderBoard(board, tiles);
