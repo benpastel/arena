@@ -1,12 +1,13 @@
 // this websocket client runs in the player's browser
 // it initializes the board, listens for moves, and sends moves to the server
 
-import { createBoard, playMove } from "./board.js";
+import { createBoard, renderBoard } from "./board.js";
 
 window.addEventListener("DOMContentLoaded", () => {
   // Initialize the UI.
   const board = document.querySelector(".board");
   createBoard(board);
+  renderBoard(board);
   // Open the WebSocket connection and register event handlers.
   const websocket = new WebSocket("ws://localhost:8001/");
   receiveMoves(board, websocket);

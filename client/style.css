@@ -70,8 +70,5 @@ Each column contains ROW rows.
   box-sizing: border-box;
   height: 20%; /* TODO assumes 5 rows */
   border: 1px solid gray;
-}
-
-.empty {
   background-color: white;
 }
