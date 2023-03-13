@@ -44,8 +44,7 @@ body {
   grid-row: 4 / 5;
 }
 /*
-The board is a flexbox containing COLUMN columns.
-Each column contains ROW rows.
+The board is a flexbox.  The sizing assumes a 5x5 board.
 */
 
 .board {
@@ -63,12 +62,15 @@ Each column contains ROW rows.
 
 .column {
   box-sizing: border-box;
-  width: 20%; /* TODO assumes 5 columns */
+  width: 20%;
 }
 
 .cell {
   box-sizing: border-box;
-  height: 20%; /* TODO assumes 5 rows */
+  height: 20%;
   border: 1px solid gray;
   background-color: white;
+
+  font-size: 14vmin;
+  text-align: center;
 }

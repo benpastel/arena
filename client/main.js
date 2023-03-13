@@ -7,7 +7,14 @@ window.addEventListener("DOMContentLoaded", () => {
   // Initialize the UI.
   const board = document.querySelector(".board");
   createBoard(board);
-  renderBoard(board);
+
+  // TODO: get tiles from server instead
+  const tiles = [
+    [1, 2, "🀥"],
+    [3, 3, "🀛"],
+  ]
+
+  renderBoard(board, tiles);
   // Open the WebSocket connection and register event handlers.
   const websocket = new WebSocket("ws://localhost:8001/");
   receiveMoves(board, websocket);

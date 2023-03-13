@@ -19,17 +19,24 @@ function createBoard(board) {
   return board;
 }
 
-function renderBoard(board) {
-  // TODO: read state
-  // state["tiles_on_board"][player] and state["positions"][player]
-
+function renderBoard(board, tiles) {
+  // set board empty
   for (let c = 0; c < COLUMNS; c++) {
     const columnElement = board.querySelectorAll(".column")[c];
     for (let r = 0; r < ROWS; r++) {
       const cellElement = columnElement.querySelectorAll(".cell")[r];
-      console.log(`cellElement: ${cellElement}`);
-      cellElement.innerHTML = `(${r}, ${c})`;
+      cellElement.innerHTML = "";
     }
+  }
+
+  // set non-empty tiles
+  for (const [row, col, char] of tiles) {
+    const columnElement = board.querySelectorAll(".column")[col];
+    const cellElement = columnElement.querySelectorAll(".cell")[row];
+    if (!cellElement) {
+      throw new Error(`${row}, ${col} out of bounds`);
+    }
+    cellElement.innerHTML = char;
   }
 }
 
