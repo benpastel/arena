@@ -67,4 +67,13 @@ function renderLog(panel, player_view) {
   }
 }
 
+// function renderPlayerInfo(panels, player_view) {
+//   for (const player of PLAYERS) {
+//     const panel = panels[player];
+
+//     panel.
+
+//   }
+// }
+
 export { createBoard, renderBoard, renderLog };

@@ -23,11 +23,11 @@ body {
 .grid-element {
   border: 5px solid black;
 }
-.enemy-info {
+.player-info .north-player {
   grid-column: 1 / 2;
   grid-row: 1 / 2;
 }
-.player-info {
+.player-info .south-player {
   grid-column: 1 / 2;
   grid-row: 2 / 3;
 }
