@@ -22,7 +22,7 @@ async def handler(websocket):
 
     player = state.current_player()
     player_view = state.player_view(player)
-    state_event = {"type": "state", "player_view": player_view.json()}
+    state_event = {"type": "state", "player_view": player_view.dict()}
     await websocket.send(json.dumps(state_event))
     await asyncio.sleep(0.5)
 

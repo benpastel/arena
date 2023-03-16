@@ -5,6 +5,7 @@ const COLUMNS = 5;
 
 const NORTH_PLAYER = "north-player";
 const SOUTH_PLAYER = "south-player";
+const PLAYERS = [NORTH_PLAYER, SOUTH_PLAYER];
 
 function createBoard(board) {
   // Generate board.
@@ -24,7 +25,7 @@ function createBoard(board) {
   return board;
 }
 
-function renderBoard(board, tiles) {
+function renderBoard(board, player_view) {
   // set board empty
   for (let c = 0; c < COLUMNS; c++) {
     const columnElement = board.querySelectorAll(".column")[c];
@@ -34,16 +35,25 @@ function renderBoard(board, tiles) {
       cellElement.classList = "cell empty";
     }
   }
-
   // set player tiles
-  for (const [row, col, char, player] of tiles) {
-    const columnElement = board.querySelectorAll(".column")[col];
-    const cellElement = columnElement.querySelectorAll(".cell")[row];
-    if (!cellElement) {
-      throw new Error(`${row}, ${col} out of bounds`);
+  for (const player of PLAYERS) {
+    const tiles = player_view.tiles_on_board[player];
+    const positions = player_view.positions[player];
+
+    for (let t = 0; t < tiles.length; t++) {
+      const char = tiles[t];
+      const [row, col] = positions[t];
+
+      const columnElement = board.querySelectorAll(".column")[col];
+      const cellElement = columnElement.querySelectorAll(".cell")[row];
+
+      if (!cellElement) {
+        throw new Error(`${row}, ${col}, ${char} out of bounds`);
+      }
+
+      cellElement.innerHTML = char;
+      cellElement.classList = `cell ${player}`;
     }
-    cellElement.innerHTML = char;
-    cellElement.classList = `cell ${player}`;
   }
 }
 

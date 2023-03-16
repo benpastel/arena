@@ -8,9 +8,11 @@ from pydantic import BaseModel
 # There are two players:
 #   North - displayed on top
 #   South - displayed on bottom
+#
+# the enum values must match the javascript & css values
 class Player(str, Enum):
-    N = "North Player"
-    S = "South Player"
+    N = "north-player"
+    S = "south-player"
 
 
 def other_player(p: Player) -> Player:

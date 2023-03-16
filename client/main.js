@@ -43,16 +43,9 @@ function receiveMoves(board, websocket) {
     switch (event.type) {
       case "state":
         // Update the UI with the new state.
-
-        // TODO: get tiles from data instead
-        const tiles = [
-          [0, 0, "🀫", "north-player"],
-          [0, 4, "🀫", "north-player"],
-          [4, 0, "🀥", "south-player"],
-          [4, 4, "🀛", "south-player"],
-        ]
-        renderBoard(board, tiles);
-
+        const player_view = event["player_view"];
+        console.log(player_view);
+        renderBoard(board, player_view);
         break;
       case "win":
         showMessage(`Player ${event.player} wins!`);
