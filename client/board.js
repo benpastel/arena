@@ -67,13 +67,17 @@ function renderLog(panel, player_view) {
   }
 }
 
-// function renderPlayerInfo(panels, player_view) {
-//   for (const player of PLAYERS) {
-//     const panel = panels[player];
+function renderPlayerInfo(doc, player_view) {
+  for (const player of PLAYERS) {
+    const element = doc.querySelector(`.player-info.${player}`);
+    const hand = player_view.tiles_in_hand[player];
+    const mana = player_view.mana[player];
+    element.innerHTML = (
+      `<p>${player} info:</p>`
+      + `<p>hand: ${hand.join()}</p>`
+      + `<p>mana: ${mana}</p>`
+    )
+  }
+}
 
-//     panel.
-
-//   }
-// }
-
-export { createBoard, renderBoard, renderLog };
+export { createBoard, renderBoard, renderLog, renderPlayerInfo };
