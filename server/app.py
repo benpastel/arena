@@ -5,44 +5,29 @@ import json
 
 import websockets
 
-from arena.web.connect4 import Connect4
+from arena.state import new_state, Player
+from arena.server.terminal_ui import auto_place_tiles
 
 
 async def handler(websocket):
     print("New game")
 
-    # Initialize a Connect Four game.
-    game = Connect4()
+    # initialize a new game
+    # start with a hardcoded board for now
+    # later random + place_tiles
+    state = new_state()
+    auto_place_tiles(Player.N, state)
+    auto_place_tiles(Player.S, state)
+    state.check_consistency()
+
+    player = state.current_player()
+    player_view = state.player_view(player)
+    state_event = {"type": "state", "player_view": player_view.json()}
+    await websocket.send(json.dumps(state_event))
+    await asyncio.sleep(0.5)
 
     async for message in websocket:
-        in_event = json.loads(message)
-        assert in_event["type"] == "play"
-        column = in_event["column"]
-        player = game.current_player
-
-        try:
-            row = game.play(player, column)
-        except:
-            error_event = {"type": "error", "message": "invalid move"}
-            await websocket.send(json.dumps(error_event))
-            continue
-
-        move_event = {
-            "type": "play",
-            "player": player,
-            "column": column,
-            "row": row,
-        }
-        await websocket.send(json.dumps(move_event))
-        await asyncio.sleep(0.5)
-
-        if game.last_player_won:
-            win_event = {
-                "type": "win",
-                "player": game.last_player,
-            }
-            await websocket.send(json.dumps(win_event))
-            break
+        assert False, "TODO: implement incoming messages"
 
     print("Game over")
 

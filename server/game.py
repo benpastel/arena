@@ -11,11 +11,11 @@ from arena.state import (
     Action,
     OtherAction,
 )
-from arena.actions import (
+from arena.server.actions import (
     valid_targets,
     take_action,
 )
-from arena.ui import (
+from arena.server.terminal_ui import (
     display_state,
     place_tiles,
     choose_option,

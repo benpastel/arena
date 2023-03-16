@@ -1,3 +1,5 @@
+# Terminal-based UI that I'm gradually migrating to web client
+
 import os
 import json
 from typing import TypeVar, List, Literal, cast, Optional
@@ -129,6 +131,17 @@ def place_tiles(player: Player, state: State) -> None:
             state.player_view(player),
             f"Choose a tile to start on {target}",
         )
+        state.tiles_in_hand[player].remove(tile)
+        state.tiles_on_board[player].append(tile)
+        state.positions[player].append(target)
+
+
+def auto_place_tiles(player: Player, state: State) -> None:
+    """Arbitrarily place the starting tiles.  For testing."""
+    assert len(START_POSITIONS[player]) == 2
+
+    for target in START_POSITIONS[player]:
+        tile = state.tiles_in_hand[player][0]
         state.tiles_in_hand[player].remove(tile)
         state.tiles_on_board[player].append(tile)
         state.positions[player].append(target)

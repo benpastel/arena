@@ -8,18 +8,11 @@ window.addEventListener("DOMContentLoaded", () => {
   const board = document.querySelector(".board");
   createBoard(board);
 
-  // TODO: get tiles from server instead
-  const tiles = [
-    [0, 0, "🀫", "north-player"],
-    [0, 4, "🀫", "north-player"],
-    [4, 0, "🀥", "south-player"],
-    [4, 4, "🀛", "south-player"],
-  ]
-
-  renderBoard(board, tiles);
   // Open the WebSocket connection and register event handlers.
   const websocket = new WebSocket("ws://localhost:8001/");
+
   receiveMoves(board, websocket);
+
   sendMoves(board, websocket);
 });
 
@@ -46,10 +39,20 @@ function showMessage(message) {
 function receiveMoves(board, websocket) {
   websocket.addEventListener("message", ({ data }) => {
     const event = JSON.parse(data);
+
     switch (event.type) {
-      case "play":
-        // Update the UI with the move.
-        playMove(board, event.player, event.column, event.row);
+      case "state":
+        // Update the UI with the new state.
+
+        // TODO: get tiles from data instead
+        const tiles = [
+          [0, 0, "🀫", "north-player"],
+          [0, 4, "🀫", "north-player"],
+          [4, 0, "🀥", "south-player"],
+          [4, 4, "🀛", "south-player"],
+        ]
+        renderBoard(board, tiles);
+
         break;
       case "win":
         showMessage(`Player ${event.player} wins!`);

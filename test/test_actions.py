@@ -1,5 +1,5 @@
 from arena.state import Square
-from arena.actions import _all_distances
+from arena.server.actions import _all_distances
 
 
 def test_all_distances():
