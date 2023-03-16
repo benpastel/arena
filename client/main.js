@@ -1,17 +1,19 @@
 // this websocket client runs in the player's browser
 // it initializes the board, listens for moves, and sends moves to the server
 
-import { createBoard, renderBoard } from "./board.js";
+import { createBoard, renderBoard, renderLog } from "./board.js";
 
 window.addEventListener("DOMContentLoaded", () => {
   // Initialize the UI.
   const board = document.querySelector(".board");
   createBoard(board);
 
+  const log = document.querySelector(".log");
+
   // Open the WebSocket connection and register event handlers.
   const websocket = new WebSocket("ws://localhost:8001/");
 
-  receiveMoves(board, websocket);
+  receiveMoves(board, log, websocket);
 
   sendMoves(board, websocket);
 });
@@ -36,7 +38,7 @@ function showMessage(message) {
   window.setTimeout(() => window.alert(message), 50);
 }
 
-function receiveMoves(board, websocket) {
+function receiveMoves(board, log, websocket) {
   websocket.addEventListener("message", ({ data }) => {
     const event = JSON.parse(data);
 
@@ -46,6 +48,7 @@ function receiveMoves(board, websocket) {
         const player_view = event["player_view"];
         console.log(player_view);
         renderBoard(board, player_view);
+        renderLog(log, player_view);
         break;
       case "win":
         showMessage(`Player ${event.player} wins!`);

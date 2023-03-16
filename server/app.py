@@ -18,6 +18,8 @@ async def handler(websocket):
     state = new_state()
     auto_place_tiles(Player.N, state)
     auto_place_tiles(Player.S, state)
+    state.log("log line 1")
+    state.log("log line 2")
     state.check_consistency()
 
     player = state.current_player()

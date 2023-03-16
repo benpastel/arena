@@ -26,6 +26,11 @@ function createBoard(board) {
 }
 
 function renderBoard(board, player_view) {
+  // TODO:
+  //  - save references directly to the elements instead of querying them each time?
+  //  - what's standard assert / error handling?
+  //  - only change the elements that changed?
+
   // set board empty
   for (let c = 0; c < COLUMNS; c++) {
     const columnElement = board.querySelectorAll(".column")[c];
@@ -48,13 +53,18 @@ function renderBoard(board, player_view) {
       const cellElement = columnElement.querySelectorAll(".cell")[row];
 
       if (!cellElement) {
-        throw new Error(`${row}, ${col}, ${char} out of bounds`);
+        throw new Error(`Cell not found for ${row}, ${col}, ${char}`);
       }
-
       cellElement.innerHTML = char;
       cellElement.classList = `cell ${player}`;
     }
   }
 }
 
-export { createBoard, renderBoard };
+function renderLog(panel, player_view) {
+  for (const line of player_view.public_log) {
+    panel.innerHTML += `<p>${line}</p>`;
+  }
+}
+
+export { createBoard, renderBoard, renderLog };

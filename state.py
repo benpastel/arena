@@ -193,6 +193,7 @@ class State(BaseModel):
 
     # human-readable event log of public information
     # TODO: nested indentation
+    # TODO: tag with player so we can color-code them
     public_log: List[str]
 
     # count of turns since beginning of game, starting at 0
