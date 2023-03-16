@@ -62,6 +62,7 @@ function renderBoard(board, player_view) {
 }
 
 function renderLog(panel, player_view) {
+  panel.innerHTML = '<p>log<p>';
   for (const line of player_view.public_log) {
     panel.innerHTML += `<p>${line}</p>`;
   }
@@ -73,9 +74,9 @@ function renderPlayerInfo(doc, player_view) {
     const hand = player_view.tiles_in_hand[player];
     const mana = player_view.mana[player];
     element.innerHTML = (
-      `<p>${player} info:</p>`
-      + `<p>hand: ${hand.join()}</p>`
-      + `<p>mana: ${mana}</p>`
+      `<p>${player}</p>`
+      + `<p>hand: <big>${hand.join()}</big></p>`
+      + `<p>mana: <big>${mana}</big></p>`
     )
   }
 }

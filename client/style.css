@@ -13,15 +13,19 @@ body {
   grid-template-rows: 41vmin 41vmin 2fr 1fr;
   border: 1px solid black;
 
-  font-family: 'Quicksand', sans-serif;
-  font-weight: bold;
+  font-family: 'Courier New';
+  font-weight: normal;
   font-size: 20px;
+  text-align: center;
 
   width: 100vw;
   height: 100vh;
 }
 .grid-element {
   border: 5px solid black;
+}
+.player-info {
+  font-size: 150%;
 }
 .player-info .north-player {
   grid-column: 1 / 2;
@@ -73,9 +77,6 @@ The board is a flexbox with cells in columns.  The sizing assumes a 5x5 board.
 
   line-height: 14vmin;
   font-size: 14vmin;
-  font-family: 'Courier New';
-  font-weight: normal;
-  text-align: center;
 }
 
 .north-player {
