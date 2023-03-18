@@ -68,17 +68,16 @@ function renderLog(panel, player_view) {
   }
 }
 
-function renderPlayerInfo(doc, player_view) {
+function renderHand(doc, player_view) {
   for (const player of PLAYERS) {
-    const element = doc.querySelector(`.player-info.${player}`);
+    const element = doc.querySelector(`.hand.${player}`);
     const hand = player_view.tiles_in_hand[player];
     const mana = player_view.mana[player];
     element.innerHTML = (
-      `<p>${player}</p>`
-      + `<p>hand: <big>${hand.join()}</big></p>`
-      + `<p>mana: <big>${mana}</big></p>`
+      `${hand.join(" ")}`
+      + `<br />$${mana}`
     )
   }
 }
 
-export { createBoard, renderBoard, renderLog, renderPlayerInfo };
+export { createBoard, renderBoard, renderLog, renderHand };

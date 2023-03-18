@@ -1,7 +1,7 @@
 // this websocket client runs in the player's browser
 // it initializes the board, listens for moves, and sends moves to the server
 
-import { createBoard, renderBoard, renderLog, renderPlayerInfo } from "./board.js";
+import { createBoard, renderBoard, renderLog, renderHand } from "./board.js";
 
 window.addEventListener("DOMContentLoaded", () => {
   // Initialize the UI.
@@ -49,7 +49,7 @@ function receiveMoves(board, log, doc, websocket) {
         // console.log(player_view);
         renderBoard(board, player_view);
         renderLog(log, player_view);
-        renderPlayerInfo(doc, player_view);
+        renderHand(doc, player_view);
         break;
       case "win":
         showMessage(`Player ${event.player} wins!`);
