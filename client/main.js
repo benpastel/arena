@@ -1,19 +1,20 @@
 // this websocket client runs in the player's browser
 // it initializes the board, listens for moves, and sends moves to the server
 
-import { createBoard, renderBoard, renderLog, renderHand } from "./board.js";
+import { createBoard, renderBoard, renderLog, renderHand, renderActions, createActionPanel } from "./board.js";
 
 window.addEventListener("DOMContentLoaded", () => {
   // Initialize the UI.
   const board = document.querySelector(".board");
   createBoard(board);
 
-  const log = document.querySelector(".log");
+  const action_panel = document.querySelector(".actions");
+  createActionPanel(action_panel);
 
   // Open the WebSocket connection and register event handlers.
   const websocket = new WebSocket("ws://localhost:8001/");
 
-  receiveMoves(board, log, document, websocket);
+  receiveMoves(board, action_panel, document, websocket);
 
   sendMoves(board, websocket);
 });
@@ -38,7 +39,9 @@ function showMessage(message) {
   window.setTimeout(() => window.alert(message), 50);
 }
 
-function receiveMoves(board, log, doc, websocket) {
+function receiveMoves(board, action_panel, doc, websocket) {
+  const log = doc.querySelector(".log");
+
   websocket.addEventListener("message", ({ data }) => {
     const event = JSON.parse(data);
 
@@ -46,10 +49,27 @@ function receiveMoves(board, log, doc, websocket) {
       case "state":
         // Update the UI with the new state.
         const player_view = event["player_view"];
+
+        // TODO read action_target from event
+        // list of action_target corresponding to positions[current_player]
+        const action_targets = [
+          {
+            "smite": [[4,0], [4, 4]],
+            "move": [[1, 0], [0, 1]],
+            "🀥": [[1, 0], [0, 1]],
+          },
+          {
+            "smite": [[4,0], [4, 4]],
+            "move": [[0, 3], [1, 4]],
+            "🀥": [[0, 3], [1, 4]],
+          }
+        ];
+
         // console.log(player_view);
         renderBoard(board, player_view);
         renderLog(log, player_view);
         renderHand(doc, player_view);
+        renderActions(board, action_panel, action_targets, player_view);
         break;
       case "win":
         showMessage(`Player ${event.player} wins!`);

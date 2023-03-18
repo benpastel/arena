@@ -53,6 +53,16 @@ body {
 .actions {
   grid-column: 1 / 4;
   grid-row: 2 / 3;
+
+  display: flex;
+  flex-direction: row;
+  font-size: 300%;
+  align-items: center;
+  justify-content: space-evenly;
+
+/*
+  position: relative;
+  padding: 2% 2%;*/
 }
 .prompt {
   grid-column: 1 / 4;

@@ -7,6 +7,17 @@ const NORTH_PLAYER = "north-player";
 const SOUTH_PLAYER = "south-player";
 const PLAYERS = [NORTH_PLAYER, SOUTH_PLAYER];
 
+// TODO get rows, columns, actions from server with game start event?
+const ACTIONS = [
+  "move",
+  "smite",
+  "🀥",
+  "🀍",
+  "🀐",
+  "🀛",
+  "🀒",
+];
+
 function createBoard(board) {
   // Generate board.
   for (let column = 0; column < COLUMNS; column++) {
@@ -23,6 +34,16 @@ function createBoard(board) {
     board.append(columnElement);
   }
   return board;
+}
+
+function createActionPanel(action_panel) {
+  for (const tile of ACTIONS) {
+    const element = document.createElement("div")
+    element.classList.add("action", tile);
+    element.innerHTML = tile;
+    action_panel.append(element);
+  }
+  return action_panel;
 }
 
 function renderBoard(board, player_view) {
@@ -80,4 +101,8 @@ function renderHand(doc, player_view) {
   }
 }
 
-export { createBoard, renderBoard, renderLog, renderHand };
+function renderActions(board, action_panel, action_targets, player_view) {
+  // TODO
+}
+
+export { createBoard, renderBoard, renderLog, renderHand, renderActions, createActionPanel };
