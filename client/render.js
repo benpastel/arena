@@ -17,6 +17,8 @@ const ACTIONS = [
   "🀛",
   "🀒",
 ];
+const INVALID = "invalid";
+const VALID = "valid";
 
 function createBoard(board) {
   // Generate board.
@@ -39,7 +41,7 @@ function createBoard(board) {
 function createActionPanel(action_panel) {
   for (const tile of ACTIONS) {
     const element = document.createElement("div")
-    element.classList.add("action", tile);
+    element.classList.add("action", tile, INVALID);
     element.innerHTML = tile;
     action_panel.append(element);
   }
@@ -53,6 +55,7 @@ function renderBoard(board, player_view) {
   //  - only change the elements that changed?
 
   // set board empty
+  // TODO just query all cells
   for (let c = 0; c < COLUMNS; c++) {
     const columnElement = board.querySelectorAll(".column")[c];
     for (let r = 0; r < ROWS; r++) {
@@ -101,8 +104,4 @@ function renderHand(doc, player_view) {
   }
 }
 
-function renderActions(board, action_panel, action_targets, player_view) {
-  // TODO
-}
-
-export { createBoard, renderBoard, renderLog, renderHand, renderActions, createActionPanel };
+export { createBoard, renderBoard, renderLog, renderHand, createActionPanel };
