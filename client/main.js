@@ -10,10 +10,7 @@ import {
 } from "./render.js";
 
 import {
-  waitForTurn,
-  chooseTile,
-  chooseAction,
-  chooseTarget,
+  waitForTurn
 } from "./chooseAction.js";
 
 window.addEventListener("DOMContentLoaded", () => {
@@ -59,7 +56,8 @@ function receiveMoves(board, action_panel, doc, websocket) {
   websocket.addEventListener("message", ({ data }) => {
     const event = JSON.parse(data);
 
-    waitForTurn(prompt);
+    const uiState = {};
+    waitForTurn(uiState, prompt);
 
     switch (event.type) {
       case "state":
