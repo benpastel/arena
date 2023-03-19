@@ -201,6 +201,7 @@ class State(BaseModel):
 
     def current_player(self) -> Player:
         """For now, North is hardcoded to go first."""
+        # TODO: change this to a property so it makes it over the wire into javascript
         order = [Player.N, Player.S]
         return order[self.turn_count % 2]
 
