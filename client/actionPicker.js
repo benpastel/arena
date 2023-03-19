@@ -36,10 +36,10 @@ class ActionPicker {
     // each element in the array is action name => list of valid target squares
     actionTargets = null;
 
-    // the tile the player has selected so far
+    // index into tile positions & actionTargets of the selected tile
     tile = null;
 
-    // the action the player has selected so far
+    // name of the action the selected action
     action = null;
 
     constructor(prompt) {
@@ -69,45 +69,52 @@ class ActionPicker {
     }
 
     tryChooseTile(row, col) {
-        // attempt to choose a tile
-        // this can be in CHOOSE_TILE state
-        // or in CHOOSE_ACTION / CHOOSE_TARGET in which case it cancels
-        // the previously selected tile or action
+        // called when someone clicks on a tile at [row, col]
+        //
+        // first check whether it's appropriate to interpret this click as
+        // choosing a tile.
+        //
+        // we can choose a tile in CHOOSE_TILE state of course,
+        // but also in CHOOSE_ACTION / CHOOSE_TARGET
+        // in which case it cancels the previously selected tile and/or action
         if (! ([CHOOSE_TILE, CHOOSE_ACTION, CHOOSE_TARGET].includes(this.state))) {
             console.log(`Ignored click at ${[row, col]} in ${this.state}`);
             return;
         }
 
-        let chosenTile = null;
+        // find the index in positions, if there is one
         for (let t = 0; t < this.positions.length; t++) {
             const [r, c] = this.positions[t];
             if (r === row && c === col) {
-                chosenTile = [r, c];
+                return startChooseAction(t);
             }
         }
-        if (chosenTile !== null) {
-            startChooseAction(chosenTile);
-        } else {
-            console.log(`Ignored click at ${[row, col]}; tile positions are ${this.positions}`);
-        }
+        console.log(`Ignored click at ${[row, col]}; tile positions are ${this.positions}`);
     }
 
-    startChooseAction(tile) {
+    #startChooseAction(tile_index) {
         if (! ([CHOOSE_TILE, CHOOSE_ACTION, CHOOSE_TARGET].includes(this.state))) {
             console.log(`Bad call to startChooseAction from ${this.state}`);
             return;
         }
         this.state = CHOOSE_ACTION;
-        this.chosenTile = tile;
+        this.tile = tile_index;
         this.chosenAction = null;
         this.prompt.innerHTML = "Select an action for that tile.";
+
+        // TODO: set classes to tag action buttons as valid / invalid?
+        // TODO: set hover behavior on ALL action buttons?
     }
 
     tryChooseAction(action) {
-        // TODO
+        if (! ([CHOOSE_ACTION, CHOOSE_TARGET].includes(this.state))) {
+            console.log(`Ignored click on ${action} in ${this.state}`);
+            return;
+        }
+
     }
 
-    startChooseTarget(action) {
+    #startChooseTarget(action) {
         if (! ([CHOOSE_ACTION, CHOOSE_TARGET].includes(this.state))) {
             console.log(`Bad call to startChooseTarget from ${this.state}`);
             return;
@@ -115,6 +122,8 @@ class ActionPicker {
         this.state = CHOOSE_TARGET;
         this.chosenAction = action;
         this.prompt.innerHTML = "Select a target for that action.";
+
+        // TODO:
     }
 
     tryChooseTarget(action) {
