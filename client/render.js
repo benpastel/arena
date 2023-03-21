@@ -105,4 +105,4 @@ function renderHand(doc, player_view) {
   }
 }
 
-export { createBoard, renderBoard, renderLog, renderHand, createActionPanel };
+export { createBoard, renderBoard, renderLog, renderHand, createActionPanel, NORTH_PLAYER};

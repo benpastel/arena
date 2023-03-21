@@ -6,7 +6,8 @@ import {
   renderBoard,
   renderLog,
   renderHand,
-  createActionPanel
+  createActionPanel,
+  NORTH_PLAYER
 } from "./render.js";
 
 import {
@@ -87,13 +88,16 @@ function receiveMoves(board, actionPanel, doc, websocket, actionPicker) {
         renderLog(log, player_view);
         renderHand(doc, player_view);
 
-        // TODO read these from event
-        // TODO distinguish between a state update that means it's our turn to play
-        // and one that means we've just played
-        const positions = [
-          [0, 0],
-          [0, 4],
-        ];
+        // TODO left off here
+        // let's commit to ignoring player for starters?
+        // and hardcoding it.  or reading current_player from the state directly
+        // and see positions update.  also pass in actual actionTargets from event
+        //
+        // MEANWHILE also update UI to make action picking good
+        //  - highlight selected tile
+        //  - bold/gray valid/invalid actions
+        //  - hardest part!  darken valid targets when hovering or selecting action
+        const positions = player_view.positions[NORTH_PLAYER];
         const actionTargets = [
           {
             "smite": [[4,0], [4, 4]],

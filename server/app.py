@@ -60,6 +60,10 @@ async def handler(websocket):
         _resolve_action(start, action, target, state)
         print("resolved action")
 
+        state_event = {"type": "state", "player_view": player_view.dict()}
+        await websocket.send(json.dumps(state_event))
+        await asyncio.sleep(0.5)
+
     print("Game over")
 
 
