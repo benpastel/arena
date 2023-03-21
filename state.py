@@ -44,6 +44,12 @@ class Square(NamedTuple):
         col = int(coord_string[1]) - 1  # 0 indexed internally; 1 indexed in UI
         return cls(row, col)
 
+    @classmethod
+    def from_list(cls, coords: list) -> "Square":
+        assert len(coords) == 2
+        row, col = coords
+        return cls(row, col)
+
     def __str__(self) -> str:
         """
         Convert to a display-formatted square name like B3

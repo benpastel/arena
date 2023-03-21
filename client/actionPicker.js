@@ -147,8 +147,10 @@ class ActionPicker {
             if (targetRow === r && targetCol === c) {
                 console.log(`Selected ${[targetRow, targetCol]}; submitting to server.`);
 
-                // TODO: await?
-                this.submitMoveFn(this.chosenTile, this.chosenAction, [targetRow, targetCol]);
+                const start = this.positions[this.chosenTile];
+                const target = [targetRow, targetCol];
+
+                this.submitMoveFn(start, this.chosenAction, target);
                 return this.beginWait();
             }
         }

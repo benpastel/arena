@@ -7,6 +7,22 @@ import websockets
 
 from arena.state import new_state, Player
 from arena.server.terminal_ui import auto_place_tiles
+from arena.server.game import _resolve_action
+from arena.state import Action, OtherAction, Tile, Square
+
+
+def _parse_action(action_string: str) -> Action:
+    try:
+        return OtherAction(action_string)
+    except:
+        pass
+
+    try:
+        return Tile(action_string)  # type: ignore
+    except:
+        pass
+
+    raise ValueError(f"Unknown {action_string=}")
 
 
 async def handler(websocket):
@@ -29,7 +45,20 @@ async def handler(websocket):
     await asyncio.sleep(0.5)
 
     async for message in websocket:
-        assert False, "TODO: implement incoming messages"
+        # TODO
+        #    - check it is from the correct player
+        #    - check it is valid
+        #    - if so, make move on board & send "board updated!" message to player
+        #   worry about challenges & responses later
+        event = json.loads(message)
+        print(f"Received {event=}")
+        assert event["type"] == "action"
+        start = Square.from_list(event["start"])
+        action = _parse_action(event["action"])
+        target = Square.from_list(event["target"])
+
+        _resolve_action(start, action, target, state)
+        print("resolved action")
 
     print("Game over")
 

@@ -29,10 +29,10 @@ window.addEventListener("DOMContentLoaded", () => {
   // closure for sending moves to the server
   // called by ActionPicker when a player has successfully selected tile + action + target
   // on their turn
-  function sendMoveFn(tile, action, target) {
+  function sendMoveFn(start, action, target) {
     event = {
       type: "action",
-      tile,
+      start,
       action,
       target
     }
