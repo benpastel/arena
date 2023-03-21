@@ -18,8 +18,8 @@ window.addEventListener("DOMContentLoaded", () => {
   const board = document.querySelector(".board");
   createBoard(board);
 
-  const action_panel = document.querySelector(".actions");
-  createActionPanel(action_panel);
+  const actionPanel = document.querySelector(".actions");
+  createActionPanel(actionPanel);
 
   const prompt = document.querySelector(".prompt");
 
@@ -42,7 +42,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const actionPicker = new ActionPicker(prompt, sendMoveFn);
   actionPicker.beginWait();
 
-  receiveMoves(board, action_panel, document, websocket, actionPicker);
+  receiveMoves(board, actionPanel, document, websocket, actionPicker);
 
   // event listeners for ActionPicker
   // when clicking on an action, try to interpret it as choosing an action
@@ -57,13 +57,22 @@ window.addEventListener("DOMContentLoaded", () => {
     actionPicker.tryChooseTile(row, column);
     actionPicker.tryChooseTarget(row, column);
   });
+
+  // when clicking on an action, try to interpret it as choosing an action
+  actionPanel.addEventListener("click", ({ target }) => {
+    const actionName = target.dataset.actionName;
+    if (actionName === undefined) {
+      return;
+    }
+    actionPicker.tryChooseAction(actionName);
+  });
 });
 
 function showMessage(message) {
   window.setTimeout(() => window.alert(message), 50);
 }
 
-function receiveMoves(board, action_panel, doc, websocket, actionPicker) {
+function receiveMoves(board, actionPanel, doc, websocket, actionPicker) {
   const log = doc.querySelector(".log");
 
   websocket.addEventListener("message", ({ data }) => {

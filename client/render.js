@@ -42,6 +42,7 @@ function createActionPanel(action_panel) {
   for (const tile of ACTIONS) {
     const element = document.createElement("div")
     element.classList.add("action", tile, INVALID);
+    element.dataset.actionName = tile;
     element.innerHTML = tile;
     action_panel.append(element);
   }

@@ -71,15 +71,15 @@ class ActionPicker {
         this.prompt.innerHTML = "Select a tile on the board.";
     }
 
-    #beginChooseAction(tile_index) {
+    #beginChooseAction(tileIndex) {
         if (![CHOOSE_TILE, CHOOSE_ACTION, CHOOSE_TARGET].includes(this.state)) {
             console.log(`Ignored call to beginChooseAction from ${this.state}`);
             return;
         }
-        console.log(`Selected ${this.positions[tile_index]}; now choosing action.`);
+        console.log(`Selected ${this.positions[tileIndex]}; now choosing action.`);
 
         this.state = CHOOSE_ACTION;
-        this.tile = tile_index;
+        this.chosenTile = tileIndex;
         this.chosenAction = null;
         this.prompt.innerHTML = "Select an action for that tile.";
 
@@ -130,7 +130,6 @@ class ActionPicker {
             return;
         }
         const okActions = this.actionTargets[this.chosenTile];
-
         if (action in okActions) {
             return this.#beginChooseTarget(action);
         }
@@ -149,7 +148,7 @@ class ActionPicker {
                 console.log(`Selected ${[targetRow, targetCol]}; submitting to server.`);
 
                 // TODO: await?
-                this.submitMove(this.chosenTile, this.chosenAction, [targetRow, targetCol]);
+                this.submitMoveFn(this.chosenTile, this.chosenAction, [targetRow, targetCol]);
                 return this.beginWait();
             }
         }
