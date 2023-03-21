@@ -10,8 +10,8 @@ import {
 } from "./render.js";
 
 import {
-  waitForTurn
-} from "./chooseAction.js";
+  ActionPicker
+} from "./actionPicker.js";
 
 window.addEventListener("DOMContentLoaded", () => {
   // Initialize the UI.
@@ -21,52 +21,68 @@ window.addEventListener("DOMContentLoaded", () => {
   const action_panel = document.querySelector(".actions");
   createActionPanel(action_panel);
 
+  const prompt = document.querySelector(".prompt");
+
   // Open the WebSocket connection and register event handlers.
   const websocket = new WebSocket("ws://localhost:8001/");
 
-  receiveMoves(board, action_panel, document, websocket);
+  // closure for sending moves to the server
+  // called by ActionPicker when a player has successfully selected tile + action + target
+  // on their turn
+  function sendMoveFn(tile, action, target) {
+    event = {
+      type: "action",
+      tile,
+      action,
+      target
+    }
+    websocket.send(JSON.stringify(event));
+  }
 
-  sendMoves(board, websocket);
+  const actionPicker = new ActionPicker(prompt, sendMoveFn);
+  actionPicker.beginWait();
+
+  receiveMoves(board, action_panel, document, websocket, actionPicker);
 });
 
-function sendMoves(board, websocket) {
-  // When clicking a column, send a "play" event for a move in that column.
-  board.addEventListener("click", ({ target }) => {
-    const column = target.dataset.column;
-    // Ignore clicks outside a column.
-    if (column === undefined) {
-      return;
-    }
-    const event = {
-      type: "play",
-      column: parseInt(column, 10),
-    };
-    websocket.send(JSON.stringify(event));
-  });
-}
+// TODO: add event listeners for actionPicker
+// // When clicking a column, send a "play" event for a move in that column.
+// board.addEventListener("click", ({ target }) => {
+//   const column = target.dataset.column;
+//   // Ignore clicks outside a column.
+//   if (column === undefined) {
+//     return;
+//   }
+//
+// });
 
 function showMessage(message) {
   window.setTimeout(() => window.alert(message), 50);
 }
 
-function receiveMoves(board, action_panel, doc, websocket) {
+function receiveMoves(board, action_panel, doc, websocket, actionPicker) {
   const log = doc.querySelector(".log");
-  const prompt = doc.querySelector(".prompt");
 
   websocket.addEventListener("message", ({ data }) => {
     const event = JSON.parse(data);
-
-    const uiState = {};
-    waitForTurn(uiState, prompt);
 
     switch (event.type) {
       case "state":
         // Update the UI with the new state.
         const player_view = event["player_view"];
 
-        // TODO read action_target from event
-        // list of action_target corresponding to positions[current_player]
-        const action_targets = [
+        renderBoard(board, player_view);
+        renderLog(log, player_view);
+        renderHand(doc, player_view);
+
+        // TODO read these from event
+        // TODO distinguish between a state update that means it's our turn to play
+        // and one that means we've just played
+        const positions = [
+          [0, 0],
+          [0, 4],
+        ];
+        const actionTargets = [
           {
             "smite": [[4,0], [4, 4]],
             "move": [[1, 0], [0, 1]],
@@ -78,11 +94,7 @@ function receiveMoves(board, action_panel, doc, websocket) {
             "🀥": [[0, 3], [1, 4]],
           }
         ];
-
-        // console.log(player_view);
-        renderBoard(board, player_view);
-        renderLog(log, player_view);
-        renderHand(doc, player_view);
+        actionPicker.beginChooseTile(positions, actionTargets);
         break;
       case "win":
         showMessage(`Player ${event.player} wins!`);
