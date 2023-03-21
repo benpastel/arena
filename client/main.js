@@ -43,18 +43,21 @@ window.addEventListener("DOMContentLoaded", () => {
   actionPicker.beginWait();
 
   receiveMoves(board, action_panel, document, websocket, actionPicker);
-});
 
-// TODO: add event listeners for actionPicker
-// // When clicking a column, send a "play" event for a move in that column.
-// board.addEventListener("click", ({ target }) => {
-//   const column = target.dataset.column;
-//   // Ignore clicks outside a column.
-//   if (column === undefined) {
-//     return;
-//   }
-//
-// });
+  // event listeners for ActionPicker
+  // when clicking on an action, try to interpret it as choosing an action
+
+  // when clicking on a tile, try to interpret it as choosing a tile OR choosing a target
+  board.addEventListener("click", ({ target }) => {
+    const row = parseInt(target.dataset.row);
+    const column = parseInt(target.dataset.column);
+    if (!Number.isInteger(row) || !Number.isInteger(column)) {
+      return;
+    }
+    actionPicker.tryChooseTile(row, column);
+    actionPicker.tryChooseTarget(row, column);
+  });
+});
 
 function showMessage(message) {
   window.setTimeout(() => window.alert(message), 50);

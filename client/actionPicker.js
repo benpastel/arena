@@ -1,9 +1,9 @@
 "use strict";
 
-const WAIT = "wait";
-const CHOOSE_TILE = "chooseTile";
-const CHOOSE_ACTION = "chooseAction";
-const CHOOSE_TARGET = "chooseTarget";
+const WAIT = "WAIT_STATE";
+const CHOOSE_TILE = "CHOOSE_TILE_STATE";
+const CHOOSE_ACTION = "CHOOSE_ACTION_STATE";
+const CHOOSE_TARGET = "CHOOSE_TARGET_STATE";
 
 class ActionPicker {
     // Selecting an action is a state machine:
@@ -60,7 +60,7 @@ class ActionPicker {
 
     beginChooseTile(positions, actionTargets) {
         if (this.state !== WAIT) {
-            console.log(`Bad call to beginChooseTile from ${this.state}`);
+            console.log(`Ignored call to beginChooseTile from ${this.state}`);
             return;
         }
         this.state = CHOOSE_TILE;
@@ -69,6 +69,35 @@ class ActionPicker {
         this.positions = positions;
         this.actionTargets = actionTargets;
         this.prompt.innerHTML = "Select a tile on the board.";
+    }
+
+    #beginChooseAction(tile_index) {
+        if (![CHOOSE_TILE, CHOOSE_ACTION, CHOOSE_TARGET].includes(this.state)) {
+            console.log(`Ignored call to beginChooseAction from ${this.state}`);
+            return;
+        }
+        console.log(`Selected ${this.positions[tile_index]}; now choosing action.`);
+
+        this.state = CHOOSE_ACTION;
+        this.tile = tile_index;
+        this.chosenAction = null;
+        this.prompt.innerHTML = "Select an action for that tile.";
+
+        // TODO: set classes to tag action buttons as valid / invalid?
+        // TODO: set hover behavior on ALL action buttons?
+    }
+
+
+    #beginChooseTarget(action) {
+        if (![CHOOSE_ACTION, CHOOSE_TARGET].includes(this.state)) {
+            console.log(`Ignored call to beginChooseTarget in ${this.state}`);
+            return;
+        }
+        console.log(`Selected ${action}; now choosing target.`);
+
+        this.state = CHOOSE_TARGET;
+        this.chosenAction = action;
+        this.prompt.innerHTML = "Select a target for that action.";
     }
 
     tryChooseTile(row, col) {
@@ -89,24 +118,10 @@ class ActionPicker {
         for (let t = 0; t < this.positions.length; t++) {
             const [r, c] = this.positions[t];
             if (r === row && c === col) {
-                return startChooseAction(t);
+                return this.#beginChooseAction(t);
             }
         }
         console.log(`Ignored click at ${[row, col]}; tile positions are ${this.positions}`);
-    }
-
-    #startChooseAction(tile_index) {
-        if (![CHOOSE_TILE, CHOOSE_ACTION, CHOOSE_TARGET].includes(this.state)) {
-            console.log(`Bad call to startChooseAction from ${this.state}`);
-            return;
-        }
-        this.state = CHOOSE_ACTION;
-        this.tile = tile_index;
-        this.chosenAction = null;
-        this.prompt.innerHTML = "Select an action for that tile.";
-
-        // TODO: set classes to tag action buttons as valid / invalid?
-        // TODO: set hover behavior on ALL action buttons?
     }
 
     tryChooseAction(action) {
@@ -117,37 +132,28 @@ class ActionPicker {
         const okActions = this.actionTargets[this.chosenTile];
 
         if (action in okActions) {
-            return startChooseTarget(action);
+            return this.#beginChooseTarget(action);
         }
         console.log(`Ignored ${action}; only ${okActions} are valid.`);
         return;
     }
 
-    #startChooseTarget(action) {
-        if (![CHOOSE_ACTION, CHOOSE_TARGET].includes(this.state)) {
-            console.log(`Bad call to startChooseTarget from ${this.state}`);
-            return;
-        }
-        this.state = CHOOSE_TARGET;
-        this.chosenAction = action;
-        this.prompt.innerHTML = "Select a target for that action.";
-    }
-
-    tryChooseTarget(target) {
+    tryChooseTarget(targetRow, targetCol) {
         if (CHOOSE_TARGET !== this.state) {
-            console.log(`Bad call to tryChooseTarget from ${this.state}`);
+            console.log(`Ignored call to tryChooseTarget in ${this.state}`);
             return;
         }
-        const [targetRow, targetCol] = target;
         const okTargets = this.actionTargets[this.chosenTile][this.chosenAction];
         for (const [r, c] of okTargets) {
             if (targetRow === r && targetCol === c) {
+                console.log(`Selected ${[targetRow, targetCol]}; submitting to server.`);
+
                 // TODO: await?
-                this.submitMove(this.chosenTile, this.chosenAction, target);
+                this.submitMove(this.chosenTile, this.chosenAction, [targetRow, targetCol]);
                 return this.beginWait();
             }
         }
-        console.log(`Ignored ${target}; only ${okTargets} are valid.`);
+        console.log(`Ignored ${[targetRow, targetCol]}; only ${okTargets} are valid.`);
         return;
     }
 }
