@@ -1,6 +1,6 @@
 from typing import List, Dict, Optional
 
-from arena.state import (
+from arena.server.state import (
     Tile,
     GameState,
     Square,

@@ -3,7 +3,7 @@ from typing import Optional, Dict, List
 
 from pydantic import BaseModel
 
-from arena.state import (
+from arena.server.state import (
     Square,
     Action,
 )
@@ -52,7 +52,7 @@ class ActionChooser(BaseModel):
         assert self.action is not None
         self.target = target
 
-    def tryChooseStart(start: Square, positions: List[Square]) -> bool:
+    def tryChooseStart(self, start: Square, positions: List[Square]) -> bool:
         """
         Called when someone clicks on a tile.
 
@@ -67,7 +67,7 @@ class ActionChooser(BaseModel):
             NextChoice.ACTION,
             NextChoice.TARGET,
         ):
-            print(f"Ignored {start=} in {self.state}")
+            print(f"Ignored {start=} in {self.next_choice}")
             return False
 
         if start not in positions:
@@ -78,7 +78,7 @@ class ActionChooser(BaseModel):
         return True
 
     def tryChooseAction(
-        action: Action, valid_targets: Dict[Action, List[Square]]
+        self, action: Action, valid_targets: Dict[Action, List[Square]]
     ) -> bool:
         """
         Called when someone clicks on an action.
@@ -89,7 +89,7 @@ class ActionChooser(BaseModel):
         selected action
         """
         if self.next_choice not in (NextChoice.ACTION, NextChoice.TARGET):
-            print(f"Ignored {action=} in {self.state}")
+            print(f"Ignored {action=} in {self.next_choice}")
             return False
 
         if action not in valid_targets:
@@ -100,7 +100,7 @@ class ActionChooser(BaseModel):
         return True
 
     def tryChooseTarget(
-        target: Square, valid_targets: Dict[Action, List[Square]]
+        self, target: Square, valid_targets: Dict[Action, List[Square]]
     ) -> bool:
         """
         Called when someone clicks on a tile.
@@ -108,9 +108,10 @@ class ActionChooser(BaseModel):
         If it's a valid time and choice for a target, return true and transitions state.
         """
         if self.next_choice != NextChoice.TARGET:
-            print(f"Ignored {target=} in {self.state}")
+            print(f"Ignored {target=} in {self.next_choice}")
             return False
 
+        assert self.action
         if target not in valid_targets[self.action]:
             print(f"Ignored {target=}; not in {valid_targets[self.action]}.")
             return False

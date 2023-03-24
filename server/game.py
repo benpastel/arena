@@ -8,7 +8,6 @@ from arena.server.state import (
     Tile,
     Square,
     GameState,
-    PlayerState,
     Action,
     OtherAction,
 )
@@ -51,7 +50,7 @@ class Response(Enum):
         return self.value
 
 
-def _select_action(state: State) -> Tuple[Square, Action, Square]:
+def _select_action(state: GameState) -> Tuple[Square, Action, Square]:
     """
     Prompt the player to choose the action for their turn.
 
@@ -110,7 +109,7 @@ def _select_response(
     start: Square,
     action: Action,
     target: Square,
-    state: State,
+    state: GameState,
 ) -> Response:
     if action not in Tile:
         # the action doesn't require a response
@@ -143,7 +142,7 @@ def _select_response(
     return response
 
 
-def _select_block_response(target: Square, state: State) -> Response:
+def _select_block_response(target: Square, state: GameState) -> Response:
     state.log(f"{target} claims to be {Tile.HOOK} and wants to block.")
 
     response = choose_option(
@@ -154,7 +153,7 @@ def _select_block_response(target: Square, state: State) -> Response:
     return response
 
 
-def _lose_tile(player_or_square: Player | Square, state: State) -> None:
+def _lose_tile(player_or_square: Player | Square, state: GameState) -> None:
     """
      - Prompt the player to choose a tile to lose
      - choose the tile to replace it
@@ -231,7 +230,7 @@ def _lose_tile(player_or_square: Player | Square, state: State) -> None:
 
 
 def _resolve_action(
-    start: Square, action: Action, target: Square, state: State
+    start: Square, action: Action, target: Square, state: GameState
 ) -> None:
     # `hits` is a possibly-empty list of tiles hit by the action
     hits = take_action(start, action, target, state)

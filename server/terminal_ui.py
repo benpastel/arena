@@ -4,7 +4,7 @@ import os
 import json
 from typing import TypeVar, List, Literal, cast, Optional
 
-from arena.state import (
+from arena.server.state import (
     GameState,
     START_POSITIONS,
     BOOK_POSITIONS,

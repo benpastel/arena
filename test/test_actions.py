@@ -1,4 +1,4 @@
-from arena.state import Square
+from arena.server.state import Square
 from arena.server.actions import _all_distances
 
 
