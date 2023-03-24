@@ -5,7 +5,7 @@ import json
 from typing import TypeVar, List, Literal, cast, Optional
 
 from arena.state import (
-    State,
+    GameState,
     START_POSITIONS,
     BOOK_POSITIONS,
     FOUNTAIN_POSITION,
@@ -80,7 +80,7 @@ T = TypeVar("T")
 
 def choose_option(
     options: List[T],
-    player_view: State,
+    player_view: GameState,
     prompt: str,
 ) -> T:
     """
@@ -104,7 +104,7 @@ def choose_option(
 
 def choose_option_or_cancel(
     options: List[T],
-    player_view: State,
+    player_view: GameState,
     prompt: str,
 ) -> Optional[T]:
     """
@@ -119,7 +119,7 @@ def choose_option_or_cancel(
         return cast(T, choice)
 
 
-def place_tiles(player: Player, state: State) -> None:
+def place_tiles(player: Player, state: GameState) -> None:
     """
     Prompt the player to choose their starting tiles from their hand.
     """
@@ -136,7 +136,7 @@ def place_tiles(player: Player, state: State) -> None:
         state.positions[player].append(target)
 
 
-def auto_place_tiles(player: Player, state: State) -> None:
+def auto_place_tiles(player: Player, state: GameState) -> None:
     """Arbitrarily place the starting tiles.  For testing."""
     assert len(START_POSITIONS[player]) == 2
 

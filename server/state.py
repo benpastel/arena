@@ -162,9 +162,9 @@ class GameResult(str, Enum):
     DRAW = "Draw"
 
 
-class State(BaseModel):
+class GameState(BaseModel):
     """
-    This fully represents a game's state.
+    The persistent state of the game (board, tiles, mana, log).
 
     There are 3 versions of the state:
         - a private state known only to the server that includes all the tiles
@@ -202,17 +202,10 @@ class State(BaseModel):
     # TODO: tag with player so we can color-code them
     public_log: List[str]
 
-    # count of turns since beginning of game, starting at 0
-    turn_count: int
-
-    def current_player(self) -> Player:
-        """For now, North is hardcoded to go first."""
-        # TODO: change this to a property so it makes it over the wire into javascript
-        order = [Player.N, Player.S]
-        return order[self.turn_count % 2]
-
-    def other_player(self) -> Player:
-        return other_player(self.current_player())
+    # current player is the player whose turn it currently is; other_player is the other
+    # redundant attributes for easier communication with frontend
+    current_player: Player
+    other_player: Player
 
     def tile_at(self, square: Square) -> Tile:
         """The tile occupying on the board at this square.  Error if there isn't one."""
@@ -256,7 +249,7 @@ class State(BaseModel):
         else:
             return GameResult.ONGOING
 
-    def player_view(self, player: Player) -> "State":
+    def player_view(self, player: Player) -> "GameState":
         """
         Return a copy of self with all hidden tiles replaced by Tile.HIDDEN
 
@@ -270,7 +263,7 @@ class State(BaseModel):
         # identity
         opponent_board = [Tile.HIDDEN for tile in self.tiles_on_board[opponent]]
 
-        return State(
+        return GameState(
             tiles_in_hand={
                 player: self.tiles_in_hand[player],
                 opponent: opponent_hand,
@@ -291,7 +284,8 @@ class State(BaseModel):
             # we can see everything else
             discard=self.discard,
             public_log=self.public_log,
-            turn_count=self.turn_count,
+            current_player=self.current_player,
+            other_player=self.other_player,
             mana=self.mana,
         )
 
@@ -355,8 +349,10 @@ class State(BaseModel):
         # check mana non-negative
         assert all(self.mana[player] >= 0 for player in Player)
 
+        assert self.current_player != self.other_player
 
-def new_state() -> State:
+
+def new_state() -> GameState:
     """
     Return a new state with the tiles randomly dealt.
     """
@@ -369,7 +365,7 @@ def new_state() -> State:
 
     # shuffle, then deal out the cards from fixed indices
     shuffle(tiles)
-    return State(
+    return GameState(
         tiles_in_hand={
             Player.N: tiles[0:4],
             Player.S: tiles[4:8],
@@ -385,5 +381,7 @@ def new_state() -> State:
         # first player starts with 1 fewer mana
         mana={Player.N: 1, Player.S: 2},
         public_log=[],
-        turn_count=0,
+        # currently N hardcoded to go first
+        current_player=Player.N,
+        other_player=Player.S,
     )

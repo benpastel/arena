@@ -2,7 +2,7 @@ from typing import List, Dict, Optional
 
 from arena.state import (
     Tile,
-    State,
+    GameState,
     Square,
     Action,
     OtherAction,
@@ -161,7 +161,7 @@ def _grenade_targets(
     ]
 
 
-def valid_targets(start: Square, state: State) -> Dict[Action, List[Square]]:
+def valid_targets(start: Square, state: GameState) -> Dict[Action, List[Square]]:
     """
     What are the valid actions for the current player from the start square,
     and what squares are those actions allowed to target?
@@ -174,9 +174,9 @@ def valid_targets(start: Square, state: State) -> Dict[Action, List[Square]]:
     obstructions = [s for s in state.all_positions() if s != start]
     distances = _all_distances(start, obstructions)
 
-    mana = state.mana[state.current_player()]
+    mana = state.mana[state.current_player]
 
-    enemy_positions = state.positions[state.other_player()]
+    enemy_positions = state.positions[state.other_player]
 
     empty_targets = {s: dist for s, dist in distances.items() if s not in obstructions}
     enemy_targets = {s: dist for s, dist in distances.items() if s in enemy_positions}
@@ -226,7 +226,7 @@ def valid_targets(start: Square, state: State) -> Dict[Action, List[Square]]:
 
 
 def take_action(
-    start: Square, action: Action, target: Square, state: State
+    start: Square, action: Action, target: Square, state: GameState
 ) -> List[Square]:
     """
     Updates the state with the result of the action.
@@ -234,8 +234,8 @@ def take_action(
 
     Returns a possibly-empty list of casualties (positions of tiles that got killed)
     """
-    player = state.current_player()
-    enemy = state.other_player()
+    player = state.current_player
+    enemy = state.other_player
 
     if action in (OtherAction.MOVE, Tile.FLOWER, Tile.BIRD):
         # move to the target square

@@ -10,9 +10,11 @@ import {
   NORTH_PLAYER
 } from "./render.js";
 
-import {
-  ActionPicker
-} from "./actionPicker.js";
+// Outgoing event type names.  Must match python.
+const CHOOSE_START = "CHOOSE_START";
+const CHOOSE_ACTION = "CHOOSE_ACTION";
+const CHOOSE_TARGET = "CHOOSE_TARGET";
+
 
 window.addEventListener("DOMContentLoaded", () => {
   // Initialize the UI.
@@ -22,106 +24,93 @@ window.addEventListener("DOMContentLoaded", () => {
   const actionPanel = document.querySelector(".actions");
   createActionPanel(actionPanel);
 
+  // TODO render prompt based on nextChoice
   const prompt = document.querySelector(".prompt");
 
   // Open the WebSocket connection and register event handlers.
   const websocket = new WebSocket("ws://localhost:8001/");
 
-  // closure for sending moves to the server
-  // called by ActionPicker when a player has successfully selected tile + action + target
-  // on their turn
-  function sendMoveFn(start, action, target) {
-    event = {
-      type: "action",
-      start,
-      action,
-      target
-    }
-    websocket.send(JSON.stringify(event));
-  }
+  sendChoices(board, actionPanel, websocket);
 
-  const actionPicker = new ActionPicker(prompt, sendMoveFn);
-  actionPicker.beginWait();
+  receiveChoices(websocket);
 
   receiveMoves(board, actionPanel, document, websocket, actionPicker);
+}
 
-  // event listeners for ActionPicker
-  // when clicking on an action, try to interpret it as choosing an action
+function showMessage(message) {
+  window.setTimeout(() => window.alert(message), 50);
+}
 
-  // when clicking on a tile, try to interpret it as choosing a tile OR choosing a target
+function sendChoices(board, actionPanel, websocket) {
+  // interpret clicks on board tiles or actions as possible selections
+  // let server decide if they are valid
   board.addEventListener("click", ({ target }) => {
     const row = parseInt(target.dataset.row);
     const column = parseInt(target.dataset.column);
     if (!Number.isInteger(row) || !Number.isInteger(column)) {
       return;
     }
-    actionPicker.tryChooseTile(row, column);
-    actionPicker.tryChooseTarget(row, column);
+    // try interpreting click as either choosing a tile or choosing a target
+    // TODO: reduce to a single `send` and check both server-side?
+    websocket.send(
+      JSON.stringify({
+        type: CHOOSE_START,
+        start: [row, column]
+      })
+    );
+    websocket.send(
+      JSON.stringify({
+        type: CHOOSE_TARGET,
+        target: [row, column]
+      })
+    );
   });
 
-  // when clicking on an action, try to interpret it as choosing an action
   actionPanel.addEventListener("click", ({ target }) => {
     const actionName = target.dataset.actionName;
     if (actionName === undefined) {
       return;
     }
-    actionPicker.tryChooseAction(actionName);
+    websocket.send(
+      JSON.stringify({
+        type: CHOOSE_ACTION,
+        action: actionName
+      })
+    );
   });
-});
-
-function showMessage(message) {
-  window.setTimeout(() => window.alert(message), 50);
 }
 
-function receiveMoves(board, actionPanel, doc, websocket, actionPicker) {
+function receiveChoices(websocket) {
+  // update the UI with changes to the current (partially) selected moves
+  websocket.addEventListener("message", ({ data }) => {
+    const event = JSON.parse(data);
+
+    if event.type === "ACTION_CHOICE_CHANGE":
+      console.log(`received choice event: ${event}`);
+
+      const player = event["player"];
+      const start = event["start"];
+      const action = event["action"];
+      const target = event["target"];
+      const actionTargets = event["action_targets"];
+      const nextChoice = event["nextChoice"];
+  }
+}
+
+function receiveMoves(board, actionPanel, doc, websocket) {
+  // update the UI with changes to the persistent game state
   const log = doc.querySelector(".log");
 
   websocket.addEventListener("message", ({ data }) => {
     const event = JSON.parse(data);
 
-    switch (event.type) {
-      case "state":
-        // Update the UI with the new state.
+    if event.type === "GAME_STATE_CHANGE":
+        console.log(`received game state event: ${event}`);
+
         const player_view = event["player_view"];
 
         renderBoard(board, player_view);
         renderLog(log, player_view);
         renderHand(doc, player_view);
-
-        // TODO left off here
-        // let's commit to ignoring player for starters?
-        // and hardcoding it.  or reading current_player from the state directly
-        // and see positions update.  also pass in actual actionTargets from event
-        //
-        // MEANWHILE also update UI to make action picking good
-        //  - highlight selected tile
-        //  - bold/gray valid/invalid actions
-        //  - hardest part!  darken valid targets when hovering or selecting action
-        const positions = player_view.positions[NORTH_PLAYER];
-        const actionTargets = [
-          {
-            "smite": [[4,0], [4, 4]],
-            "move": [[1, 0], [0, 1]],
-            "🀥": [[1, 0], [0, 1]],
-          },
-          {
-            "smite": [[4,0], [4, 4]],
-            "move": [[0, 3], [1, 4]],
-            "🀥": [[0, 3], [1, 4]],
-          }
-        ];
-        actionPicker.beginChooseTile(positions, actionTargets);
-        break;
-      case "win":
-        showMessage(`Player ${event.player} wins!`);
-        // No further messages are expected; close the WebSocket connection.
-        websocket.close(1000);
-        break;
-      case "error":
-        showMessage(event.message);
-        break;
-      default:
-        throw new Error(`Unsupported event type: ${event.type}.`);
-    }
-  });
+  }
 }

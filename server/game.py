@@ -1,13 +1,14 @@
 from enum import Enum
 from typing import Tuple
 
-from arena.state import (
+from arena.server.state import (
     new_state,
     GameResult,
     Player,
     Tile,
     Square,
-    State,
+    GameState,
+    PlayerState,
     Action,
     OtherAction,
 )
@@ -59,14 +60,13 @@ def _select_action(state: State) -> Tuple[Square, Action, Square]:
         - the action
         - target square of the action
     """
-    player = state.current_player()
-    player_view = state.player_view(player)
+    player_view = state.player_view(state.current_player)
 
     # choose in a loop
     # to enable canceling our choice and trying again indefinitely
     while True:
         # choose the start square
-        possible_starts = state.positions[player]
+        possible_starts = state.positions[state.current_player]
 
         assert 1 <= len(possible_starts) <= 2
         if len(possible_starts) == 1:
@@ -137,7 +137,7 @@ def _select_response(
 
     response = choose_option(
         options,
-        state.player_view(state.other_player()),
+        state.player_view(state.other_player),
         "Choose your response.",
     )
     return response
@@ -148,7 +148,7 @@ def _select_block_response(target: Square, state: State) -> Response:
 
     response = choose_option(
         [Response.ACCEPT, Response.CHALLENGE],
-        state.player_view(state.current_player()),
+        state.player_view(state.current_player),
         "Choose your response.",
     )
     return response
@@ -293,13 +293,13 @@ def play_one_game():
                 # challenge fails
                 # original action succeeds
                 state.log(f"Challenge failed because {start} is a {start_tile}.")
-                _lose_tile(state.other_player(), state)
+                _lose_tile(state.other_player, state)
                 _resolve_action(start, action, target, state)
             else:
                 # challenge succeeds
                 # original action fails
                 state.log(f"Challenge succeeded because {start} is a {start_tile}.")
-                _lose_tile(state.current_player(), state)
+                _lose_tile(state.current_player, state)
         else:
             # the response was to block
             # blocking means the target is Tile.HOOK in response to a HOOK
@@ -316,13 +316,13 @@ def play_one_game():
                 # block succeeds
                 # original action fails
                 state.log(f"Challenge failed because {target} is a {Tile.HOOK}.")
-                _lose_tile(state.current_player(), state)
+                _lose_tile(state.current_player, state)
             else:
                 # challenge succeeds
                 # block fails
                 # original action succeeds
                 state.log(f"Challenge succeeded because {target} is a {target_tile}.")
-                _lose_tile(state.other_player(), state)
+                _lose_tile(state.other_player, state)
                 _resolve_action(start, action, target, state)
 
         state.turn_count += 1
