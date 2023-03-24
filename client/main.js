@@ -93,8 +93,6 @@ function receiveChoices(board, prompt, actionPanel, websocket) {
     const event = JSON.parse(data);
 
     if (event.type === "ACTION_CHOICE_CHANGE") {
-      console.log(`received choice event: ${JSON.stringify(event)}`);
-
       const player = event["player"];
       const start = event["start"];
       const action = event["action"];
@@ -122,8 +120,6 @@ function receiveMoves(board, actionPanel, doc, websocket) {
     const event = JSON.parse(data);
 
     if (event.type === "GAME_STATE_CHANGE") {
-      console.log(`received game state event: ${JSON.stringify(event)}`);
-
       const player_view = event["playerView"];
 
       renderBoard(board, player_view);

@@ -59,8 +59,7 @@ body {
   font-size: 300%;
   align-items: center;
   justify-content: space-evenly;
-}
-.invalid-action {
+
   color: grey;
   font-weight: light;
 }
@@ -98,13 +97,10 @@ body {
   box-sizing: border-box;
   height: 20%; /* assumes a 5x5 board */
   border: 1px solid darkgrey;
-/*  background-color: white;*/
+  background-color: white;
 
   line-height: 14vmin;
   font-size: 14vmin;
-}
-.invalid-target {
-  background-color: white;
 }
 .valid-target {
   background-color: lightgray;
