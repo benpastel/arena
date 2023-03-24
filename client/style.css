@@ -60,11 +60,11 @@ body {
   align-items: center;
   justify-content: space-evenly;
 }
-.invalid {
+.invalid-action {
   color: grey;
   font-weight: light;
 }
-.valid {
+.valid-action {
   color: black;
   font-weight: bold;
 }
@@ -97,11 +97,17 @@ body {
 .cell {
   box-sizing: border-box;
   height: 20%; /* assumes a 5x5 board */
-  border: 1px solid gray;
-  background-color: white;
+  border: 1px solid darkgrey;
+/*  background-color: white;*/
 
   line-height: 14vmin;
   font-size: 14vmin;
+}
+.invalid-target {
+  background-color: white;
+}
+.valid-target {
+  background-color: lightgray;
 }
 
 .north-player {

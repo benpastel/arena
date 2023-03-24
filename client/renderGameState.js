@@ -60,7 +60,7 @@ function renderBoard(board, player_view) {
     for (let r = 0; r < ROWS; r++) {
       const cellElement = columnElement.querySelectorAll(".cell")[r];
       cellElement.innerHTML = "";
-      cellElement.classList = "cell empty";
+      cellElement.classList = "cell invalid-target";
     }
   }
   // set player tiles
@@ -79,7 +79,8 @@ function renderBoard(board, player_view) {
         throw new Error(`Cell not found for ${row}, ${col}, ${char}`);
       }
       cellElement.innerHTML = char;
-      cellElement.classList = `cell ${player}`;
+      cellElement.classList.remove(NORTH_PLAYER, SOUTH_PLAYER);
+      cellElement.classList.add(player);
     }
   }
 }

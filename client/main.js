@@ -13,6 +13,7 @@ import {
 import {
   renderPrompt,
   highlightActions,
+  highlightTargets,
   NEXT_CHOICE_START
 } from "./renderChoice.js";
 
@@ -38,7 +39,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   sendChoices(board, actionPanel, websocket);
 
-  receiveChoices(prompt, actionPanel, websocket);
+  receiveChoices(board, prompt, actionPanel, websocket);
 
   receiveMoves(board, actionPanel, document, websocket);
 });
@@ -86,7 +87,7 @@ function sendChoices(board, actionPanel, websocket) {
   });
 }
 
-function receiveChoices(prompt, actionPanel, websocket) {
+function receiveChoices(board, prompt, actionPanel, websocket) {
   // update the UI with changes to the current (partially) selected moves
   websocket.addEventListener("message", ({ data }) => {
     const event = JSON.parse(data);
@@ -103,6 +104,12 @@ function receiveChoices(prompt, actionPanel, websocket) {
 
       renderPrompt(prompt, nextChoice);
       highlightActions(actionPanel, actionTargets);
+
+      if (action && actionTargets[action]) {
+        highlightTargets(board, actionTargets[action]);
+      } else {
+        highlightTargets(board, []);
+      }
     }
   });
 }
