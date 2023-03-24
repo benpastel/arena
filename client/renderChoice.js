@@ -18,16 +18,16 @@ const NEXT_CHOICE_RESPONSE = "RESPONSE";
 function renderPrompt(prompt, nextChoice) {
   switch (nextChoice) {
     case NEXT_CHOICE_START:
-      prompt.innerHTML = 'Select the tile that will take action this turn.';
+      prompt.innerHTML = 'Select a tile.';
       break;
     case NEXT_CHOICE_ACTION :
-      prompt.innerHTML = 'Select the action to take (or select a new tile).';
+      prompt.innerHTML = 'Select an action, or a different tile.';
       break;
     case NEXT_CHOICE_TARGET:
-      prompt.innerHTML = 'Select the target square (or select a new tile/action).';
+      prompt.innerHTML = 'Select the target square, or a different tile or action.';
       break;
     case NEXT_CHOICE_RESPONSE:
-      prompt.innerHTML = 'Not implemented yet :(';
+      prompt.innerHTML = 'Response not implemented yet :(';
       break;
     default:
       throw new Error(`Bad nextChoice ${nextChoice}`);
