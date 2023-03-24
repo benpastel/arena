@@ -34,8 +34,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
   receiveChoices(websocket);
 
-  receiveMoves(board, actionPanel, document, websocket, actionPicker);
-}
+  receiveMoves(board, actionPanel, document, websocket);
+});
 
 function showMessage(message) {
   window.setTimeout(() => window.alert(message), 50);
@@ -85,7 +85,7 @@ function receiveChoices(websocket) {
   websocket.addEventListener("message", ({ data }) => {
     const event = JSON.parse(data);
 
-    if event.type === "ACTION_CHOICE_CHANGE":
+    if (event.type === "ACTION_CHOICE_CHANGE") {
       console.log(`received choice event: ${event}`);
 
       const player = event["player"];
@@ -94,7 +94,8 @@ function receiveChoices(websocket) {
       const target = event["target"];
       const actionTargets = event["action_targets"];
       const nextChoice = event["nextChoice"];
-  }
+    }
+  });
 }
 
 function receiveMoves(board, actionPanel, doc, websocket) {
@@ -104,13 +105,14 @@ function receiveMoves(board, actionPanel, doc, websocket) {
   websocket.addEventListener("message", ({ data }) => {
     const event = JSON.parse(data);
 
-    if event.type === "GAME_STATE_CHANGE":
-        console.log(`received game state event: ${event}`);
+    if (event.type === "GAME_STATE_CHANGE") {
+      console.log(`received game state event: ${event}`);
 
-        const player_view = event["player_view"];
+      const player_view = event["player_view"];
 
-        renderBoard(board, player_view);
-        renderLog(log, player_view);
-        renderHand(doc, player_view);
-  }
+      renderBoard(board, player_view);
+      renderLog(log, player_view);
+      renderHand(doc, player_view);
+    }
+  });
 }
