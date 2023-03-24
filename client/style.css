@@ -67,6 +67,28 @@ body {
   color: black;
   font-weight: bold;
 }
+.chosen-action {
+  border-radius: 100%;
+  border: 1px solid;
+}
+.chosen-start::before {
+  position: absolute;
+  content: 'O';
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: auto;
+}
+.chosen-target::before {
+  position: absolute;
+  content: 'X';
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: auto;
+}
 
 .prompt {
   grid-column: 1 / 4;
@@ -98,6 +120,7 @@ body {
   height: 20%; /* assumes a 5x5 board */
   border: 1px solid darkgrey;
   background-color: white;
+  position: relative;
 
   line-height: 14vmin;
   font-size: 14vmin;

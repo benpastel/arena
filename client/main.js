@@ -12,8 +12,11 @@ import {
 
 import {
   renderPrompt,
-  highlightActions,
-  highlightTargets,
+  highlightOkActions,
+  highlightOkTargets,
+  markChosenStart,
+  markChosenAction,
+  markChosenTarget,
   NEXT_CHOICE_START
 } from "./renderChoice.js";
 
@@ -100,13 +103,17 @@ function receiveChoices(board, prompt, actionPanel, websocket) {
       const actionTargets = event["actionTargets"];
       const nextChoice = event["nextChoice"];
 
-      renderPrompt(prompt, nextChoice);
-      highlightActions(actionPanel, actionTargets);
+      markChosenStart(board, start);
+      markChosenAction(actionPanel, action);
+      markChosenTarget(board, target);
 
+      renderPrompt(prompt, nextChoice);
+
+      highlightOkActions(actionPanel, actionTargets);
       if (action && actionTargets[action]) {
-        highlightTargets(board, actionTargets[action]);
+        highlightOkTargets(board, actionTargets[action]);
       } else {
-        highlightTargets(board, []);
+        highlightOkTargets(board, []);
       }
     }
   });
