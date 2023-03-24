@@ -8,7 +8,12 @@ import {
   renderHand,
   createActionPanel,
   NORTH_PLAYER
-} from "./render.js";
+} from "./renderGameState.js";
+
+import {
+  renderPrompt,
+  NEXT_CHOICE_START
+} from "./renderChoice.js";
 
 // Outgoing event type names.  Must match python.
 const CHOOSE_START = "CHOOSE_START";
@@ -24,15 +29,15 @@ window.addEventListener("DOMContentLoaded", () => {
   const actionPanel = document.querySelector(".actions");
   createActionPanel(actionPanel);
 
-  // TODO render prompt based on nextChoice
   const prompt = document.querySelector(".prompt");
+  renderPrompt(prompt, NEXT_CHOICE_START);
 
   // Open the WebSocket connection and register event handlers.
   const websocket = new WebSocket("ws://localhost:8001/");
 
   sendChoices(board, actionPanel, websocket);
 
-  receiveChoices(websocket);
+  receiveChoices(prompt, websocket);
 
   receiveMoves(board, actionPanel, document, websocket);
 });
@@ -80,20 +85,22 @@ function sendChoices(board, actionPanel, websocket) {
   });
 }
 
-function receiveChoices(websocket) {
+function receiveChoices(prompt, websocket) {
   // update the UI with changes to the current (partially) selected moves
   websocket.addEventListener("message", ({ data }) => {
     const event = JSON.parse(data);
 
     if (event.type === "ACTION_CHOICE_CHANGE") {
-      console.log(`received choice event: ${event}`);
+      console.log(`received choice event: ${JSON.stringify(event)}`);
 
       const player = event["player"];
       const start = event["start"];
       const action = event["action"];
       const target = event["target"];
-      const actionTargets = event["action_targets"];
+      const actionTargets = event["actionTargets"];
       const nextChoice = event["nextChoice"];
+
+      renderPrompt(prompt, nextChoice);
     }
   });
 }
@@ -106,9 +113,9 @@ function receiveMoves(board, actionPanel, doc, websocket) {
     const event = JSON.parse(data);
 
     if (event.type === "GAME_STATE_CHANGE") {
-      console.log(`received game state event: ${event}`);
+      console.log(`received game state event: ${JSON.stringify(event)}`);
 
-      const player_view = event["player_view"];
+      const player_view = event["playerView"];
 
       renderBoard(board, player_view);
       renderLog(log, player_view);

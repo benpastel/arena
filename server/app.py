@@ -68,7 +68,7 @@ async def handler(websocket: Any) -> None:
     player_view = game_state.player_view(game_state.current_player)
     state_event = {
         "type": OutEventType.GAME_STATE_CHANGE.value,
-        "player_view": player_view.dict(),
+        "playerView": player_view.dict(),
     }
     await websocket.send(json.dumps(state_event))
     await asyncio.sleep(0.5)
@@ -115,8 +115,8 @@ async def handler(websocket: Any) -> None:
                 "start": actionChooser.start,
                 "action": actionChooser.action,
                 "target": actionChooser.target,
-                "action_targets": action_targets,
-                "next_choice": actionChooser.next_choice,
+                "actionTargets": action_targets,
+                "nextChoice": actionChooser.next_choice,
             }
             await websocket.send(json.dumps(choice_event))
 
