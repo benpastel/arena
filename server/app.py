@@ -45,10 +45,32 @@ class OutEventType(str, Enum):
     GAME_STATE_CHANGE = "GAME_STATE_CHANGE"
 
     # change in the player's selection (start, action, target)
-    ACTION_CHOICE_CHANGE = "ACTION_CHOICE_CHANGE"
+    TURN_STATE_CHANGE = "TURN_STATE_CHANGE"
 
 
-async def handler(websocket: Any) -> None:
+# game id => the websockets for each player
+WEBSOCKETS: Dict[int, Dict[Player, Any]] = {}
+
+# game id => the between-turn state of the game (tiles, money, etc)
+GAME_STATES: Dict[int, GameState] = {}
+
+# game id => the within-turn state of the game (actions selected so far, challenge decisions, etc)
+TURN_STATES: Dict[int, TurnState] = {}
+
+# for now hardcode at most one game running at a time
+GAME_ID = 0
+
+
+
+
+
+async def playHandler() -> None:
+    """
+    Both players have separate handler threads.
+
+    To simplify synchronization we only progress the game in this thread,
+    while the other thread blocks.
+    """
     print("New game")
 
     # initialize a new game
@@ -110,7 +132,7 @@ async def handler(websocket: Any) -> None:
 
         if changed:
             choice_event = {
-                "type": OutEventType.ACTION_CHOICE_CHANGE.value,
+                "type": OutEventType.TURN_STATE_CHANGE.value,
                 "player": game_state.current_player,
                 "start": actionChooser.start,
                 "action": actionChooser.action,
@@ -121,6 +143,44 @@ async def handler(websocket: Any) -> None:
             await websocket.send(json.dumps(choice_event))
 
     print("Game over")
+
+
+
+
+async def handler(websocket: Any) -> None:
+    """
+    Register the player => websocket in the global registry
+    wait for both players
+    then start playing
+    """
+    join_message = await websocket.recv()
+    join_event = json.loads(message)
+    assert join_event["type"] == "join"
+
+    player = Player(join_event["player"])
+
+    # eventually we'll need to handle reconnecting
+    # right now just end the game and delete the websocket
+    assert player not in WEBSOCKETS
+    WEBSOCKETS[player] = websocket
+
+    print(f"{player} connected")
+    try:
+        async for message in websocket:
+            if len(WEBSOCKETS) != 2:
+                print(f"{player} waiting until both players connected")
+            else
+                print(f"{player} starting game")
+                play_one_game(player)
+                break
+
+    finally:
+        del WEBSOCKETS[player]
+        print(f"{player} disconnected")
+
+
+
+
 
 
 async def main():

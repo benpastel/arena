@@ -129,10 +129,10 @@ body {
   background-color: lightgray;
 }
 
-.north-player {
+.north {
   color: red
 }
 
-.south-player {
+.south {
   color: blue
 }

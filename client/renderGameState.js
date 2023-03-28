@@ -3,8 +3,9 @@
 const ROWS = 5;
 const COLUMNS = 5;
 
-const NORTH_PLAYER = "north-player";
-const SOUTH_PLAYER = "south-player";
+// must match both css and python
+const NORTH_PLAYER = "north";
+const SOUTH_PLAYER = "south";
 const PLAYERS = [NORTH_PLAYER, SOUTH_PLAYER];
 
 // TODO get rows, columns, actions from server with game start event?
@@ -104,4 +105,4 @@ function renderHand(doc, player_view) {
   }
 }
 
-export { createBoard, renderBoard, renderLog, renderHand, createActionPanel, NORTH_PLAYER, ACTIONS};
+export { createBoard, renderBoard, renderLog, renderHand, createActionPanel, NORTH_PLAYER, SOUTH_PLAYER, ACTIONS};

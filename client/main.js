@@ -7,7 +7,8 @@ import {
   renderLog,
   renderHand,
   createActionPanel,
-  NORTH_PLAYER
+  NORTH_PLAYER,
+  SOUTH_PLAYER,
 } from "./renderGameState.js";
 
 import {
@@ -26,6 +27,25 @@ const CHOOSE_ACTION = "CHOOSE_ACTION";
 const CHOOSE_TARGET = "CHOOSE_TARGET";
 
 
+function joinGame(websocket) {
+  websocket.addEventListener("open", () => {
+    // send an "join" event informing the server which player we are
+    // based on hardcoded url ?player=north or ?player=south
+    const params = new URLSearchParams(window.location.search);
+    const player = params["player"];
+    if (! (player === NORTH_PLAYER || player === SOUTH_PLAYER)) {
+      const msg = `Please set the url param ?player=${NORTH_PLAYER} or ?player=${SOUTH_PLAYER}`;
+      alert(msg);
+      throw new Error(msg);
+    }
+    const event = {
+      type: "join",
+      player
+    };
+    websocket.send(JSON.stringify(event));
+  });
+}
+
 window.addEventListener("DOMContentLoaded", () => {
   // Initialize the UI.
   const board = document.querySelector(".board");
@@ -39,6 +59,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // Open the WebSocket connection and register event handlers.
   const websocket = new WebSocket("ws://localhost:8001/");
+  joinGame(websocket);
 
   sendChoices(board, actionPanel, websocket);
 

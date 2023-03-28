@@ -1,0 +1,3 @@
+- randomize start positions
+- add diagonals back?
+- reconsider grappler immunities

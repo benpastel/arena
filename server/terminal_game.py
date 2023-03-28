@@ -23,33 +23,6 @@ from arena.server.terminal_ui import (
 )
 
 
-class Response(Enum):
-    """
-    A response by the other player to a proposed action.  Only some responses are valid
-    on any given move.
-
-    They choices are to accept, challenge, or block
-    but when blocking, the player must choose a blocking tile.
-
-    We flatten the choice of blocking tile into a single enum to simplify
-    the player input.
-
-    Only some options are valid on any given move.
-    """
-
-    # accept the action as given
-    ACCEPT = "ACCEPT"
-
-    # challenge the action
-    CHALLENGE = "CHALLENGE"
-
-    # block a grappling hook by claiming to have a grappling hook
-    BLOCK = f"BLOCK AS {Tile.HOOK}"
-
-    def __repr__(self) -> str:
-        return self.value
-
-
 def _select_action(state: GameState) -> Tuple[Square, Action, Square]:
     """
     Prompt the player to choose the action for their turn.

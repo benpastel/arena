@@ -11,8 +11,8 @@ from pydantic import BaseModel
 #
 # the enum values must match the javascript & css values
 class Player(str, Enum):
-    N = "north-player"
-    S = "south-player"
+    N = "north"
+    S = "south"
 
 
 def other_player(p: Player) -> Player:
@@ -164,7 +164,7 @@ class GameResult(str, Enum):
 
 class GameState(BaseModel):
     """
-    The persistent state of the game (board, tiles, mana, log).
+    The between-turn state of the game (board, tiles, mana, log).
 
     There are 3 versions of the state:
         - a private state known only to the server that includes all the tiles
