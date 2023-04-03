@@ -43,6 +43,11 @@ class NextChoice(str, Enum):
     # if the player still has tile(s) in hand
     REPLACE_CHALLENGE_LOSS = "REPLACE_CHALLENGE_LOSS"
 
+    # a special state marking the turn as complete
+    # so the game handler can read the turn state, update the game state, and
+    # begin the next turn
+    TURN_OVER = "TURN_OVER"
+
 
 class Response(str, Enum):
     """
@@ -62,6 +67,45 @@ class Response(str, Enum):
     BLOCK = "BLOCK"
 
 
+def _decide_next_choice(turn_state: TurnState, game_state: GameState) -> Tuple[NextChoice, Player]:
+    """
+    Assumes the previous choice was just decided, and the relevant turn_state field set.
+
+    Returns the next choice and the player making that choice.
+
+    Entering CHOOSE_START and CHOOSE_ACTION are special cases not covered here (see below)
+    because they can be accessed by undoing a previous selection.
+
+    But the other choices can only be accessed unambigiously from previous ones
+    depending on the previous choices, game state and game logic.
+
+    TODO: synchronize?
+    """
+    prev = turn_state.next_choice
+
+    # these cases are organized by the outgoing NextChoice - for each state we could
+    # enter, we enumerate all the paths by which we can get into that state.
+
+    # opponent may challenge tile-based actions
+    if prev == NextChoice.CHOOSE_TARGET and turn_state.action in Tile:
+        return NextChoice.RESPOND, game_state.other_player
+
+    # current player may challenge the block
+    if prev == NextChoice.RESPOND and self.response == Response.BLOCK:
+        return NextChoice.RESPOND_TO_BLOCK, game_state.current_player
+
+    # if the current player successfully used a killing action,
+    # opponent replaces the killed tile
+    #
+    # OH NO
+    # grenades can kill multiple opponents and has friendly fire.
+    # SIGH
+    # TODO: stuck here
+
+    TODO:
+        return NextChoice.REPLACE_KILLED, game_state.other_player
+
+
 class TurnState(BaseModel):
     """
     The within-turn state, consisting of players' choices so far:
@@ -75,80 +119,60 @@ class TurnState(BaseModel):
 
     # the player responsible for making that choice
     # for now we hardcode south player as starting
+    # TODO update this
     next_chooser = Player.S
 
     # record any choices made so far in this turn
     # that are inputs for future choices this turn
     #
-    # (start, action, target) will always be chosen
-    # the rest are only applicable in some situations
+    # (start, action, target) will be chosen each turn
+    # but we allow changing the selected start & action until the target is chosen
     start: Optional[Square] = None
     action: Optional[Action] = None
     target: Optional[Square] = None
 
-    # TODO from here we need to decide:
-    #   are we updating game_state as we go?  or relegating to end-of-turn
-    #
-    # if updating game_state as we go, those updates need to be intermingled with these
-    # try_ or begin_ functions
-    #
-    # if relegating to end-of-turn, we'll need to recompute challenge failure twice
-    # also, the two "REPLACE LOSS" functions are confusing if happen simultaneously
-    # ... although I guess they can't happen simultaneously because you can only ever
-    #   choose once??
-    #
-    # ok let's go with that idea, and maybe make a special state out of it
-    # to tell the handler it's time to compute the end-of-turn
+    # the remaining choices are only applicable in certain situations
     response: Optional[Response] = None
     response_to_block: Optional[Response] = None
-    kill_replacement: Optional[int] = None # index into game_state.tiles_in_hand[player]
+    replacement_for_kill: Optional[int] = None # index into game_state.tiles_in_hand[player]
     challenge_loss: Optional[Square] = None
-    challenge_replacement: Optional[int] = None # index into game_state.tiles_in_hand[player]
+    replacement_for_challenge: Optional[int] = None # index into game_state.tiles_in_hand[player]
 
-    """
-    The following state transitions assume that a valid choice has been made.
-
-    They record the previous choice, and transition us to waiting on the next choice.
-    They sometimes need the game state as context for determining the next choice.
-    """
-    def begin_choose_start(self):
+    def begin_choose_start(self, game_state: GameState):
+        """
+        Choose the starting tile.  Turns start with this choice, and we can also reach it
+        by canceling a previously selected start or action.
+        """
         self.next_choice = NextChoice.CHOOSE_START
+        self.next_chooser = game_state.current_player
         self.start = None
         self.action = None
-        self.target = None
-        self.response = None
-        self.response_to_block = None
-        self.kill_replacement = None
-        self.challenge_loss = None
-        self.challenge_replacement = None
-
-    def begin_choose_action(self, start: Square):
-        self.next_choice = NextChoice.CHOOSE_ACTION
-        self.start = start
-        self.action = None
-        self.target = None
-
-    def begin_choose_target(self, action: Action):
-        assert self.start
-        self.next_choice = NextChoice.CHOOSE_TARGET
-        self.action = action
-        self.target = None
-
-    def begin_respond(self, target: Square):
-        assert self.start
-        assert self.action
         assert self.target is None
-        self.next_choice = NextChoice.RESPOND
-        self.target = target
-
-    def begin_respond_to_block(self):
-        assert self.start
-        assert self.action
-        assert self.target
         assert self.response is None
-        assert response == response.
-        self.target = None
-        self.response = None
+        assert self.response_to_block is None
+        assert self.replacement_for_kill is None
+        assert self.challenge_loss is None
+        assert self.replacement_for_challenge is None
+
+    def begin_choose_action(self, game_state: GameState):
+        """
+        Choose the action.  This happens after choosing the starting tile, or we can reach
+        it by canceling a previously selected action.
+
+        Assumes the start square is set.
+        """
+        self.next_choice = NextChoice.CHOOSE_ACTION
+        self.next_chooser = game_state.current_player
+        self.action = None
+        assert self.start
+        assert self.target is None
+        assert self.response is None
+        assert self.response_to_block is None
+        assert self.replacement_for_kill is None
+        assert self.challenge_loss is None
+        assert self.replacement_for_challenge is None
+
+    def begin_next_choice(self, game_state: GameState):
 
 
 

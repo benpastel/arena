@@ -351,6 +351,10 @@ class GameState(BaseModel):
 
         assert self.current_player != self.other_player
 
+    def next_turn(self) -> None:
+        self.current_player = other_player(self.current_player)
+        self.other_player = other_player(self.other_player)
+
 
 def new_state() -> GameState:
     """

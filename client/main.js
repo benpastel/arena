@@ -82,7 +82,8 @@ function sendChoices(board, actionPanel, websocket) {
       return;
     }
     // try interpreting click as either choosing a tile or choosing a target
-    // TODO: reduce to a single `send` and check both server-side?
+    //
+    // TODO remove type; add choice_id; put data into "data"
     websocket.send(
       JSON.stringify({
         type: CHOOSE_START,

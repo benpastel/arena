@@ -6,6 +6,7 @@ from enum import Enum
 from typing import List, Dict, Any
 
 import websockets
+from websockets.server import WebSocketServerProtocol
 
 from arena.server.state import new_state, Player
 from arena.server.actions import valid_targets
@@ -48,145 +49,104 @@ class OutEventType(str, Enum):
     TURN_STATE_CHANGE = "TURN_STATE_CHANGE"
 
 
-# game id => the websockets for each player
-WEBSOCKETS: Dict[int, Dict[Player, Any]] = {}
 
-# game id => the between-turn state of the game (tiles, money, etc)
-GAME_STATES: Dict[int, GameState] = {}
+# # currently valid actions => targets
+# # based on both the game state and the actionChooser state
+# action_targets: Dict[Action, List[Square]] = {}
 
-# game id => the within-turn state of the game (actions selected so far, challenge decisions, etc)
-TURN_STATES: Dict[int, TurnState] = {}
+# async for message in websocket:
+#     # TODO
+#     #    - check it is from the correct player
+#     #    - check it is valid
+#     #    - if so, make move on board & send "board updated!" message to player
+#     #   worry about challenges & responses later
+#     event = json.loads(message)
+#     print(f"Received {event=}")
+#     in_event_type = InEventType(event["type"])
 
-# for now hardcode at most one game running at a time
-GAME_ID = 0
+#     if in_event_type == InEventType.CHOOSE_START:
+#         start = Square.from_list(event["start"])
+#         changed = actionChooser.tryChooseStart(
+#             start, game_state.positions[game_state.current_player]
+#         )
+#         if changed:
+#             action_targets = valid_targets(start, game_state)
+
+#     elif in_event_type == InEventType.CHOOSE_ACTION:
+#         action = _parse_action(event["action"])
+#         changed = actionChooser.tryChooseAction(action, action_targets)
+
+#     elif in_event_type == InEventType.CHOOSE_TARGET:
+#         target = Square.from_list(event["target"])
+#         changed = actionChooser.tryChooseTarget(target, action_targets)
+#         if changed:
+#             action_targets = {}
+
+#     else:
+#         assert False
+
+#     if changed:
+#         choice_event = {
+#             "type": OutEventType.TURN_STATE_CHANGE.value,
+#             "player": game_state.current_player,
+#             "start": actionChooser.start,
+#             "action": actionChooser.action,
+#             "target": actionChooser.target,
+#             "actionTargets": action_targets,
+#             "nextChoice": actionChooser.next_choice,
+#         }
+#         await websocket.send(json.dumps(choice_event))
+
+# print("Game over")
 
 
 
+# For now we support at most one game at a time.
+# this tracks the websocket of each connected player
+# until both player are connected and we can start the game.
+WEBSOCKETS: Dict[Player, WebSocketServerProtocol] = {}
 
 
-async def playHandler() -> None:
+async def handler(websocket: WebSocketServerProtocol) -> None:
     """
-    Both players have separate handler threads.
+    Register player => websocket in a global registry.
+    If we are the 2nd connecting player, start the game.
+    Otherwise, wait forever for another player.
 
-    To simplify synchronization we only progress the game in this thread,
-    while the other thread blocks.
+    Consumes a single message from the websocket queue containing the Player
+    (north or south).  Future messages are handled inside the game task.
     """
-    print("New game")
-
-    # initialize a new game
-    # start with a hardcoded board for now
-    # later random + place_tiles
-    game_state = new_state()
-    auto_place_tiles(Player.N, game_state)
-    auto_place_tiles(Player.S, game_state)
-    game_state.log("log line 1")
-    game_state.log("log line 2")
-    game_state.check_consistency()
-
-    # should actually be per-person
-    actionChooser = ActionChooser()
-    actionChooser.beginChooseStart()
-
-    player_view = game_state.player_view(game_state.current_player)
-    state_event = {
-        "type": OutEventType.GAME_STATE_CHANGE.value,
-        "playerView": player_view.dict(),
-    }
-    await websocket.send(json.dumps(state_event))
-    await asyncio.sleep(0.5)
-
-    # currently valid actions => targets
-    # based on both the game state and the actionChooser state
-    action_targets: Dict[Action, List[Square]] = {}
-
-    async for message in websocket:
-        # TODO
-        #    - check it is from the correct player
-        #    - check it is valid
-        #    - if so, make move on board & send "board updated!" message to player
-        #   worry about challenges & responses later
-        event = json.loads(message)
-        print(f"Received {event=}")
-        in_event_type = InEventType(event["type"])
-
-        if in_event_type == InEventType.CHOOSE_START:
-            start = Square.from_list(event["start"])
-            changed = actionChooser.tryChooseStart(
-                start, game_state.positions[game_state.current_player]
-            )
-            if changed:
-                action_targets = valid_targets(start, game_state)
-
-        elif in_event_type == InEventType.CHOOSE_ACTION:
-            action = _parse_action(event["action"])
-            changed = actionChooser.tryChooseAction(action, action_targets)
-
-        elif in_event_type == InEventType.CHOOSE_TARGET:
-            target = Square.from_list(event["target"])
-            changed = actionChooser.tryChooseTarget(target, action_targets)
-            if changed:
-                action_targets = {}
-
-        else:
-            assert False
-
-        if changed:
-            choice_event = {
-                "type": OutEventType.TURN_STATE_CHANGE.value,
-                "player": game_state.current_player,
-                "start": actionChooser.start,
-                "action": actionChooser.action,
-                "target": actionChooser.target,
-                "actionTargets": action_targets,
-                "nextChoice": actionChooser.next_choice,
-            }
-            await websocket.send(json.dumps(choice_event))
-
-    print("Game over")
-
-
-
-
-async def handler(websocket: Any) -> None:
-    """
-    Register the player => websocket in the global registry
-    wait for both players
-    then start playing
-    """
+    assert isinstance(websocket, WebSocketServerProtocol)
     join_message = await websocket.recv()
     join_event = json.loads(message)
     assert join_event["type"] == "join"
 
     player = Player(join_event["player"])
-
-    # eventually we'll need to handle reconnecting
-    # right now just end the game and delete the websocket
     assert player not in WEBSOCKETS
     WEBSOCKETS[player] = websocket
-
     print(f"{player} connected")
-    try:
-        async for message in websocket:
-            if len(WEBSOCKETS) != 2:
-                print(f"{player} waiting until both players connected")
-            else
-                print(f"{player} starting game")
-                play_one_game(player)
-                break
 
+    try:
+        if len(WEBSOCKETS) == 2:
+            # both players are connected, so start the game.
+            await play_one_game(WEBSOCKETS)
+        else:
+            # wait forever for the other player to connect
+            # TODO:
+            #   - needs to consume messages so we hear a disconnect
+            #   - but then stop consuming messages once the game starts
+            #   - and also exit when the game exits....
+            await websocket.wait_closed()
     finally:
         del WEBSOCKETS[player]
         print(f"{player} disconnected")
 
 
 
-
-
-
-async def main():
+async def main() -> None:
     async with websockets.serve(handler, "", 8001):
         await asyncio.Future()  # run forever
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(main(), debug=True)
