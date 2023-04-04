@@ -8,10 +8,29 @@ from websockets.server import WebSocketServerProtocol
 
 from arena.server.state import new_state, Player
 from arena.server.actions import valid_targets, take_action
-from arena.server.terminal_ui import auto_place_tiles
 from arena.server.state import Action, OtherAction, Tile, Square
 from arena.server.choices import choose_action_or_square, choose_square_or_hand
 
+
+def auto_place_tiles(player: Player, state: GameState) -> None:
+    """Arbitrarily place the starting tiles.  For testing."""
+    # TODO consider making this the actual rules and do it when state is initialized
+    # also randomize the columns (maybe with rotational symmetry?)
+    assert len(START_POSITIONS[player]) == 2
+
+    for target in START_POSITIONS[player]:
+        tile = state.tiles_in_hand[player][0]
+        state.tiles_in_hand[player].remove(tile)
+        state.tiles_on_board[player].append(tile)
+        state.positions[player].append(target)
+
+
+class Response(str, Enum):
+    # TODO explain
+    # these must match javascript
+    ACCEPT = "ACCEPT"
+    CHALLENGE = "CHALLENGE"
+    BLOCK = "BLOCK"
 
 
 def _resolve_action(
@@ -116,7 +135,11 @@ async def _select_action(
         # so we can display their partial choices so far
 
 
-def _lose_tile(player_or_square: Player | Square, state: GameState, websockets: Dict[Player, WebSocketServerProtocol]) -> None:
+def _lose_tile(
+    player_or_square: Player | Square,
+    state: GameState,
+    websockets: Dict[Player, WebSocketServerProtocol]
+) -> None:
     """
      - Prompt the player to choose a tile to lose, if applicable
      - choose the tile to replace it, if applicable
@@ -208,6 +231,55 @@ def _lose_tile(player_or_square: Player | Square, state: GameState, websockets: 
         state.tiles_in_hand[player].remove(replacement)
         state.tiles_on_board[player].append(replacement)
         state.positions[player].append(square)
+
+
+def _select_response(
+    start: Square,
+    action: Action,
+    target: Square,
+    state: GameState,
+) -> Response:
+    assert action in Tile
+
+    msg = f"{start} claims to be {action} and "
+    match action:
+        case Tile.FLOWER | Tile.BIRD:
+            msg += f"wants to move to {target}."
+        case Tile.HOOK:
+            msg += f"wants to hook {target}."
+        case Tile.GRENADES:
+            msg += f"wants to throw a grenade at {target}."
+        case Tile.KNIVES:
+            msg += f"wants to stab {target}."
+        case _:
+            assert False
+    state.log(msg)
+    # TODO push the log update?
+
+    # TODO left off here
+
+    options = [Response.ACCEPT, Response.CHALLENGE]
+    if action == Tile.HOOK:
+        options.append(Response.BLOCK)
+
+    response = choose_option(
+        options,
+        state.player_view(state.other_player),
+        "Choose your response.",
+    )
+    return response
+
+
+def _select_block_response(target: Square, state: GameState) -> Response:
+    # TODO left off here
+    state.log(f"{target} claims to be {Tile.HOOK} and wants to block.")
+
+    response = choose_option(
+        [Response.ACCEPT, Response.CHALLENGE],
+        state.player_view(state.current_player),
+        "Choose your response.",
+    )
+    return response
 
 
 async def play_one_turn(
