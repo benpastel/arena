@@ -1,8 +1,9 @@
 from typing import Enum
-
 from weakref import WeakKeyDictionary
 
 from websockets.server import WebSocketServerProtocol
+
+from arena.server.game_state import Tile, Action, OtherAction, Square
 
 # Generally incoming messages are invalid unless we've prompted for them.
 # websockets keeps incoming messages in a FIFO queue, but generally all messages
@@ -53,31 +54,78 @@ async def _get_choice(
 
 
 
-async def choose_start(
-    valid_starts: List[Square],
-    websocket: WebSocketServerProtocol
-) -> Square:
-    # loop until we get a valid start square
+async def choose_action_or_square(
+    valid_actions: List[Action],
+    valid_squares: List[Square],
+    websocket: WebSocketServerProtocol,
+    prompt: str
+) -> Action | Square:
+    # loop until we get a valid choice
+    # TODO: send the list of possibilities to the player to highlight
     while True:
         data = await _get_choice(
-            "Select a tile.",
             websocket
+            prompt,
         )
-        chosen = Square(
+        # try parsing as a square
+        square = Square(
             row = data.get("row", -1),
             column = data.get("column", -1)
         )
-        if chosen in valid_targets:
-            return chosen
-        else:
-            print(f"Ignoring invalid start {chosen}")
+        if square in valid_squares:
+            return square
+
+        # try parsing as a Tile Action
+        # TODO: make sure javascript keys match these
+        try:
+            action = Tile(data["action"])
+            if action in valid_actions:
+                return action
+        except:
+            pass
+
+        # try parsing as an Other Action
+        try:
+            action = OtherAction(data["action"])
+            if action in valid_actions:
+                return action
+        except:
+            pass
+
+        # it's not valid; get a new choice
+        print(f"Ignoring invalid choice {data=}")
 
 
-# TODO: left off implement the other choose_X functions
-# choose_action and choose_target will be harder because they return a union with cancel
-# the tile-in-hand choices will need a representation
+async def choose_square_or_hand(
+    valid_squares: List[Square],
+    valid_hand_tiles: List[Tile],
+    websocket: WebSocketServerProtocol,
+    prompt: str
+) -> Square | Tile:
+    # loop until we get a valid choice
+    # TODO: send the list of possibilities to the player to highlight
+    while True:
+        data = await _get_choice(
+            websocket
+            prompt,
+        )
+        # try parsing as a square
+        square = Square(
+            row = data.get("row", -1),
+            column = data.get("column", -1)
+        )
+        if square in valid_squares:
+            return square
 
+        # try parsing as a Tile
+        # TODO: make sure javascript keys match these
+        try:
+            tile = Tile(data["tile"])
+            if tile in valid_hand_tiles:
+                return tile
+        except:
+            pass
 
-
-
+        # it's not valid; get a new choice
+        print(f"Ignoring invalid choice {data=}")
 
