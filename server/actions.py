@@ -2,7 +2,7 @@ from typing import List, Dict, Optional
 
 from arena.server.state import (
     Tile,
-    GameState,
+    State,
     Square,
     Action,
     OtherAction,
@@ -161,7 +161,7 @@ def _grenade_targets(
     ]
 
 
-def valid_targets(start: Square, state: GameState) -> Dict[Action, List[Square]]:
+def valid_targets(start: Square, state: State) -> Dict[Action, List[Square]]:
     """
     What are the valid actions for the current player from the start square,
     and what squares are those actions allowed to target?
@@ -226,7 +226,7 @@ def valid_targets(start: Square, state: GameState) -> Dict[Action, List[Square]]
 
 
 def take_action(
-    start: Square, action: Action, target: Square, state: GameState
+    start: Square, action: Action, target: Square, state: State
 ) -> List[Square]:
     """
     Updates the state with the result of the action.

@@ -12,7 +12,7 @@ from arena.server.state import Action, OtherAction, Tile, Square
 from arena.server.choices import choose_action_or_square, choose_square_or_hand
 
 
-def auto_place_tiles(player: Player, state: GameState) -> None:
+def auto_place_tiles(player: Player, state: State) -> None:
     """Arbitrarily place the starting tiles.  For testing."""
     # TODO consider making this the actual rules and do it when state is initialized
     # also randomize the columns (maybe with rotational symmetry?)
@@ -37,7 +37,7 @@ def _resolve_action(
     start: Square,
     action: Action,
     target: Square,
-    state: GameState,
+    state: State,
     websockets: Dict[Player, WebSocketServerProtocol]
 ) -> None:
     # `hits` is a possibly-empty list of tiles hit by the action
@@ -64,7 +64,7 @@ def _resolve_action(
 
 
 async def _select_action(
-    state: GameState,
+    state: State,
     websocket: WebSocketServerProtocol
 ) -> Tuple[Square, Action, Square]:
     """
@@ -137,7 +137,7 @@ async def _select_action(
 
 def _lose_tile(
     player_or_square: Player | Square,
-    state: GameState,
+    state: State,
     websockets: Dict[Player, WebSocketServerProtocol]
 ) -> None:
     """
@@ -237,7 +237,7 @@ def _select_response(
     start: Square,
     action: Action,
     target: Square,
-    state: GameState,
+    state: State,
 ) -> Response:
     assert action in Tile
 
@@ -270,7 +270,7 @@ def _select_response(
     return response
 
 
-def _select_block_response(target: Square, state: GameState) -> Response:
+def _select_block_response(target: Square, state: State) -> Response:
     # TODO left off here
     state.log(f"{target} claims to be {Tile.HOOK} and wants to block.")
 
@@ -283,7 +283,7 @@ def _select_block_response(target: Square, state: GameState) -> Response:
 
 
 async def play_one_turn(
-    state: GameState,
+    state: State,
     websockets: Dict[Player, WebSocketServerProtocol]
 ) -> None:
     """
@@ -382,7 +382,7 @@ async def play_one_game(
         #  - also dispaly turn count
         async with asyncio.TaskGroup() as tg:
             for player in Player:
-                player_view = game_state.player_view(player)
+                player_view = state.player_view(player)
                 state_event = {
                     "type": OutEventType.GAME_STATE_CHANGE.value,
                     "playerView": player_view.dict(),

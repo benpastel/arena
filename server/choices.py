@@ -3,7 +3,7 @@ from weakref import WeakKeyDictionary
 
 from websockets.server import WebSocketServerProtocol
 
-from arena.server.game_state import Tile, Action, OtherAction, Square
+from arena.server.state import Tile, Action, OtherAction, Square
 
 # Generally incoming messages are invalid unless we've prompted for them.
 # websockets keeps incoming messages in a FIFO queue, but generally all messages

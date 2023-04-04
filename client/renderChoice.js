@@ -2,7 +2,7 @@
 
 import {
   ACTIONS
-} from "./renderGameState.js";
+} from "./renderState.js";
 
 // must match css
 const VALID_ACTION = "valid-action";

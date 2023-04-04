@@ -162,7 +162,7 @@ class GameResult(str, Enum):
     DRAW = "Draw"
 
 
-class GameState(BaseModel):
+class State(BaseModel):
     """
     The between-turn state of the game (board, tiles, mana, log).
 
@@ -249,7 +249,7 @@ class GameState(BaseModel):
         else:
             return GameResult.ONGOING
 
-    def player_view(self, player: Player) -> "GameState":
+    def player_view(self, player: Player) -> "State":
         """
         Return a copy of self with all hidden tiles replaced by Tile.HIDDEN
 
@@ -263,7 +263,7 @@ class GameState(BaseModel):
         # identity
         opponent_board = [Tile.HIDDEN for tile in self.tiles_on_board[opponent]]
 
-        return GameState(
+        return State(
             tiles_in_hand={
                 player: self.tiles_in_hand[player],
                 opponent: opponent_hand,
@@ -356,7 +356,7 @@ class GameState(BaseModel):
         self.other_player = other_player(self.other_player)
 
 
-def new_state() -> GameState:
+def new_state() -> State:
     """
     Return a new state with the tiles randomly dealt.
     """
@@ -369,7 +369,7 @@ def new_state() -> GameState:
 
     # shuffle, then deal out the cards from fixed indices
     shuffle(tiles)
-    return GameState(
+    return State(
         tiles_in_hand={
             Player.N: tiles[0:4],
             Player.S: tiles[4:8],

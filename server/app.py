@@ -67,10 +67,10 @@ class OutEventType(str, Enum):
 #     if in_event_type == InEventType.CHOOSE_START:
 #         start = Square.from_list(event["start"])
 #         changed = actionChooser.tryChooseStart(
-#             start, game_state.positions[game_state.current_player]
+#             start, state.positions[state.current_player]
 #         )
 #         if changed:
-#             action_targets = valid_targets(start, game_state)
+#             action_targets = valid_targets(start, state)
 
 #     elif in_event_type == InEventType.CHOOSE_ACTION:
 #         action = _parse_action(event["action"])
@@ -88,7 +88,7 @@ class OutEventType(str, Enum):
 #     if changed:
 #         choice_event = {
 #             "type": OutEventType.TURN_STATE_CHANGE.value,
-#             "player": game_state.current_player,
+#             "player": state.current_player,
 #             "start": actionChooser.start,
 #             "action": actionChooser.action,
 #             "target": actionChooser.target,

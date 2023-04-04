@@ -9,7 +9,7 @@ import {
   createActionPanel,
   NORTH_PLAYER,
   SOUTH_PLAYER,
-} from "./renderGameState.js";
+} from "./renderState.js";
 
 import {
   renderPrompt,
