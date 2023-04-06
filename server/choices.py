@@ -14,7 +14,7 @@ from arena.server.constants import Tile, Action, OtherAction, Square, Response
 # All messages with other choice ids are ignored, so we can ignore messages from
 # before our prompt.
 #
-# It's a WeakKeyDictionary so we don't keep a reference to old websockets.
+# Weak references so we don't keep old websockets alive.
 NEXT_CHOICE_ID: WeakKeyDictionary[WebSocketServerProtocol, int] = WeakKeyDictionary()
 
 
@@ -32,13 +32,13 @@ async def _get_choice(websocket: WebSocketServerProtocol, prompt: str) -> dict:
 
     # prompt the player for this choice
     # TODO share "type"=="prompt" with other prompts like "waiting for opponent to X"
-    prompt_event = {"type": "prompt", "choice_id": expected_choice_id, "prompt": prompt}
+    prompt_event = {"type": "PROMPT", "choiceId": expected_choice_id, "prompt": prompt}
     await websocket.send(json.dumps(prompt_event))
 
     while True:
         message = await websocket.recv()
         event = json.loads(message)
-        choice_id = int(event["choice_id"])
+        choice_id = int(event["choiceId"])
 
         if expected_choice_id == choice_id:
             return event["data"]
@@ -68,7 +68,6 @@ async def choose_action_or_square(
             return square
 
         # try parsing as a Tile Action
-        # TODO: make sure javascript keys match these
         try:
             tile = Tile(data["action"])
             if tile in possible_actions:
@@ -106,7 +105,6 @@ async def choose_square_or_hand(
             return square
 
         # try parsing as a Tile
-        # TODO: make sure javascript keys match these
         try:
             tile = Tile(data["tile"])
             if tile in possible_hand_tiles:

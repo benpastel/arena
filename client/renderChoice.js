@@ -1,8 +1,6 @@
 "use strict";
 
-import {
-  ACTIONS
-} from "./renderState.js";
+import { ACTIONS } from "./renderState.js";
 
 // must match css
 const VALID_ACTION = "valid-action";
@@ -11,31 +9,6 @@ const CHOSEN_START = "chosen-start";
 const CHOSEN_ACTION = "chosen-action";
 const CHOSEN_TARGET = "chosen-target";
 
-// must match python enum
-const NEXT_CHOICE_START = "START";
-const NEXT_CHOICE_ACTION = "ACTION";
-const NEXT_CHOICE_TARGET = "TARGET";
-const NEXT_CHOICE_RESPONSE = "RESPONSE";
-
-
-function renderPrompt(prompt, nextChoice) {
-  switch (nextChoice) {
-    case NEXT_CHOICE_START:
-      prompt.innerHTML = 'Select a tile.';
-      break;
-    case NEXT_CHOICE_ACTION :
-      prompt.innerHTML = 'Select an action, or a different tile.';
-      break;
-    case NEXT_CHOICE_TARGET:
-      prompt.innerHTML = 'Select the target square, or a different tile or action.';
-      break;
-    case NEXT_CHOICE_RESPONSE:
-      prompt.innerHTML = 'Response not implemented yet :(';
-      break;
-    default:
-      throw new Error(`Bad nextChoice ${nextChoice}`);
-  }
-}
 
 // TODO abstract the cell stuff
 function markChosenStart(board, start) {
@@ -114,4 +87,4 @@ function highlightOkTargets(board, targets) {
   }
 }
 
-export { renderPrompt, highlightOkActions, highlightOkTargets, markChosenStart, markChosenAction, markChosenTarget, NEXT_CHOICE_START };
+export { highlightOkActions, highlightOkTargets, markChosenStart, markChosenAction, markChosenTarget };

@@ -95,6 +95,9 @@ function renderLog(panel, player_view) {
 
 function renderHand(doc, player_view) {
   for (const player of PLAYERS) {
+    // TODO: need to render these as different elements
+    // with tileName set
+    // so we can listen to tileName on clicks
     const element = doc.querySelector(`.hand.${player}`);
     const hand = player_view.tiles_in_hand[player];
     const coins = player_view.coins[player];

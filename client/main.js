@@ -18,19 +18,17 @@ import {
   markChosenStart,
   markChosenAction,
   markChosenTarget,
-  NEXT_CHOICE_START
 } from "./renderChoice.js";
 
-// Outgoing event type names.  Must match python.
-const CHOOSE_START = "CHOOSE_START";
-const CHOOSE_ACTION = "CHOOSE_ACTION";
-const CHOOSE_TARGET = "CHOOSE_TARGET";
-
+// This counter identifies the most recent input request we've received from the server
+// we include it in all outgoing changes so that the server can ignore anything stale
+let CHOICE_ID = 0;
 
 function joinGame(websocket) {
   websocket.addEventListener("open", () => {
     // send an "join" event informing the server which player we are
     // based on hardcoded url ?player=north or ?player=south
+    // TODO: move to path
     const params = new URLSearchParams(window.location.search);
     const player = params["player"];
     if (! (player === NORTH_PLAYER || player === SOUTH_PLAYER)) {
@@ -55,65 +53,83 @@ window.addEventListener("DOMContentLoaded", () => {
   createActionPanel(actionPanel);
 
   const prompt = document.querySelector(".prompt");
-  renderPrompt(prompt, NEXT_CHOICE_START);
+  renderPrompt(prompt, "Waiting for server.");
+
+  // TODO: actually only need our player's hand here
+  const hand = document.querySelector(".hand");
 
   // Open the WebSocket connection and register event handlers.
   const websocket = new WebSocket("ws://localhost:8001/");
   joinGame(websocket);
 
-  sendChoices(board, actionPanel, websocket);
+  sendSelection(board, actionPanel, hand, websocket);
 
-  receiveChoices(board, prompt, actionPanel, websocket);
+  receiveSelection(board, actionPanel, websocket);
 
   receiveMoves(board, actionPanel, document, websocket);
+
+  receivePrompt(prompt, websocket);
 });
 
 function showMessage(message) {
   window.setTimeout(() => window.alert(message), 50);
 }
 
-function sendChoices(board, actionPanel, websocket) {
-  // interpret clicks on board tiles or actions as possible selections
+// TODO listen to prompt messages
+// TODO update CHOICE_ID
+
+function sendSelection(board, actionPanel, hand, websocket) {
+  // interpret all clicks as possible selections
   // let server decide if they are valid
+
   board.addEventListener("click", ({ target }) => {
     const row = parseInt(target.dataset.row);
     const column = parseInt(target.dataset.column);
     if (!Number.isInteger(row) || !Number.isInteger(column)) {
       return;
     }
-    // try interpreting click as either choosing a tile or choosing a target
-    //
-    // TODO remove type; add choice_id; put data into "data"
     websocket.send(
       JSON.stringify({
-        type: CHOOSE_START,
-        start: [row, column]
-      })
-    );
-    websocket.send(
-      JSON.stringify({
-        type: CHOOSE_TARGET,
-        target: [row, column]
+        choice_id: CHOICE_ID,
+        data: {row, column}
       })
     );
   });
 
   actionPanel.addEventListener("click", ({ target }) => {
-    const actionName = target.dataset.actionName;
-    if (actionName === undefined) {
+    const action = target.dataset.actionName;
+    if (action === undefined) {
       return;
     }
     websocket.send(
       JSON.stringify({
-        type: CHOOSE_ACTION,
-        action: actionName
+        choiceId: CHOICE_ID,
+        data: {action}
       })
     );
   });
+
+  hand.addEventListener("click", ({ target }) => {
+    // TODO actually set these tileNames
+    console.log("TODO: get hand clicks working");
+    const tile = target.dataset.tileName;
+    if (tile === undefined) {
+      return;
+    }
+    websocket.send(
+      JSON.stringify({
+        choiceId: CHOICE_ID,
+        data: {tile}
+      })
+    );
+  });
+
+  // TODO one more listener for Response
 }
 
-function receiveChoices(board, prompt, actionPanel, websocket) {
+function receiveSelection(board, actionPanel, websocket) {
   // update the UI with changes to the current (partially) selected moves
+  // TODO: simpler to pass the list of actions & targets separately?
   websocket.addEventListener("message", ({ data }) => {
     const event = JSON.parse(data);
 
@@ -123,13 +139,11 @@ function receiveChoices(board, prompt, actionPanel, websocket) {
       const action = event["action"];
       const target = event["target"];
       const actionTargets = event["actionTargets"];
-      const nextChoice = event["nextChoice"];
 
+      // TODO use `player` to get correct coloring on opponent's turn
       markChosenStart(board, start);
       markChosenAction(actionPanel, action);
       markChosenTarget(board, target);
-
-      renderPrompt(prompt, nextChoice);
 
       highlightOkActions(actionPanel, actionTargets);
       if (action && actionTargets[action]) {
@@ -157,3 +171,14 @@ function receiveMoves(board, actionPanel, doc, websocket) {
     }
   });
 }
+
+function receivePrompt(prompt, websocket) {
+  websocket.addEventListener("message", ({ data }) => {
+    const event = JSON.parse(data);
+    if (event.type === "PROMPT") {
+      prompt.innerHTML = event.prompt;
+      CHOICE_ID = parseInt(event.choiceId);
+    }
+  });
+}
+
