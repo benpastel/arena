@@ -97,10 +97,10 @@ function renderHand(doc, player_view) {
   for (const player of PLAYERS) {
     const element = doc.querySelector(`.hand.${player}`);
     const hand = player_view.tiles_in_hand[player];
-    const mana = player_view.mana[player];
+    const coins = player_view.coins[player];
     element.innerHTML = (
       `${hand.join(" ")}`
-      + `<br />$${mana}`
+      + `<br />$${coins}`
     )
   }
 }

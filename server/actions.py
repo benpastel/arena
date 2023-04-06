@@ -11,8 +11,8 @@ from arena.server.state import (
 )
 
 
-"""Mana gains & costs"""
-MANA_GAIN = {
+"""Money gains & costs"""
+COIN_GAIN = {
     OtherAction.MOVE: 1,
     Tile.BIRD: 2,
     Tile.FLOWER: 3,
@@ -174,7 +174,7 @@ def valid_targets(start: Square, state: State) -> Dict[Action, List[Square]]:
     obstructions = [s for s in state.all_positions() if s != start]
     distances = _all_distances(start, obstructions)
 
-    mana = state.mana[state.current_player]
+    coins = state.coins[state.current_player]
 
     enemy_positions = state.positions[state.other_player]
 
@@ -184,11 +184,11 @@ def valid_targets(start: Square, state: State) -> Dict[Action, List[Square]]:
     # there must be enemies or the game would have ended
     assert len(enemy_targets) > 0
 
-    if mana >= MUST_SMITE_AT:
+    if coins >= MUST_SMITE_AT:
         # smiting is the only valid action
         return {OtherAction.SMITE: list(enemy_targets.keys())}
 
-    # move, FLOWER, and BIRD cost no mana
+    # move, FLOWER, and BIRD cost no coins
     # and move to any empty square at some distance
     #
     # for now we'll allow empty lists when there is no valid target square;
@@ -204,20 +204,20 @@ def valid_targets(start: Square, state: State) -> Dict[Action, List[Square]]:
         s for s in enemy_targets if _grapple_end_square(start, s, obstructions)
     ]
 
-    if mana >= SMITE_COST:
+    if coins >= SMITE_COST:
         # can smite any enemy
         actions[OtherAction.SMITE] = list(enemy_targets.keys())
 
-    if mana >= KNIVES_RANGE_2_COST:
+    if coins >= KNIVES_RANGE_2_COST:
         actions[Tile.KNIVES] = [
             s for s, dist in enemy_targets.items() if 1 <= dist <= 2
         ]
-    elif mana >= KNIVES_RANGE_1_COST:
+    elif coins >= KNIVES_RANGE_1_COST:
         actions[Tile.KNIVES] = [
             s for s, dist in enemy_targets.items() if 1 <= dist <= 2
         ]
 
-    if mana >= GRENADES_COST:
+    if coins >= GRENADES_COST:
         # see `_grenade_targets` for the definition of valid grenade targets
         actions[Tile.GRENADES] = _grenade_targets(start, obstructions, enemy_positions)
 
@@ -248,8 +248,8 @@ def take_action(
         state.positions[player].remove(start)
         state.positions[player].append(target)
 
-        # gain mana
-        state.mana[player] += MANA_GAIN[action]
+        # gain coins
+        state.coins[player] += COIN_GAIN[action]
 
         # kill nobody
         return []
@@ -262,23 +262,23 @@ def take_action(
         state.positions[player].append(end_square)
 
         # steal
-        steal_amount = min(GRAPPLE_STEAL_AMOUNT, state.mana[enemy])
-        state.mana[player] += steal_amount
-        state.mana[enemy] -= steal_amount
+        steal_amount = min(GRAPPLE_STEAL_AMOUNT, state.coins[enemy])
+        state.coins[player] += steal_amount
+        state.coins[enemy] -= steal_amount
 
         # kill noboby
         return []
 
     if action == OtherAction.SMITE:
         # pay cost
-        state.mana[player] -= SMITE_COST
+        state.coins[player] -= SMITE_COST
 
         # kill target
         return [target]
 
     if action == Tile.GRENADES:
         # pay cost
-        state.mana[player] -= GRENADES_COST
+        state.coins[player] -= GRENADES_COST
 
         # see `_grenate_hits` for definition of who dies
         return _grenade_hits(target, state.all_positions())
@@ -287,10 +287,10 @@ def take_action(
         # cost depends on distance to target
         dist = max(abs(start.row - target.row), abs(start.col - target.col))
         if dist == 2:
-            state.mana[player] -= KNIVES_RANGE_2_COST
+            state.coins[player] -= KNIVES_RANGE_2_COST
         else:
             assert dist == 1
-            state.mana[player] -= KNIVES_RANGE_1_COST
+            state.coins[player] -= KNIVES_RANGE_1_COST
 
         # kill target
         return [target]

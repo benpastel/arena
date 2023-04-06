@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 class State(BaseModel):
     """
-    The between-turn state of the game (board, tiles, mana, log).
+    The between-turn state of the game (board, tiles, coins, log).
 
     There are 3 versions of the state:
         - a private state known only to the server that includes all the tiles
@@ -38,7 +38,7 @@ class State(BaseModel):
     discard: List[Tile]
 
     # points used to cast tiles
-    mana: Dict[Player, int]
+    coins: Dict[Player, int]
 
     # human-readable event log of public information
     # TODO: nested indentation
@@ -129,7 +129,7 @@ class State(BaseModel):
             public_log=self.public_log,
             current_player=self.current_player,
             other_player=self.other_player,
-            mana=self.mana,
+            coins=self.coins,
         )
 
     def check_consistency(self) -> None:
@@ -189,8 +189,8 @@ class State(BaseModel):
         # check tile locations are unique
         assert len(self.all_positions()) == len(set(self.all_positions()))
 
-        # check mana non-negative
-        assert all(self.mana[player] >= 0 for player in Player)
+        # check coins non-negative
+        assert all(self.coins[player] >= 0 for player in Player)
 
         assert self.current_player != self.other_player
 
@@ -225,8 +225,8 @@ def new_state() -> State:
         ],
         unused_tiles=tiles[12:15],
         discard=[],
-        # first player starts with 1 fewer mana
-        mana={Player.N: 1, Player.S: 2},
+        # first player starts with 1 fewer coins
+        coins={Player.N: 1, Player.S: 2},
         public_log=[],
         # currently N hardcoded to go first
         current_player=Player.N,
