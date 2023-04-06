@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Tuple
 from random import shuffle
 
 from pydantic import BaseModel
@@ -7,10 +7,9 @@ from arena.server.constants import (
     Player,
     Square,
     GameResult,
-    Action,
     Tile,
-    OtherAction,
-    Response,
+    BOOK_POSITIONS,
+    other_player,
 )
 
 

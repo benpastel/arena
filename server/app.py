@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 
 import asyncio
+import json
+from typing import Dict
 
 import websockets
 from websockets.server import WebSocketServerProtocol
 
+from arena.server.constants import Player
 from arena.server.game import play_one_game
 
 

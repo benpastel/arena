@@ -1,14 +1,10 @@
 import asyncio
-import json
-from enum import Enum
-from typing import List, Dict, Any
+from typing import Dict, Tuple, Optional
 
-import websockets
 from websockets.server import WebSocketServerProtocol
 
-from arena.server.state import new_state, Player
 from arena.server.actions import valid_targets, take_action
-from arena.server.state import State
+from arena.server.state import new_state, State
 from arena.server.constants import (
     Player,
     Square,

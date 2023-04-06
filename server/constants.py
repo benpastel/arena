@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Tuple, List, Dict, Literal, NamedTuple
+from typing import Literal, NamedTuple
 
 
 # There are two players:

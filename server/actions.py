@@ -2,12 +2,12 @@ from typing import List, Dict, Optional
 
 from arena.server.state import State
 from arena.server.constants import (
-    Player,
     Square,
-    GameResult,
     Action,
     OtherAction,
     Tile,
+    ROWS,
+    COLUMNS,
 )
 
 

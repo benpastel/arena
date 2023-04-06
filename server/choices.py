@@ -1,4 +1,5 @@
-from typing import Enum
+import json
+from typing import List
 from weakref import WeakKeyDictionary
 
 from websockets.server import WebSocketServerProtocol
