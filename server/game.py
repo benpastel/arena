@@ -36,7 +36,7 @@ def _auto_place_tiles(player: Player, state: State) -> None:
         state.positions[player].append(target)
 
 
-def _resolve_action(
+async def _resolve_action(
     start: Square,
     action: Action,
     target: Square,
@@ -63,7 +63,7 @@ def _resolve_action(
             assert False
 
     for hit in hits:
-        _lose_tile(hit, state, websockets)
+        await _lose_tile(hit, state, websockets)
 
 
 async def _select_action(
@@ -77,8 +77,6 @@ async def _select_action(
         - the action
         - target square of the action
     """
-    player_view = state.player_view(state.current_player)
-
     possible_starts = state.positions[state.current_player]
     assert 1 <= len(possible_starts) <= 2
     if len(possible_starts) == 1:
@@ -95,10 +93,11 @@ async def _select_action(
     while True:
         actions_and_targets = valid_targets(start, state)
         possible_actions = list(actions_and_targets.keys())
+        possible_targets = actions_and_targets.get(action, [])
 
         # display the partial selection and valid actions/targets to the
         # current player
-        notify_selection_changed(
+        await notify_selection_changed(
             state.current_player, start, action, None, actions_and_targets, websocket
         )
 
@@ -109,10 +108,10 @@ async def _select_action(
             possible_squares = possible_starts
             prompt = "Select an action, or a different tile."
         elif len(possible_starts) == 1:
-            possible_squares = actions_and_targets[action]
+            possible_squares = possible_targets
             prompt = "Select a target, or a different action."
         else:
-            possible_squares = possible_starts + actions_and_targets[action]
+            possible_squares = possible_starts + possible_targets
             prompt = "Select a target, or a different action or tile."
 
         choice = await choose_action_or_square(
@@ -134,7 +133,7 @@ async def _select_action(
             action = None
 
 
-def _lose_tile(
+async def _lose_tile(
     player_or_square: Player | Square,
     state: State,
     websockets: Dict[Player, WebSocketServerProtocol],
@@ -166,7 +165,7 @@ def _lose_tile(
         possible_squares = state.positions[player]
 
     websocket = websockets[player]
-    if len(possible_starts) > 1:
+    if len(possible_squares) > 1:
         square = await choose_square_or_hand(
             possible_squares=possible_squares,
             possible_hand=[],
@@ -229,10 +228,10 @@ def _lose_tile(
         state.positions[player].append(square)
 
     state.log(f"{player} lost {tile} at {square}.")
-    notify_state_changed(state, websockets)
+    await notify_state_changed(state, websockets)
 
 
-def _select_response(
+async def _select_response(
     start: Square,
     action: Action,
     target: Square,
@@ -245,24 +244,22 @@ def _select_response(
     if action == Tile.HOOK:
         possible_responses.append(Response.BLOCK)
 
-    return choose_response(
+    return await choose_response(
         possible_responses,
         websocket,
         f"Opponent claimed {action}.  Choose your response.",
     )
 
 
-def _select_block_response(
-    target: Square, state: state, websocket: WebSocketServerProtocol
-) -> Response:
-    return choose_response(
+async def _select_block_response(websocket: WebSocketServerProtocol) -> Response:
+    return await choose_response(
         [Response.ACCEPT, Response.CHALLENGE],
         websocket,
         f"Opponent blocked with {Tile.HOOK}.  Choose your response.",
     )
 
 
-async def play_one_turn(
+async def _play_one_turn(
     state: State, websockets: Dict[Player, WebSocketServerProtocol]
 ) -> None:
     """
@@ -323,9 +320,7 @@ async def play_one_turn(
         # the response was to block
         # blocking means the target is Tile.HOOK in response to a HOOK
         # which the original player may challenge
-        block_response = await _select_block_response(
-            target, state, websockets[state.current_player]
-        )
+        block_response = await _select_block_response(websockets[state.current_player])
         target_tile = state.tile_at(target)
 
         if block_response == Response.ACCEPT:

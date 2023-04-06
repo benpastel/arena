@@ -27,11 +27,11 @@ async def handler(websocket: WebSocketServerProtocol) -> None:
     (north or south).  Future messages are handled inside the game task.
     """
     assert isinstance(websocket, WebSocketServerProtocol)
-    join_message = await websocket.recv()
-    join_event = json.loads(message)
-    assert join_event["type"] == "join"
+    message = await websocket.recv()
+    event = json.loads(message)
+    assert event["type"] == "join"
 
-    player = Player(join_event["player"])
+    player = Player(event["player"])
     assert player not in WEBSOCKETS
     WEBSOCKETS[player] = websocket
     print(f"{player} connected")
