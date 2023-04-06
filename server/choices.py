@@ -1,5 +1,5 @@
 import json
-from typing import List
+from typing import List, cast
 from weakref import WeakKeyDictionary
 
 from websockets.server import WebSocketServerProtocol
@@ -15,7 +15,7 @@ from arena.server.constants import Tile, Action, OtherAction, Square, Response
 # before our prompt.
 #
 # It's a WeakKeyDictionary so we don't keep a reference to old websockets.
-NEXT_CHOICE_ID: WeakKeyDictionary[WebSocketServerProtocol, int] = {}
+NEXT_CHOICE_ID: WeakKeyDictionary[WebSocketServerProtocol, int] = WeakKeyDictionary()
 
 
 async def _get_choice(websocket: WebSocketServerProtocol, prompt: str) -> dict:
@@ -51,8 +51,8 @@ async def _get_choice(websocket: WebSocketServerProtocol, prompt: str) -> dict:
 
 
 async def choose_action_or_square(
-    valid_actions: List[Action],
-    valid_squares: List[Square],
+    possible_actions: List[Action],
+    possible_squares: List[Square],
     websocket: WebSocketServerProtocol,
     prompt: str,
 ) -> Action | Square:
@@ -63,23 +63,23 @@ async def choose_action_or_square(
             prompt,
         )
         # try parsing as a square
-        square = Square(row=data.get("row", -1), column=data.get("column", -1))
-        if square in valid_squares:
+        square = Square(row=data.get("row", -1), col=data.get("column", -1))
+        if square in possible_squares:
             return square
 
         # try parsing as a Tile Action
         # TODO: make sure javascript keys match these
         try:
-            action = Tile(data["action"])
-            if action in valid_actions:
-                return action
+            tile = Tile(data["action"])
+            if tile in possible_actions:
+                return cast(Action, tile)
         except:
             pass
 
         # try parsing as an Other Action
         try:
             action = OtherAction(data["action"])
-            if action in valid_actions:
+            if action in possible_actions:
                 return action
         except:
             pass
@@ -89,8 +89,8 @@ async def choose_action_or_square(
 
 
 async def choose_square_or_hand(
-    valid_squares: List[Square],
-    valid_hand_tiles: List[Tile],
+    possible_squares: List[Square],
+    possible_hand_tiles: List[Tile],
     websocket: WebSocketServerProtocol,
     prompt: str,
 ) -> Square | Tile:
@@ -101,15 +101,15 @@ async def choose_square_or_hand(
             prompt,
         )
         # try parsing as a square
-        square = Square(row=data.get("row", -1), column=data.get("column", -1))
-        if square in valid_squares:
+        square = Square(row=data.get("row", -1), col=data.get("column", -1))
+        if square in possible_squares:
             return square
 
         # try parsing as a Tile
         # TODO: make sure javascript keys match these
         try:
             tile = Tile(data["tile"])
-            if tile in valid_hand_tiles:
+            if tile in possible_hand_tiles:
                 return tile
         except:
             pass

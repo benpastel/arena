@@ -4,8 +4,7 @@ import asyncio
 import json
 from typing import Dict
 
-import websockets
-from websockets.server import WebSocketServerProtocol
+from websockets.server import WebSocketServerProtocol, serve
 
 from arena.server.constants import Player
 from arena.server.game import play_one_game
@@ -53,7 +52,7 @@ async def handler(websocket: WebSocketServerProtocol) -> None:
 
 
 async def main() -> None:
-    async with websockets.serve(handler, "", 8001):
+    async with serve(handler, "", 8001):  # type: ignore
         await asyncio.Future()  # run forever
 
 

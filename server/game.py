@@ -1,5 +1,5 @@
 import asyncio
-from typing import Dict, Tuple, Optional
+from typing import Dict, Tuple, Optional, cast
 
 from websockets.server import WebSocketServerProtocol
 
@@ -83,9 +83,10 @@ async def _select_action(
         # only one choice
         start = possible_starts[0]
     else:
-        start = await choose_action_or_square(
+        choice = await choose_action_or_square(
             [], possible_starts, websocket, "Select a tile."
         )
+        start = cast(Square, choice)
 
     # choose in a loop
     # to allow changing out choice of start square & action
@@ -93,7 +94,7 @@ async def _select_action(
     while True:
         actions_and_targets = valid_targets(start, state)
         possible_actions = list(actions_and_targets.keys())
-        possible_targets = actions_and_targets.get(action, [])
+        possible_targets = actions_and_targets.get(cast(Action, action), [])
 
         # display the partial selection and valid actions/targets to the
         # current player
@@ -121,11 +122,11 @@ async def _select_action(
             # they chose a target
             # we should now have all 3 selected
             assert action is not None
-            return start, action, choice
+            return start, action, cast(Square, choice)
         elif choice in possible_actions:
             # they chose an action
             # go around again for the target or different action
-            action = choice
+            action = cast(Action, choice)
         else:
             # they chose a start square
             # go around again for the action or different start
@@ -166,12 +167,13 @@ async def _lose_tile(
 
     websocket = websockets[player]
     if len(possible_squares) > 1:
-        square = await choose_square_or_hand(
-            possible_squares=possible_squares,
-            possible_hand=[],
-            websocket=websocket,
-            prompt="Choose which tile to lose.",
+        choice = await choose_square_or_hand(
+            possible_squares,
+            [],
+            websocket,
+            "Choose which tile to lose.",
         )
+        square = cast(Square, choice)
 
     # choose replacement tile from hand in a loop
     # to enable choosing a different square to lose
@@ -191,12 +193,13 @@ async def _lose_tile(
 
         if len(possible_squares) == 1:
             # the player chooses the replacement tile
-            replacement = await choose_square_or_hand(
+            choice = await choose_square_or_hand(
                 possible_squares=[],
                 possible_hand_tiles=hand_tiles,
                 websocket=websocket,
                 prompt="Choose the replacement tile from your hand.",
             )
+            replacement = cast(Tile, choice)
             break
 
         # otherwise, the player chooses the replacement tile or changes the lost tile
@@ -207,13 +210,13 @@ async def _lose_tile(
             prompt="Choose the replacement tile from your hand, or a different tile to lose.",
         )
         if choice in hand_tiles:
-            replacement = choice
+            replacement = cast(Tile, choice)
             break
         else:
             # they changed the lost tile
             # go around the loop again to choose the replacement
             assert choice in possible_squares
-            square = choice
+            square = cast(Square, choice)
             continue
 
     # move the tile from alive to dead
@@ -285,7 +288,7 @@ async def _play_one_turn(
         return
 
     # show both players the proposed action
-    async with asyncio.TaskGroup as tg:
+    async with asyncio.TaskGroup() as tg:
         for websocket in websockets.values():
             coroutine = notify_selection_changed(
                 state.current_player, start, action, target, {}, websocket
@@ -307,15 +310,13 @@ async def _play_one_turn(
             # challenge fails
             # original action succeeds
             state.log(f"Challenge failed because {start} is a {start_tile}.")
-            await _lose_tile(state.other_player, state, websockets[state.other_player])
+            await _lose_tile(state.other_player, state, websockets)
             await _resolve_action(start, action, target, state, websockets)
         else:
             # challenge succeeds
             # original action fails
             state.log(f"Challenge succeeded because {start} is a {start_tile}.")
-            await _lose_tile(
-                state.current_player, state, websockets[state.current_player]
-            )
+            await _lose_tile(state.current_player, state, websockets)
     else:
         # the response was to block
         # blocking means the target is Tile.HOOK in response to a HOOK
@@ -332,15 +333,13 @@ async def _play_one_turn(
             # block succeeds
             # original action fails
             state.log(f"Challenge failed because {target} is a {Tile.HOOK}.")
-            await _lose_tile(
-                state.current_player, state, websockets[state.current_player]
-            )
+            await _lose_tile(state.current_player, state, websockets)
         else:
             # challenge succeeds
             # block fails
             # original action succeeds
             state.log(f"Challenge succeeded because {target} is a {target_tile}.")
-            await _lose_tile(state.other_player, state, websockets[state.other_player])
+            await _lose_tile(state.other_player, state, websockets)
             await _resolve_action(start, action, target, state, websockets)
 
 
@@ -363,16 +362,16 @@ async def play_one_game(
     state.log("log line 1")
     state.log("log line 2")
     print("Sending initial state to both players.")
-    notify_state_changed(state, websockets)
+    await notify_state_changed(state, websockets)
 
     while state.game_result() == GameResult.ONGOING:
         state.check_consistency()
 
-        _play_one_turn(state, websockets)
+        await _play_one_turn(state, websockets)
 
         state.next_turn()
 
-        notify_state_changed(state, websockets)
+        await notify_state_changed(state, websockets)
 
     # later: prompt for a new game with starting player rotated
     # also keep a running total score for longer matches
