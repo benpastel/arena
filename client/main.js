@@ -12,7 +12,6 @@ import {
 } from "./renderState.js";
 
 import {
-  renderPrompt,
   highlightOkActions,
   highlightOkTargets,
   markChosenStart,
@@ -24,16 +23,17 @@ import {
 // we include it in all outgoing changes so that the server can ignore anything stale
 let CHOICE_ID = 0;
 
-function joinGame(websocket) {
+function joinGame(prompt, websocket) {
   websocket.addEventListener("open", () => {
     // send an "join" event informing the server which player we are
     // based on hardcoded url ?player=north or ?player=south
     // TODO: move to path
     const params = new URLSearchParams(window.location.search);
-    const player = params["player"];
+    const player = params.get("player");
     if (! (player === NORTH_PLAYER || player === SOUTH_PLAYER)) {
       const msg = `Please set the url param ?player=${NORTH_PLAYER} or ?player=${SOUTH_PLAYER}`;
-      alert(msg);
+      prompt.innerHTML = msg;
+      console.log(params);
       throw new Error(msg);
     }
     const event = {
@@ -53,14 +53,14 @@ window.addEventListener("DOMContentLoaded", () => {
   createActionPanel(actionPanel);
 
   const prompt = document.querySelector(".prompt");
-  renderPrompt(prompt, "Waiting for server.");
+  prompt.innerHTML = "Waiting for other player to join.";
 
   // TODO: actually only need our player's hand here
   const hand = document.querySelector(".hand");
 
   // Open the WebSocket connection and register event handlers.
   const websocket = new WebSocket("ws://localhost:8001/");
-  joinGame(websocket);
+  joinGame(prompt, websocket);
 
   sendSelection(board, actionPanel, hand, websocket);
 
