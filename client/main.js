@@ -117,7 +117,7 @@ function receiveChoices(board, prompt, actionPanel, websocket) {
   websocket.addEventListener("message", ({ data }) => {
     const event = JSON.parse(data);
 
-    if (event.type === "ACTION_CHOICE_CHANGE") {
+    if (event.type === "SELECTION_CHANGE") {
       const player = event["player"];
       const start = event["start"];
       const action = event["action"];
@@ -148,7 +148,7 @@ function receiveMoves(board, actionPanel, doc, websocket) {
   websocket.addEventListener("message", ({ data }) => {
     const event = JSON.parse(data);
 
-    if (event.type === "GAME_STATE_CHANGE") {
+    if (event.type === "STATE_CHANGE") {
       const player_view = event["playerView"];
 
       renderBoard(board, player_view);

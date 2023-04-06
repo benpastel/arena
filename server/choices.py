@@ -62,7 +62,6 @@ async def choose_action_or_square(
     prompt: str
 ) -> Action | Square:
     # loop until we get a valid action or square
-    # TODO: send the list of possibilities to the player to highlight instead of current method?
     while True:
         data = await _get_choice(
             websocket
@@ -104,7 +103,6 @@ async def choose_square_or_hand(
     prompt: str
 ) -> Square | Tile:
     # loop until we get a valid square or hand tile
-    # TODO: send the list of possibilities to the player to highlight
     while True:
         data = await _get_choice(
             websocket
