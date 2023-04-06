@@ -1,104 +1,11 @@
 #!/usr/bin/env python3
 
 import asyncio
-import json
-from enum import Enum
-from typing import List, Dict, Any
 
 import websockets
 from websockets.server import WebSocketServerProtocol
 
-from arena.server.state import new_state, Player
-from arena.server.actions import valid_targets
-from arena.server.terminal_ui import auto_place_tiles
-
-# from arena.server.game import _resolve_action
-from arena.server.state import Action, OtherAction, Tile, Square
-
-from arena.server.action_chooser import ActionChooser
-
-
-def _parse_action(action_string: str) -> Action:
-    try:
-        return OtherAction(action_string)
-    except:
-        pass
-
-    try:
-        return Tile(action_string)  # type: ignore
-    except:
-        pass
-
-    raise ValueError(f"Unknown {action_string=}")
-
-
-class InEventType(str, Enum):
-    # values must match the JS event type strings
-    CHOOSE_START = "CHOOSE_START"
-    CHOOSE_ACTION = "CHOOSE_ACTION"
-    CHOOSE_TARGET = "CHOOSE_TARGET"
-
-
-class OutEventType(str, Enum):
-    # values must match the JS event type strings
-
-    # change in the persistent game state (tiles on board, tiles in hand, mana, etc)
-    GAME_STATE_CHANGE = "GAME_STATE_CHANGE"
-
-    # change in the player's selection (start, action, target)
-    TURN_STATE_CHANGE = "TURN_STATE_CHANGE"
-
-
-
-# # currently valid actions => targets
-# # based on both the game state and the actionChooser state
-# action_targets: Dict[Action, List[Square]] = {}
-
-# async for message in websocket:
-#     # TODO
-#     #    - check it is from the correct player
-#     #    - check it is valid
-#     #    - if so, make move on board & send "board updated!" message to player
-#     #   worry about challenges & responses later
-#     event = json.loads(message)
-#     print(f"Received {event=}")
-#     in_event_type = InEventType(event["type"])
-
-#     if in_event_type == InEventType.CHOOSE_START:
-#         start = Square.from_list(event["start"])
-#         changed = actionChooser.tryChooseStart(
-#             start, state.positions[state.current_player]
-#         )
-#         if changed:
-#             action_targets = valid_targets(start, state)
-
-#     elif in_event_type == InEventType.CHOOSE_ACTION:
-#         action = _parse_action(event["action"])
-#         changed = actionChooser.tryChooseAction(action, action_targets)
-
-#     elif in_event_type == InEventType.CHOOSE_TARGET:
-#         target = Square.from_list(event["target"])
-#         changed = actionChooser.tryChooseTarget(target, action_targets)
-#         if changed:
-#             action_targets = {}
-
-#     else:
-#         assert False
-
-#     if changed:
-#         choice_event = {
-#             "type": OutEventType.TURN_STATE_CHANGE.value,
-#             "player": state.current_player,
-#             "start": actionChooser.start,
-#             "action": actionChooser.action,
-#             "target": actionChooser.target,
-#             "actionTargets": action_targets,
-#             "nextChoice": actionChooser.next_choice,
-#         }
-#         await websocket.send(json.dumps(choice_event))
-
-# print("Game over")
-
+from arena.server.game import play_one_game
 
 
 # For now we support at most one game at a time.

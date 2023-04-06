@@ -3,7 +3,7 @@ from weakref import WeakKeyDictionary
 
 from websockets.server import WebSocketServerProtocol
 
-from arena.server.state import Tile, Action, OtherAction, Square
+from arena.server.constants import Tile, Action, OtherAction, Square, Response
 
 # Generally incoming messages are invalid unless we've prompted for them.
 # websockets keeps incoming messages in a FIFO queue, but generally all messages
@@ -62,7 +62,7 @@ async def choose_action_or_square(
     prompt: str
 ) -> Action | Square:
     # loop until we get a valid action or square
-    # TODO: send the list of possibilities to the player to highlight
+    # TODO: send the list of possibilities to the player to highlight instead of current method?
     while True:
         data = await _get_choice(
             websocket

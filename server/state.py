@@ -3,6 +3,15 @@ from random import shuffle
 
 from pydantic import BaseModel
 
+from arena.server.constants import (
+    Player,
+    Square,
+    GameResult,
+    Action,
+    Tile,
+    OtherAction,
+    Response,
+)
 
 
 class State(BaseModel):

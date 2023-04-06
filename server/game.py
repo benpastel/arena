@@ -15,6 +15,7 @@ from arena.server.constants import (
     GameResult,
     Action,
     Tile,
+    OtherAction,
     Response,
     START_POSITIONS,
 )
@@ -23,9 +24,10 @@ from arena.server.choices import (
     choose_square_or_hand,
     choose_response,
 )
+from arena.server.notify import notify_state_changed, notify_selection_changed
 
 
-def auto_place_tiles(player: Player, state: State) -> None:
+def _auto_place_tiles(player: Player, state: State) -> None:
     """Arbitrarily place the starting tiles.  For testing."""
     # TODO consider making this the actual rules and do it when state is initialized
     # also randomize the columns (maybe with rotational symmetry?)
@@ -103,6 +105,17 @@ async def _select_action(
         actions_and_targets = valid_targets(start, state)
         possible_actions = list(actions_and_targets.keys())
 
+        # display the partial selection and valid actions/targets to the
+        # current player
+        notify_selection_changed(
+            state.current_player,
+            start,
+            action,
+            None,
+            actions_and_targets,
+            websocket
+        )
+
         if not action and len(possible_starts) == 1:
             possible_squares = []
             prompt = "Select an action."
@@ -136,9 +149,6 @@ async def _select_action(
             # go around again for the action or different start
             assert choice in possible_starts
             action = None
-
-        # TODO: send a notification to the choosing player
-        # so we can display their partial choices so far
 
 
 def _lose_tile(
@@ -224,9 +234,6 @@ def _lose_tile(
             square = choice
             continue
 
-    # we've successfully chosen a square to lose & replacement tile if applicable
-    state.log(f"{player} lost {tile} at {square}.")
-
     # move the tile from alive to dead
     state.tiles_on_board[player].remove(tile)
     state.positions[player].remove(square)
@@ -238,6 +245,9 @@ def _lose_tile(
         state.tiles_on_board[player].append(replacement)
         state.positions[player].append(square)
 
+    state.log(f"{player} lost {tile} at {square}.")
+    notify_state_changed(state, websockets)
+
 
 def _select_response(
     start: Square,
@@ -247,9 +257,6 @@ def _select_response(
     websocket: WebSocketServerProtocol
 ) -> Response:
     assert action in Tile
-
-    # TODO push proposed (start, action, target) to one or both players
-    # to display on their board
 
     possible_responses = [Response.ACCEPT, Response.CHALLENGE]
     if action == Tile.HOOK:
@@ -298,8 +305,20 @@ async def play_one_turn(
         await _resolve_action(start, action, target, state, websockets)
         return
 
-    # show other player the proposed action
-    # ask whether they accept, challenge, or block as appropriate
+    # show both players the proposed action
+    async with asyncio.TaskGroup as tg:
+        for websocket in websockets.values():
+            coroutine = notify_selection_changed(
+                state.current_player,
+                start,
+                action,
+                target,
+                {},
+                websocket
+            )
+            tg.create_task(coroutine)
+
+    # ask opponent to accept, challenge, or block as appropriate
     response = await _select_response(start, action, target, state, websockets[state.other_player])
 
     if response == Response.ACCEPT:
@@ -359,31 +378,21 @@ async def play_one_game(
     # start with a hardcoded board for now
     # later random + place_tiles
     state = new_state()
-    auto_place_tiles(Player.N, state)
-    auto_place_tiles(Player.S, state)
+    _auto_place_tiles(Player.N, state)
+    _auto_place_tiles(Player.S, state)
     state.log("log line 1")
     state.log("log line 2")
     print("Sending initial state to both players.")
+    notify_state_changed(state, websockets)
 
     while state.game_result() == GameResult.ONGOING:
         state.check_consistency()
 
-        # send the state to each player
-        # TODO: later:
-        #  - also pass valid_actions for highlighting
-        #  - also dispaly turn count
-        async with asyncio.TaskGroup() as tg:
-            for player in Player:
-                player_view = state.player_view(player)
-                state_event = {
-                    "type": OutEventType.GAME_STATE_CHANGE.value,
-                    "playerView": player_view.dict(),
-                }
-                message = json.dumps(state_event)
-                tg.create_task(websocket.send(message))
-
         _play_one_turn(state, websockets)
+
         state.next_turn()
+
+        notify_state_changed(state, websockets)
 
     # later: prompt for a new game with starting player rotated
     # also keep a running total score for longer matches

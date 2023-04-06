@@ -149,3 +149,12 @@ class Response(str, Enum):
     CHALLENGE = "CHALLENGE"
     BLOCK = "BLOCK"
 
+
+class OutEventType(str, Enum):
+    # TODO explain
+    # must match javascript
+
+    STATE_CHANGE = "STATE_CHANGE"
+
+    SELECTION_CHANGE = "SELECTION_CHANGE"
+
