@@ -157,4 +157,3 @@ class OutEventType(str, Enum):
     STATE_CHANGE = "STATE_CHANGE"
 
     SELECTION_CHANGE = "SELECTION_CHANGE"
-

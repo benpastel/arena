@@ -49,7 +49,6 @@ async def handler(websocket: WebSocketServerProtocol) -> None:
         print(f"{player} disconnected")
 
 
-
 async def main() -> None:
     async with websockets.serve(handler, "", 8001):
         await asyncio.Future()  # run forever

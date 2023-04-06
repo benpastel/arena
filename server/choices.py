@@ -17,10 +17,7 @@ from arena.server.constants import Tile, Action, OtherAction, Square, Response
 NEXT_CHOICE_ID: WeakKeyDictionary[WebSocketServerProtocol, int] = {}
 
 
-async def _get_choice(
-    websocket: WebSocketServerProtocol,
-    prompt: str
-) -> dict
+async def _get_choice(websocket: WebSocketServerProtocol, prompt: str) -> dict:
     """
     Prompts the player for a choice
     and returns the data from their response
@@ -34,11 +31,7 @@ async def _get_choice(
 
     # prompt the player for this choice
     # TODO share "type"=="prompt" with other prompts like "waiting for opponent to X"
-    prompt_event = {
-        "type": "prompt",
-        "choice_id": expected_choice_id,
-        "prompt": prompt
-    }
+    prompt_event = {"type": "prompt", "choice_id": expected_choice_id, "prompt": prompt}
     await websocket.send(json.dumps(prompt_event))
 
     while True:
@@ -51,27 +44,25 @@ async def _get_choice(
         elif choice_id < expected_choice_id:
             print(f"Ignored {choice_id=}; {expected_choice_id=}")
         else:
-            assert False, f"{choice_id=} should never be greater than {expected_choice_id=}"
-
+            assert (
+                False
+            ), f"{choice_id=} should never be greater than {expected_choice_id=}"
 
 
 async def choose_action_or_square(
     valid_actions: List[Action],
     valid_squares: List[Square],
     websocket: WebSocketServerProtocol,
-    prompt: str
+    prompt: str,
 ) -> Action | Square:
     # loop until we get a valid action or square
     while True:
         data = await _get_choice(
-            websocket
+            websocket,
             prompt,
         )
         # try parsing as a square
-        square = Square(
-            row = data.get("row", -1),
-            column = data.get("column", -1)
-        )
+        square = Square(row=data.get("row", -1), column=data.get("column", -1))
         if square in valid_squares:
             return square
 
@@ -100,19 +91,16 @@ async def choose_square_or_hand(
     valid_squares: List[Square],
     valid_hand_tiles: List[Tile],
     websocket: WebSocketServerProtocol,
-    prompt: str
+    prompt: str,
 ) -> Square | Tile:
     # loop until we get a valid square or hand tile
     while True:
         data = await _get_choice(
-            websocket
+            websocket,
             prompt,
         )
         # try parsing as a square
-        square = Square(
-            row = data.get("row", -1),
-            column = data.get("column", -1)
-        )
+        square = Square(row=data.get("row", -1), column=data.get("column", -1))
         if square in valid_squares:
             return square
 
@@ -128,15 +116,14 @@ async def choose_square_or_hand(
         # it's not valid; get a new choice
         print(f"Ignoring invalid choice {data=}")
 
+
 async def choose_response(
-    possible_responses: List[Response],
-    websocket: WebSocketServerProtocol,
-    prompt: str
+    possible_responses: List[Response], websocket: WebSocketServerProtocol, prompt: str
 ) -> Response:
     # loop until we get a valid response
     while True:
         data = await _get_choice(
-            websocket
+            websocket,
             prompt,
         )
         # try parsing as a response

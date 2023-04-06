@@ -3,19 +3,13 @@ import asyncio
 from websockets.server import WebSocketServerProtocol
 
 from arena.server.state import State
-from arena.server.constants import (
-    Player,
-    Square,
-    Action,
-    OutEventType
-)
+from arena.server.constants import Player, Square, Action, OutEventType
 
 
 async def notify_state_changed(
-    state: State,
-    websockets: Dict[Player, WebSocketServerProtocol]
+    state: State, websockets: Dict[Player, WebSocketServerProtocol]
 ) -> None:
-    """ Notify both players that the state changed. """
+    """Notify both players that the state changed."""
     async with asyncio.TaskGroup() as tg:
         for player, websocket in websockets.items():
             event = {
