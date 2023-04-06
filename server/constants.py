@@ -140,3 +140,12 @@ class GameResult(str, Enum):
 
     # a draw is possible if both players are simultaneously killed by a chromatic grenade
     DRAW = "Draw"
+
+
+class Response(str, Enum):
+    # TODO explain
+    # these must match javascript
+    ACCEPT = "ACCEPT"
+    CHALLENGE = "CHALLENGE"
+    BLOCK = "BLOCK"
+

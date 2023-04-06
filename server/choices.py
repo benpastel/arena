@@ -27,7 +27,8 @@ async def _get_choice(
     ignoring all other messages
     """
 
-    # get an incrementing choice id so we can ignore old messages
+    # increment choice id
+    # we use this to ignore old messages
     expected_choice_id = NEXT_CHOICE_ID.get(websocket, 0)
     NEXT_CHOICE_ID[websocket] = expected_choice_id + 1
 
@@ -60,7 +61,7 @@ async def choose_action_or_square(
     websocket: WebSocketServerProtocol,
     prompt: str
 ) -> Action | Square:
-    # loop until we get a valid choice
+    # loop until we get a valid action or square
     # TODO: send the list of possibilities to the player to highlight
     while True:
         data = await _get_choice(
@@ -102,7 +103,7 @@ async def choose_square_or_hand(
     websocket: WebSocketServerProtocol,
     prompt: str
 ) -> Square | Tile:
-    # loop until we get a valid choice
+    # loop until we get a valid square or hand tile
     # TODO: send the list of possibilities to the player to highlight
     while True:
         data = await _get_choice(
@@ -129,3 +130,25 @@ async def choose_square_or_hand(
         # it's not valid; get a new choice
         print(f"Ignoring invalid choice {data=}")
 
+async def choose_response(
+    possible_responses: List[Response],
+    websocket: WebSocketServerProtocol,
+    prompt: str
+) -> Response:
+    # loop until we get a valid response
+    while True:
+        data = await _get_choice(
+            websocket
+            prompt,
+        )
+        # try parsing as a response
+        # TODO: make sure javascript fields match
+        try:
+            response = Response(data["response"])
+            if response in possible_responses:
+                return response
+        except:
+            pass
+
+        # it's not valid; get a new choice
+        print(f"Ignoring invalid choice {data=}")

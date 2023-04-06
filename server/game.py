@@ -8,8 +8,21 @@ from websockets.server import WebSocketServerProtocol
 
 from arena.server.state import new_state, Player
 from arena.server.actions import valid_targets, take_action
-from arena.server.state import Action, OtherAction, Tile, Square
-from arena.server.choices import choose_action_or_square, choose_square_or_hand
+from arena.server.state import State
+from arena.server.constants import (
+    Player,
+    Square,
+    GameResult,
+    Action,
+    Tile,
+    Response,
+    START_POSITIONS,
+)
+from arena.server.choices import (
+    choose_action_or_square,
+    choose_square_or_hand,
+    choose_response,
+)
 
 
 def auto_place_tiles(player: Player, state: State) -> None:
@@ -24,13 +37,6 @@ def auto_place_tiles(player: Player, state: State) -> None:
         state.tiles_on_board[player].append(tile)
         state.positions[player].append(target)
 
-
-class Response(str, Enum):
-    # TODO explain
-    # these must match javascript
-    ACCEPT = "ACCEPT"
-    CHALLENGE = "CHALLENGE"
-    BLOCK = "BLOCK"
 
 
 def _resolve_action(
@@ -238,48 +244,34 @@ def _select_response(
     action: Action,
     target: Square,
     state: State,
+    websocket: WebSocketServerProtocol
 ) -> Response:
     assert action in Tile
 
-    msg = f"{start} claims to be {action} and "
-    match action:
-        case Tile.FLOWER | Tile.BIRD:
-            msg += f"wants to move to {target}."
-        case Tile.HOOK:
-            msg += f"wants to hook {target}."
-        case Tile.GRENADES:
-            msg += f"wants to throw a grenade at {target}."
-        case Tile.KNIVES:
-            msg += f"wants to stab {target}."
-        case _:
-            assert False
-    state.log(msg)
-    # TODO push the log update?
+    # TODO push proposed (start, action, target) to one or both players
+    # to display on their board
 
-    # TODO left off here
-
-    options = [Response.ACCEPT, Response.CHALLENGE]
+    possible_responses = [Response.ACCEPT, Response.CHALLENGE]
     if action == Tile.HOOK:
-        options.append(Response.BLOCK)
+        possible_responses.append(Response.BLOCK)
 
-    response = choose_option(
-        options,
-        state.player_view(state.other_player),
-        "Choose your response.",
+    return choose_response(
+        possible_responses,
+        websocket,
+        f"Opponent claimed {action}.  Choose your response.",
     )
-    return response
 
 
-def _select_block_response(target: Square, state: State) -> Response:
-    # TODO left off here
-    state.log(f"{target} claims to be {Tile.HOOK} and wants to block.")
-
-    response = choose_option(
+def _select_block_response(
+    target: Square,
+    state: state,
+    websocket: WebSocketServerProtocol
+) -> Response:
+    return choose_response(
         [Response.ACCEPT, Response.CHALLENGE],
-        state.player_view(state.current_player),
-        "Choose your response.",
+        websocket,
+        f"Opponent blocked with {Tile.HOOK}.  Choose your response.",
     )
-    return response
 
 
 async def play_one_turn(
