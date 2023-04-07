@@ -59,7 +59,6 @@ body {
   align-items: center;
   justify-content: space-evenly;
   vertical-align: middle;
-  box-sizing: border-box; /* ? */
 
   color: grey;
   font-weight: light;
@@ -70,9 +69,10 @@ body {
 .outlined-button {
   font-size: 200%;
   border-radius: 8%;
-  border: 1px solid;
+  border: 1px solid grey;
   height: 6vmin;
   width: 5vmin;
+  /* TODO the icons don't look vertically centered in the box */
 }
 .action-separator {
   border-left: 1px solid;
