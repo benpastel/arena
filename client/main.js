@@ -92,7 +92,7 @@ function sendSelection(board, actionPanel, hand, websocket) {
     }
     websocket.send(
       JSON.stringify({
-        choice_id: CHOICE_ID,
+        choiceId: CHOICE_ID,
         data: {row, column}
       })
     );

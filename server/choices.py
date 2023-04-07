@@ -44,6 +44,9 @@ async def _get_choice(prompt: str, websocket: WebSocketServerProtocol) -> dict:
     while True:
         message = await websocket.recv()
         event = json.loads(message)
+        if "choiceId" not in event:
+            print(f"Ignored {event=}")
+            continue
         choice_id = int(event["choiceId"])
 
         if expected_choice_id == choice_id:
