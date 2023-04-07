@@ -14,11 +14,13 @@ from arena.server.constants import (
     OtherAction,
     Response,
     START_POSITIONS,
+    other_player,
 )
 from arena.server.choices import (
     choose_action_or_square,
     choose_square_or_hand,
     choose_response,
+    send_prompt,
 )
 from arena.server.notify import notify_state_changed, notify_selection_changed
 
@@ -67,7 +69,7 @@ async def _resolve_action(
 
 
 async def _select_action(
-    state: State, websocket: WebSocketServerProtocol
+    state: State, websockets: Dict[Player, WebSocketServerProtocol]
 ) -> Tuple[Square, Action, Square]:
     """
     Prompt the player to choose the action for their turn.
@@ -77,6 +79,11 @@ async def _select_action(
         - the action
         - target square of the action
     """
+    await send_prompt(
+        "Waiting for opponent to select their action.", websockets[state.other_player]
+    )
+    websocket = websockets[state.current_player]
+
     possible_starts = state.positions[state.current_player]
     assert 1 <= len(possible_starts) <= 2
     if len(possible_starts) == 1:
@@ -84,7 +91,7 @@ async def _select_action(
         start = possible_starts[0]
     else:
         choice = await choose_action_or_square(
-            [], possible_starts, websocket, "Select a tile."
+            [], possible_starts, "Select a tile.", websocket
         )
         start = cast(Square, choice)
 
@@ -116,7 +123,7 @@ async def _select_action(
             prompt = "Select a target, or a different action or tile."
 
         choice = await choose_action_or_square(
-            possible_actions, possible_squares, websocket, prompt
+            possible_actions, possible_squares, prompt, websocket
         )
         if choice in possible_targets:
             # they chose a target
@@ -165,13 +172,19 @@ async def _lose_tile(
         player = player_or_square
         possible_squares = state.positions[player]
 
+    if len(possible_squares) > 1 or len(state.tiles_in_hand[player]) > 0:
+        # current player will need to choose something, so set a waiting prompt for opponent
+        await send_prompt(
+            "Waiting for opponent to lose tile.", websockets[other_player(player)]
+        )
+
     websocket = websockets[player]
     if len(possible_squares) > 1:
         choice = await choose_square_or_hand(
             possible_squares,
             [],
-            websocket,
             "Choose which tile to lose.",
+            websocket,
         )
         square = cast(Square, choice)
 
@@ -196,8 +209,8 @@ async def _lose_tile(
             choice = await choose_square_or_hand(
                 possible_squares=[],
                 possible_hand_tiles=hand_tiles,
-                websocket=websocket,
                 prompt="Choose the replacement tile from your hand.",
+                websocket=websocket,
             )
             replacement = cast(Tile, choice)
             break
@@ -206,8 +219,8 @@ async def _lose_tile(
         choice = await choose_square_or_hand(
             possible_squares=possible_squares,
             possible_hand_tiles=hand_tiles,
-            websocket=websocket,
             prompt="Choose the replacement tile from your hand, or a different tile to lose.",
+            websocket=websocket,
         )
         if choice in hand_tiles:
             replacement = cast(Tile, choice)
@@ -239,7 +252,7 @@ async def _select_response(
     action: Action,
     target: Square,
     state: State,
-    websocket: WebSocketServerProtocol,
+    websockets: Dict[Player, WebSocketServerProtocol],
 ) -> Response:
     assert action in Tile
 
@@ -247,18 +260,28 @@ async def _select_response(
     if action == Tile.HOOK:
         possible_responses.append(Response.BLOCK)
 
+    await send_prompt(
+        "Waiting for opponent to respond.", websockets[state.current_player]
+    )
+
     return await choose_response(
         possible_responses,
-        websocket,
         f"Opponent claimed {action}.  Choose your response.",
+        websockets[state.other_player],
     )
 
 
-async def _select_block_response(websocket: WebSocketServerProtocol) -> Response:
+async def _select_block_response(
+    state: State, websockets: Dict[Player, WebSocketServerProtocol]
+) -> Response:
+    await send_prompt(
+        "Waiting for opponent to respond to block.", websockets[state.other_player]
+    )
+
     return await choose_response(
         [Response.ACCEPT, Response.CHALLENGE],
-        websocket,
         f"Opponent blocked with {Tile.HOOK}.  Choose your response.",
+        websockets[state.current_player],
     )
 
 
@@ -266,19 +289,13 @@ async def _play_one_turn(
     state: State, websockets: Dict[Player, WebSocketServerProtocol]
 ) -> None:
     """
-    Play one turn, prompting both players as needed.
+    Play one turn, prompting both players for choices as needed.
 
-    Updates `state` with the result of the turn, but doesn't transition to the next turn
+    Updates `state` with the result of the turn. Doesn't transition to the next turn
     or display that state to the players.
-
-    TODO:
-        - when to set prompt  on the other player to "waiting for opponent to X"?
     """
     # current player chooses their move
-    start, action, target = await _select_action(
-        state, websockets[state.current_player]
-    )
-
+    start, action, target = await _select_action(state, websockets)
     if not action in Tile:
         assert action in OtherAction
         # the player didn't claim a tile
@@ -296,9 +313,7 @@ async def _play_one_turn(
             tg.create_task(coroutine)
 
     # ask opponent to accept, challenge, or block as appropriate
-    response = await _select_response(
-        start, action, target, state, websockets[state.other_player]
-    )
+    response = await _select_response(start, action, target, state, websockets)
 
     if response == Response.ACCEPT:
         # other player allows the action to proceed
@@ -321,7 +336,7 @@ async def _play_one_turn(
         # the response was to block
         # blocking means the target is Tile.HOOK in response to a HOOK
         # which the original player may challenge
-        block_response = await _select_block_response(websockets[state.current_player])
+        block_response = await _select_block_response(state, websockets)
         target_tile = state.tile_at(target)
 
         if block_response == Response.ACCEPT:
@@ -359,8 +374,7 @@ async def play_one_game(
     state = new_state()
     _auto_place_tiles(Player.N, state)
     _auto_place_tiles(Player.S, state)
-    state.log("log line 1")
-    state.log("log line 2")
+    state.log("New game.")
     print("Sending initial state to both players.")
     await notify_state_changed(state, websockets)
 

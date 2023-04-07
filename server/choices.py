@@ -18,7 +18,15 @@ from arena.server.constants import Tile, Action, OtherAction, Square, Response
 NEXT_CHOICE_ID: WeakKeyDictionary[WebSocketServerProtocol, int] = WeakKeyDictionary()
 
 
-async def _get_choice(websocket: WebSocketServerProtocol, prompt: str) -> dict:
+async def send_prompt(
+    prompt: str, websocket: WebSocketServerProtocol, choice_id: int = 0
+) -> None:
+    # TODO explain choice_id
+    event = {"type": "PROMPT", "choiceId": choice_id, "prompt": prompt}
+    await websocket.send(json.dumps(event))
+
+
+async def _get_choice(prompt: str, websocket: WebSocketServerProtocol) -> dict:
     """
     Prompts the player for a choice
     and returns the data from their response
@@ -29,12 +37,10 @@ async def _get_choice(websocket: WebSocketServerProtocol, prompt: str) -> dict:
     # we use this to ignore old messages
     expected_choice_id = NEXT_CHOICE_ID.get(websocket, 0)
     NEXT_CHOICE_ID[websocket] = expected_choice_id + 1
+    await send_prompt(prompt, websocket, expected_choice_id)
 
-    # prompt the player for this choice
-    # TODO share "type"=="prompt" with other prompts like "waiting for opponent to X"
-    prompt_event = {"type": "PROMPT", "choiceId": expected_choice_id, "prompt": prompt}
-    await websocket.send(json.dumps(prompt_event))
-
+    # the websocket queue may have accumulated stale messages since we last recieved
+    # wait in a loop to throw away any stale messages
     while True:
         message = await websocket.recv()
         event = json.loads(message)
@@ -53,14 +59,14 @@ async def _get_choice(websocket: WebSocketServerProtocol, prompt: str) -> dict:
 async def choose_action_or_square(
     possible_actions: List[Action],
     possible_squares: List[Square],
-    websocket: WebSocketServerProtocol,
     prompt: str,
+    websocket: WebSocketServerProtocol,
 ) -> Action | Square:
     # loop until we get a valid action or square
     while True:
         data = await _get_choice(
-            websocket,
             prompt,
+            websocket,
         )
         # try parsing as a square
         square = Square(row=data.get("row", -1), col=data.get("column", -1))
@@ -90,14 +96,14 @@ async def choose_action_or_square(
 async def choose_square_or_hand(
     possible_squares: List[Square],
     possible_hand_tiles: List[Tile],
-    websocket: WebSocketServerProtocol,
     prompt: str,
+    websocket: WebSocketServerProtocol,
 ) -> Square | Tile:
     # loop until we get a valid square or hand tile
     while True:
         data = await _get_choice(
-            websocket,
             prompt,
+            websocket,
         )
         # try parsing as a square
         square = Square(row=data.get("row", -1), col=data.get("column", -1))
@@ -117,13 +123,13 @@ async def choose_square_or_hand(
 
 
 async def choose_response(
-    possible_responses: List[Response], websocket: WebSocketServerProtocol, prompt: str
+    possible_responses: List[Response], prompt: str, websocket: WebSocketServerProtocol
 ) -> Response:
     # loop until we get a valid response
     while True:
         data = await _get_choice(
-            websocket,
             prompt,
+            websocket,
         )
         # try parsing as a response
         # TODO: make sure javascript fields match

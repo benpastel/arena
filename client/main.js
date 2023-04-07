@@ -20,7 +20,9 @@ import {
 } from "./renderChoice.js";
 
 // This counter identifies the most recent input request we've received from the server
-// we include it in all outgoing changes so that the server can ignore anything stale
+// we include it in all outgoing changes so that the server can ignore anything stale.
+//
+// 0 means we aren't waiting for any input.
 let CHOICE_ID = 0;
 
 function joinGame(prompt, websocket) {
