@@ -142,10 +142,9 @@ function receiveSelection(board, actionPanel, websocket) {
       const target = event["target"];
       const actionTargets = event["actionTargets"];
 
-      // TODO use `player` to get correct coloring on opponent's turn
       markChosenStart(board, start);
       markChosenAction(actionPanel, action);
-      markChosenTarget(board, target);
+      markChosenTarget(board, target, player);
 
       highlightOkActions(actionPanel, actionTargets);
       if (action && actionTargets[action]) {

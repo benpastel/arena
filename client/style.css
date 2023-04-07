@@ -136,3 +136,11 @@ body {
 .south {
   color: blue
 }
+
+.target-north.chosen-target::before {
+  color: red
+}
+
+.target-south.chosen-target::before {
+  color: blue
+}
