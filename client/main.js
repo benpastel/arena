@@ -99,14 +99,14 @@ function sendSelection(board, actionPanel, hand, websocket) {
   });
 
   actionPanel.addEventListener("click", ({ target }) => {
-    const action = target.dataset.actionName;
+    const action = target.dataset.name;
     if (action === undefined) {
       return;
     }
     websocket.send(
       JSON.stringify({
         choiceId: CHOICE_ID,
-        data: {action}
+        data: {action} // TODO rename to include responses
       })
     );
   });

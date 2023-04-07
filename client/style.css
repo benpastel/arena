@@ -56,12 +56,27 @@ body {
 
   display: flex;
   flex-direction: row;
-  font-size: 300%;
   align-items: center;
   justify-content: space-evenly;
+  vertical-align: middle;
+  box-sizing: border-box; /* ? */
 
   color: grey;
   font-weight: light;
+}
+.tile-button {
+  font-size: 310%;
+}
+.outlined-button {
+  font-size: 200%;
+  border-radius: 8%;
+  border: 1px solid;
+  height: 6vmin;
+  width: 5vmin;
+}
+.action-separator {
+  border-left: 1px solid;
+  height: 100%;
 }
 .valid-action {
   color: black;

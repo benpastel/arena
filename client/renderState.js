@@ -8,16 +8,22 @@ const NORTH_PLAYER = "north";
 const SOUTH_PLAYER = "south";
 const PLAYERS = [NORTH_PLAYER, SOUTH_PLAYER];
 
-// TODO get rows, columns, actions from server with game start event?
-const ACTIONS = [
-  "move",
-  "smite",
-  "🀥",
-  "🀐",
-  "🀍",
-  "🀛",
-  "🀒",
-];
+// TODO: set all icons only in javascript; use text always in python
+const TILES = {
+  "🀥": "🀥",
+  "🀐": "🀐",
+  "🀛": "🀛",
+  "🀒": "🀒",
+  "🀍": "🀍",
+};
+const OTHER_ACTIONS = {
+  "move": "↕",
+  "smite": "⚡",
+};
+const RESPONSES = {
+  "accept": "👍",
+  "challenge": "🚩",
+};
 
 
 function createBoard(board) {
@@ -39,10 +45,32 @@ function createBoard(board) {
 }
 
 function createActionPanel(action_panel) {
-  for (const tile of ACTIONS) {
-    const element = document.createElement("div")
-    element.dataset.actionName = tile;
-    element.innerHTML = tile;
+
+  for (const name in OTHER_ACTIONS) {
+    const element = document.createElement("div");
+    element.innerHTML = OTHER_ACTIONS[name];
+    element.dataset.name = name;
+    element.classList.add("outlined-button");
+    action_panel.append(element);
+  }
+  const sep1 = document.createElement('div');
+  sep1.classList.add("action-separator");
+  action_panel.append(sep1);
+  for (const name in TILES) {
+    const element = document.createElement("div");
+    element.innerHTML = TILES[name];
+    element.dataset.name = name;
+    element.classList.add("tile-button");
+    action_panel.append(element);
+  }
+  const sep2 = document.createElement('div');
+  sep2.classList.add("action-separator");
+  action_panel.append(sep2);
+  for (const name in RESPONSES) {
+    const element = document.createElement("div");
+    element.innerHTML = RESPONSES[name];
+    element.dataset.name = name;
+    element.classList.add("outlined-button");
     action_panel.append(element);
   }
   return action_panel;
@@ -108,4 +136,4 @@ function renderHand(doc, player_view) {
   }
 }
 
-export { createBoard, renderBoard, renderLog, renderHand, createActionPanel, NORTH_PLAYER, SOUTH_PLAYER, ACTIONS};
+export {createBoard, renderBoard, renderLog, renderHand, createActionPanel, NORTH_PLAYER, SOUTH_PLAYER};

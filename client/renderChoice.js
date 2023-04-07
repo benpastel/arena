@@ -1,6 +1,6 @@
 "use strict";
 
-import { ACTIONS, NORTH_PLAYER } from "./renderState.js";
+import {NORTH_PLAYER, SOUTH_PLAYER} from "./renderState.js";
 
 // must match css
 const VALID_ACTION = "valid-action";
