@@ -78,7 +78,7 @@ async def choose_action_or_square(
 
         # try parsing as a Tile Action
         try:
-            tile = Tile(data["action"])
+            tile = Tile(data["button"])
             if tile in possible_actions:
                 return cast(Action, tile)
         except:
@@ -86,14 +86,16 @@ async def choose_action_or_square(
 
         # try parsing as an Other Action
         try:
-            action = OtherAction(data["action"])
+            action = OtherAction(data["button"])
             if action in possible_actions:
                 return action
         except:
             pass
 
         # it's not valid; get a new choice
-        print(f"Ignoring invalid choice {data=}")
+        print(
+            f"Ignoring invalid choice {data=}, {possible_actions=}, {possible_squares=}"
+        )
 
 
 async def choose_square_or_hand(
@@ -137,7 +139,7 @@ async def choose_response(
         # try parsing as a response
         # TODO: make sure javascript fields match
         try:
-            response = Response(data["response"])
+            response = Response(data["button"])
             if response in possible_responses:
                 return response
         except:

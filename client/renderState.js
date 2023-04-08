@@ -21,8 +21,8 @@ const OTHER_ACTIONS = {
   "smite": "⚡",
 };
 const RESPONSES = {
-  "accept": "👍",
-  "challenge": "🚩",
+  "ACCEPT": "👍",
+  "CHALLENGE": "🚩",
 };
 
 

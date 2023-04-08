@@ -77,13 +77,9 @@ function showMessage(message) {
   window.setTimeout(() => window.alert(message), 50);
 }
 
-// TODO listen to prompt messages
-// TODO update CHOICE_ID
-
 function sendSelection(board, actionPanel, hand, websocket) {
-  // interpret all clicks as possible selections
-  // let server decide if they are valid
-
+  // send all clicks on the board
+  // and let the server decide if they are valid start/target selections
   board.addEventListener("click", ({ target }) => {
     const row = parseInt(target.dataset.row);
     const column = parseInt(target.dataset.column);
@@ -98,15 +94,20 @@ function sendSelection(board, actionPanel, hand, websocket) {
     );
   });
 
+  // send all clicks on the action panel
+  // and let the server decide if they are valid actions or responses
   actionPanel.addEventListener("click", ({ target }) => {
-    const action = target.dataset.name;
-    if (action === undefined) {
+    const button = target.dataset.name;
+    if (button === undefined) {
       return;
     }
     websocket.send(
       JSON.stringify({
         choiceId: CHOICE_ID,
-        data: {action} // TODO rename to include responses
+        // TODO: make the "possible selection" highlighting apply to
+        // responses too
+        // (and maybe change python enums to be text-only)
+        data: {button}
       })
     );
   });
@@ -125,8 +126,6 @@ function sendSelection(board, actionPanel, hand, websocket) {
       })
     );
   });
-
-  // TODO one more listener for Response
 }
 
 function receiveSelection(board, actionPanel, websocket) {

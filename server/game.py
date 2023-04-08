@@ -129,7 +129,8 @@ async def _select_action(
             # they chose a target
             # we should now have all 3 selected
             assert action is not None
-            return start, action, cast(Square, choice)
+            target = cast(Square, choice)
+            return start, action, target
         elif choice in possible_actions:
             # they chose an action
             # go around again for the target or different action
@@ -138,6 +139,7 @@ async def _select_action(
             # they chose a start square
             # go around again for the action or different start
             assert choice in possible_starts
+            start = cast(Square, choice)
             action = None
 
 
