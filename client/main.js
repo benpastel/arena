@@ -94,6 +94,11 @@ function sendSelection(board, actionPanel, hand, websocket) {
     );
   });
 
+  // TODO:
+  //  - fix action highlighting & include responses
+  //  - send hand clicks to server
+  //  - highlight selected tile for losing (wipe highlighted target?)
+
   // send all clicks on the action panel
   // and let the server decide if they are valid actions or responses
   actionPanel.addEventListener("click", ({ target }) => {
@@ -103,10 +108,7 @@ function sendSelection(board, actionPanel, hand, websocket) {
     }
     websocket.send(
       JSON.stringify({
-        choiceId: CHOICE_ID,
-        // TODO: make the "possible selection" highlighting apply to
-        // responses too
-        // (and maybe change python enums to be text-only)
+        choiceId: CHOICE_ID
         data: {button}
       })
     );

@@ -189,6 +189,8 @@ async def _lose_tile(
             websocket,
         )
         square = cast(Square, choice)
+    else:
+        square = possible_squares[0]
 
     # choose replacement tile from hand in a loop
     # to enable choosing a different square to lose
