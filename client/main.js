@@ -57,7 +57,6 @@ window.addEventListener("DOMContentLoaded", () => {
   const prompt = document.querySelector(".prompt");
   prompt.innerHTML = "Waiting for other player to join.";
 
-  // TODO: actually only need our player's hand here
   const hand = document.querySelector(".hand");
 
   // Open the WebSocket connection and register event handlers.
@@ -98,6 +97,9 @@ function sendSelection(board, actionPanel, hand, websocket) {
   //  - fix action highlighting & include responses
   //  - send hand clicks to server
   //  - highlight selected tile for losing (wipe highlighted target?)
+  //  - display challenge success/failure in prompt or log
+  //  - disconnect BOTH players whenever either player disconnects (for now)
+  //  - fix bug: hand click is not getting sent by 2nd player?  or after 1st tile lost?
 
   // send all clicks on the action panel
   // and let the server decide if they are valid actions or responses
@@ -108,16 +110,19 @@ function sendSelection(board, actionPanel, hand, websocket) {
     }
     websocket.send(
       JSON.stringify({
-        choiceId: CHOICE_ID
+        choiceId: CHOICE_ID,
         data: {button}
       })
     );
   });
 
+  // send all clicks in the hand
+  // and let server decide if they are valid replacements for a lost tile
+  //
+  // clicks on the opponent's tiles are also sent, but they are Tile.HIDDEN so never valid
   hand.addEventListener("click", ({ target }) => {
-    // TODO actually set these tileNames
-    console.log("TODO: get hand clicks working");
     const tile = target.dataset.tileName;
+    console.log(`Sending hand ${tile}`);
     if (tile === undefined) {
       return;
     }

@@ -124,7 +124,9 @@ async def choose_square_or_hand(
             pass
 
         # it's not valid; get a new choice
-        print(f"Ignoring invalid choice {data=}")
+        print(
+            f"Ignoring invalid choice {data=}, {possible_squares=}, {possible_hand_tiles=}"
+        )
 
 
 async def choose_response(

@@ -47,6 +47,9 @@ async def handler(websocket: WebSocketServerProtocol) -> None:
             #   - and also exit when the game exits....
             await websocket.wait_closed()
     finally:
+        # TODO:
+        #   - try to close both connections & the ongoing game to get back to a clean state
+        #   currently if only one player refreshes we are in trouble
         del WEBSOCKETS[player]
         print(f"{player} disconnected")
 

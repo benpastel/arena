@@ -123,16 +123,28 @@ function renderLog(panel, player_view) {
 
 function renderHand(doc, player_view) {
   for (const player of PLAYERS) {
-    // TODO: need to render these as different elements
-    // with tileName set
-    // so we can listen to tileName on clicks
-    const element = doc.querySelector(`.hand.${player}`);
-    const hand = player_view.tiles_in_hand[player];
     const coins = player_view.coins[player];
-    element.innerHTML = (
-      `${hand.join(" ")}`
-      + `<br />$${coins}`
-    )
+    const hand = player_view.tiles_in_hand[player];
+
+    const panel = doc.querySelector(`.hand.${player}`);
+    const tileElements = panel.querySelectorAll('.hand-tile');
+    const coinElement = panel.querySelector('.coins');
+    coinElement.innerHTML = `$${coins}`;
+
+    if (hand.length !== tileElements.length) {
+      // hand changed since the last render
+      // redraw from scratch
+      for (const element of tileElements) {
+        panel.removeChild(element);
+      }
+      for (const tile of hand) {
+        const element = document.createElement("div");
+        element.innerHTML = tile;
+        element.dataset.tileName = tile;
+        element.classList.add('hand-tile');
+        panel.append(element);
+      }
+    }
   }
 }
 
