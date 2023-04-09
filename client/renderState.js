@@ -4,6 +4,7 @@ const ROWS = 5;
 const COLUMNS = 5;
 
 // must match both css and python
+// TODO: move to constants.js
 const NORTH_PLAYER = "north";
 const SOUTH_PLAYER = "south";
 const PLAYERS = [NORTH_PLAYER, SOUTH_PLAYER];

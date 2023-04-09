@@ -1,6 +1,7 @@
 import json
 from typing import List, cast
 from weakref import WeakKeyDictionary
+from contextmanager import asynccontextmanager
 
 from websockets.server import WebSocketServerProtocol
 
@@ -59,43 +60,75 @@ async def _get_choice(prompt: str, websocket: WebSocketServerProtocol) -> dict:
             ), f"{choice_id=} should never be greater than {expected_choice_id=}"
 
 
+async def _send_highlights(
+    websocket: WebSocketServerProtocol,
+    squares: List[Square],
+    actions: List[Action | Response],
+    hand_tiles: List[Tile],
+):
+    event = {
+        "type": OutEventType.HIGHLIGHT_CHANGE,
+        "squares": squares,
+        "actions": actions,
+        "handTiles": hand_tiles,
+    }
+    await websocket.send(json.dumps(event))
+
+
+# TODO: rename Action | Response variables to something like "icons" everywhere?
+# or make a type that covers them?
+@asynccontextmanager
+async def _highlighted(
+    websocket: WebSocketServerProtocol,
+    squares: List[Square] = [],
+    actions: List[Action | Response] = [],
+    hand_tiles: List[Tile] = []
+):
+    await _send_highlights(websocket, squares, actions, hand_tiles)
+    yield
+    # clear highlights in UI by highlighting empty lists
+    await _send_highlights(websocket, [], [], [])
+
+
 async def choose_action_or_square(
     possible_actions: List[Action],
     possible_squares: List[Square],
     prompt: str,
     websocket: WebSocketServerProtocol,
 ) -> Action | Square:
-    # loop until we get a valid action or square
-    while True:
-        data = await _get_choice(
-            prompt,
-            websocket,
-        )
-        # try parsing as a square
-        square = Square(row=data.get("row", -1), col=data.get("column", -1))
-        if square in possible_squares:
-            return square
 
-        # try parsing as a Tile Action
-        try:
-            tile = Tile(data["button"])
-            if tile in possible_actions:
-                return cast(Action, tile)
-        except:
-            pass
+    async with _highlighted(websocket, actions = possible_actions, squares=possible_squares):
+        # loop until we get a valid action or square
+        while True:
+            data = await _get_choice(
+                prompt,
+                websocket,
+            )
+            # try parsing as a square
+            square = Square(row=data.get("row", -1), col=data.get("column", -1))
+            if square in possible_squares:
+                return square
 
-        # try parsing as an Other Action
-        try:
-            action = OtherAction(data["button"])
-            if action in possible_actions:
-                return action
-        except:
-            pass
+            # try parsing as a Tile Action
+            try:
+                tile = Tile(data["button"])
+                if tile in possible_actions:
+                    return cast(Action, tile)
+            except:
+                pass
 
-        # it's not valid; get a new choice
-        print(
-            f"Ignoring invalid choice {data=}, {possible_actions=}, {possible_squares=}"
-        )
+            # try parsing as an Other Action
+            try:
+                action = OtherAction(data["button"])
+                if action in possible_actions:
+                    return action
+            except:
+                pass
+
+            # it's not valid; get a new choice
+            print(
+                f"Ignoring invalid choice {data=}, {possible_actions=}, {possible_squares=}"
+            )
 
 
 async def choose_square_or_hand(
@@ -104,48 +137,62 @@ async def choose_square_or_hand(
     prompt: str,
     websocket: WebSocketServerProtocol,
 ) -> Square | Tile:
-    # loop until we get a valid square or hand tile
-    while True:
-        data = await _get_choice(
-            prompt,
-            websocket,
-        )
-        # try parsing as a square
-        square = Square(row=data.get("row", -1), col=data.get("column", -1))
-        if square in possible_squares:
-            return square
+    async with _highlighted(websocket, squares = possible_squares, hand_tiles = possible_hand_tiles):
+        # loop until we get a valid square or hand tile
+        while True:
+            data = await _get_choice(
+                prompt,
+                websocket,
+            )
+            # try parsing as a square
+            square = Square(row=data.get("row", -1), col=data.get("column", -1))
+            if square in possible_squares:
+                return square
 
-        # try parsing as a Tile
-        try:
-            tile = Tile(data["tile"])
-            if tile in possible_hand_tiles:
-                return tile
-        except:
-            pass
+            # try parsing as a Tile
+            try:
+                tile = Tile(data["tile"])
+                if tile in possible_hand_tiles:
+                    return tile
+            except:
+                pass
 
-        # it's not valid; get a new choice
-        print(
-            f"Ignoring invalid choice {data=}, {possible_squares=}, {possible_hand_tiles=}"
-        )
+            # it's not valid; get a new choice
+            print(
+                f"Ignoring invalid choice {data=}, {possible_squares=}, {possible_hand_tiles=}"
+            )
 
 
 async def choose_response(
     possible_responses: List[Response], prompt: str, websocket: WebSocketServerProtocol
 ) -> Response:
-    # loop until we get a valid response
-    while True:
-        data = await _get_choice(
-            prompt,
-            websocket,
-        )
-        # try parsing as a response
-        # TODO: make sure javascript fields match
-        try:
-            response = Response(data["button"])
-            if response in possible_responses:
-                return response
-        except:
-            pass
 
-        # it's not valid; get a new choice
-        print(f"Ignoring invalid choice {data=}")
+    # replace BLOCK with Tile.HOOK
+    # TODO: remove the concept of BLOCK and move this upstream
+    highlights: List[Action | Response] = [
+        Tile.HOOK
+        if r == Response.BLOCK
+        else r
+        for r in possible_responses
+    ]
+
+    async with _highlighted(websocket, actions = highlights):
+
+        # loop until we get a valid response
+        while True:
+            data = await _get_choice(
+                prompt,
+                websocket,
+            )
+            # try parsing as a response
+            # TODO: make sure javascript fields match
+            try:
+                response = Response(data["button"])
+                if response in possible_responses:
+                    return response
+            except:
+                pass
+
+            # it's not valid; get a new choice
+            print(f"Ignoring invalid choice {data=}")
+

@@ -12,12 +12,17 @@ import {
 } from "./renderState.js";
 
 import {
-  highlightOkActions,
-  highlightOkTargets,
   markChosenStart,
   markChosenAction,
   markChosenTarget,
-} from "./renderChoice.js";
+} from "./renderSelection.js";
+
+import {
+  highlightSquares,
+  highlightActions,
+  highlightHand,
+} from "./renderHighlights.js";
+
 
 // This counter identifies the most recent input request we've received from the server
 // we include it in all outgoing changes so that the server can ignore anything stale.
@@ -137,7 +142,6 @@ function sendSelection(board, actionPanel, hand, websocket) {
 
 function receiveSelection(board, actionPanel, websocket) {
   // update the UI with changes to the current (partially) selected moves
-  // TODO: simpler to pass the list of actions & targets separately?
   websocket.addEventListener("message", ({ data }) => {
     const event = JSON.parse(data);
 
@@ -146,18 +150,28 @@ function receiveSelection(board, actionPanel, websocket) {
       const start = event["start"];
       const action = event["action"];
       const target = event["target"];
-      const actionTargets = event["actionTargets"];
 
       markChosenStart(board, start);
       markChosenAction(actionPanel, action);
       markChosenTarget(board, target, player);
+    }
+  });
+}
 
-      highlightOkActions(actionPanel, actionTargets);
-      if (action && actionTargets[action]) {
-        highlightOkTargets(board, actionTargets[action]);
-      } else {
-        highlightOkTargets(board, []);
-      }
+function receiveHighlights(board, actionPanel, hand, websocket) {
+  // highlight possible squares, actions, responses, or tiles in hand
+  // the server should call this again with empty lists to clear the highlights
+  websocket.addEventListener("message", ({ data }) => {
+    const event = JSON.parse(data);
+
+    if (event.type === "HIGHLIGHT_CHANGE") {
+      const squares = event["squares"];
+      const actions = event["actions"];
+      const handTiles = event["handTiles"];
+
+      highlightSquares(squares, board);
+      highlightActions(actions, actionPanel);
+      highlightHand(handTiles, hand);
     }
   });
 }
