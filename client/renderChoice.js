@@ -71,7 +71,7 @@ function highlightOkActions(actionPanel, actionTargets) {
   // mark the action divs as valid or invalid choices
   // depending on whether the action is a key in `actionTargets`
   for (const element of actionPanel.querySelectorAll("div")) {
-    if (element.dataset.actionName in actionTargets) {
+    if (element.dataset.name in actionTargets) {
       element.classList.add(VALID_ACTION);
     } else {
       element.classList.remove(VALID_ACTION);
