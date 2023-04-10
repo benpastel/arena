@@ -162,6 +162,8 @@ async def _lose_tile(
 
     if len(possible_squares) > 1 or len(state.tiles_in_hand[player]) > 0:
         # current player will need to choose something, so set a waiting prompt for opponent
+        # and send any state updates so far to both players
+        await notify_state_changed(state, websockets)
         await send_prompt(
             "Waiting for opponent to lose tile.", websockets[other_player(player)]
         )
@@ -233,7 +235,7 @@ async def _lose_tile(
         state.tiles_on_board[player].append(replacement)
         state.positions[player].append(square)
 
-    state.log(f"{player} lost {tile} at {square}.")
+    state.log(f"{player} lost {tile}.")
     await notify_state_changed(state, websockets)
 
 
@@ -311,16 +313,17 @@ async def _play_one_turn(
 
     elif response == Response.CHALLENGE:
         start_tile = state.tile_at(start)
+        msg = f"{state.current_player} reveals a {start_tile}."
         if action == start_tile:
             # challenge fails
             # original action succeeds
-            state.log(f"Challenge failed because {start} is a {start_tile}.")
+            state.log(msg + " Challenge fails!")
             await _lose_tile(state.other_player, state, websockets)
             await _resolve_action(start, action, target, state, websockets)
         else:
             # challenge succeeds
             # original action fails
-            state.log(f"Challenge succeeded because {start} is a {start_tile}.")
+            state.log(msg + " Challenge succeeds!")
             await _lose_tile(state.current_player, state, websockets)
     else:
         # the response was to block
@@ -328,6 +331,7 @@ async def _play_one_turn(
         # which the original player may challenge
         block_response = await _select_block_response(state, websockets)
         target_tile = state.tile_at(target)
+        reveal_msg = f"{state.other_player} reveals a {target_tile}."
 
         if block_response == Response.ACCEPT:
             # block succeeds
@@ -337,13 +341,13 @@ async def _play_one_turn(
             # challenge fails
             # block succeeds
             # original action fails
-            state.log(f"Challenge failed because {target} is a {Tile.HOOK}.")
+            state.log(reveal_msg + " Challenge fails!")
             await _lose_tile(state.current_player, state, websockets)
         else:
             # challenge succeeds
             # block fails
             # original action succeeds
-            state.log(f"Challenge succeeded because {target} is a {target_tile}.")
+            state.log(reveal_msg + " Challenge succeeds!")
             await _lose_tile(state.other_player, state, websockets)
             await _resolve_action(start, action, target, state, websockets)
 

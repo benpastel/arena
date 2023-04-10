@@ -14,11 +14,14 @@ then enemy has a clear line of retreat unless you've backed them into a corner
 
 
 # TODO: SERVER
+
+- BUG: grappling doesn't work on UPPER RIGHT diagonels?
+
+- BUG: disconnect BOTH players whenever either player disconnects (for now)
+
 - move icons to javascript only?
 
 - remove Response.BLOCK & clean up Action | Response
-
-- BUG: grappling doesn't work on UPPER RIGHT diagonels?
 
 - when a player wins, send a message!
     for now just ALERT
@@ -28,6 +31,10 @@ then enemy has a clear line of retreat unless you've backed them into a corner
 
 
 # TODO: UI
+
+- move the prompt to the log somewhere?  like float it on the top or on the bottom?
+    otherwise need to read multiple places...
+
 - leave a mark on the selected action while waiting for a challenge
 
 - enumerate the list of possible responses in the prompt?
@@ -38,8 +45,3 @@ then enemy has a clear line of retreat unless you've backed them into a corner
 
 - highlight selected tile for losing (wipe highlighted target?)
 
-- display challenge success/failure in prompt or log
-
-- disconnect BOTH players whenever either player disconnects (for now)
-
-- hand should resize when window resizes!
