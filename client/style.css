@@ -26,14 +26,14 @@ body {
 .grid-element {
   border: 5px solid black;
 }
-
+/*
 .title-box {
   position: relative;
   top: -20%;
   display: inline;
   font-size: 40px;
   background-color: white;
-}
+}*/
 
 /* the player-info box displays coins and tiles in hand */
 .player-info {
@@ -86,6 +86,7 @@ currently available actions are highlighted
 }
 .tile-button {
   font-size: 310%;
+
 }
 .outlined-button {
   font-size: 200%;
