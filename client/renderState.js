@@ -116,7 +116,6 @@ function renderBoard(board, player_view) {
 }
 
 function renderLog(panel, player_view) {
-  panel.innerHTML = '<p>log<p>';
   for (const line of player_view.public_log) {
     panel.innerHTML += `<p>${line}</p>`;
   }

@@ -364,7 +364,7 @@ async def play_one_game(
     state = new_state()
     _auto_place_tiles(Player.N, state)
     _auto_place_tiles(Player.S, state)
-    state.log("New game.")
+    state.log("New game!")
     print("Sending initial state to both players.")
     await notify_state_changed(state, websockets)
 
