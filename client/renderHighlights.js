@@ -17,7 +17,7 @@ function highlightSquares(squares, board) {
     const c = parseInt(element.dataset.column);
 
     // can't use "in" on arrays in javascript, so iterate through targets explicitly
-    for (const [targetRow, targetCol] of targets) {
+    for (const [targetRow, targetCol] of squares) {
       if ((r === targetRow) && (c === targetCol)) {
         element.classList.add(HIGHLIGHT);
       }
@@ -28,11 +28,14 @@ function highlightSquares(squares, board) {
 function highlightActions(actions, actionPanel) {
   // highlight action or response icons
   // pass an empty list to clear highlighting
+  console.log(`start highlightActions, highlight ${actions}`);
   for (const element of actionPanel.querySelectorAll("div")) {
-    if (element.dataset.name in actions) {
+    if (actions.includes(element.dataset.name)) {
       element.classList.add(HIGHLIGHT);
+      console.log(`highlight ${element.dataset.name}`);
     } else {
       element.classList.remove(HIGHLIGHT);
+      console.log(`skip ${element.dataset.name}`);
     }
   }
 }
@@ -40,11 +43,11 @@ function highlightActions(actions, actionPanel) {
 function highlightHand(handTiles, hand) {
   // highlight tiles in hand
   // pass an empty list to clear highlighting
-  for (const element of panel.querySelectorAll('.hand-tile')) {
-    if (element.dataset.tileName in handTiles) {
-      panel.classList.add(HIGHLIGHT);
+  for (const element of hand.querySelectorAll('.hand-tile')) {
+    if (handTiles.includes(element.dataset.tileName)) {
+      hand.classList.add(HIGHLIGHT);
     } else {
-      panel.classList.remove(HIGHLIGHT);
+      hand.classList.remove(HIGHLIGHT);
     }
   }
 }

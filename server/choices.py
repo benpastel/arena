@@ -1,11 +1,18 @@
 import json
 from typing import List, cast
 from weakref import WeakKeyDictionary
-from contextmanager import asynccontextmanager
+from contextlib import asynccontextmanager
 
 from websockets.server import WebSocketServerProtocol
 
-from arena.server.constants import Tile, Action, OtherAction, Square, Response
+from arena.server.constants import (
+    Tile,
+    Action,
+    OtherAction,
+    Square,
+    Response,
+    OutEventType,
+)
 
 # Generally incoming messages are invalid unless we've prompted for them.
 # websockets keeps incoming messages in a FIFO queue, but generally all messages
@@ -82,7 +89,7 @@ async def _highlighted(
     websocket: WebSocketServerProtocol,
     squares: List[Square] = [],
     actions: List[Action | Response] = [],
-    hand_tiles: List[Tile] = []
+    hand_tiles: List[Tile] = [],
 ):
     await _send_highlights(websocket, squares, actions, hand_tiles)
     yield
@@ -96,8 +103,11 @@ async def choose_action_or_square(
     prompt: str,
     websocket: WebSocketServerProtocol,
 ) -> Action | Square:
-
-    async with _highlighted(websocket, actions = possible_actions, squares=possible_squares):
+    async with _highlighted(
+        websocket,
+        actions=cast(List[Action | Response], possible_actions),
+        squares=possible_squares,
+    ):
         # loop until we get a valid action or square
         while True:
             data = await _get_choice(
@@ -137,7 +147,9 @@ async def choose_square_or_hand(
     prompt: str,
     websocket: WebSocketServerProtocol,
 ) -> Square | Tile:
-    async with _highlighted(websocket, squares = possible_squares, hand_tiles = possible_hand_tiles):
+    async with _highlighted(
+        websocket, squares=possible_squares, hand_tiles=possible_hand_tiles
+    ):
         # loop until we get a valid square or hand tile
         while True:
             data = await _get_choice(
@@ -166,18 +178,13 @@ async def choose_square_or_hand(
 async def choose_response(
     possible_responses: List[Response], prompt: str, websocket: WebSocketServerProtocol
 ) -> Response:
-
     # replace BLOCK with Tile.HOOK
     # TODO: remove the concept of BLOCK and move this upstream
     highlights: List[Action | Response] = [
-        Tile.HOOK
-        if r == Response.BLOCK
-        else r
-        for r in possible_responses
+        Tile.HOOK if r == Response.BLOCK else r for r in possible_responses
     ]
 
-    async with _highlighted(websocket, actions = highlights):
-
+    async with _highlighted(websocket, actions=highlights):
         # loop until we get a valid response
         while True:
             data = await _get_choice(
@@ -195,4 +202,3 @@ async def choose_response(
 
             # it's not valid; get a new choice
             print(f"Ignoring invalid choice {data=}")
-

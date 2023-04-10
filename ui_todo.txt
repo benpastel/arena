@@ -1,0 +1,5 @@
+- leave a mark on the selected action while waiting for a challenge
+
+- enumerate the list of possible responses in the prompt?
+
+- draw an arrow on move selections

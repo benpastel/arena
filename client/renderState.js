@@ -122,12 +122,12 @@ function renderLog(panel, player_view) {
   }
 }
 
-function renderHand(doc, player_view) {
+function renderHand(player_view) {
   for (const player of PLAYERS) {
     const coins = player_view.coins[player];
     const hand = player_view.tiles_in_hand[player];
 
-    const panel = doc.querySelector(`.hand.${player}`);
+    const panel = document.querySelector(`.hand.${player}`);
     const tileElements = panel.querySelectorAll('.hand-tile');
     const coinElement = panel.querySelector('.coins');
     coinElement.innerHTML = `$${coins}`;
@@ -149,4 +149,4 @@ function renderHand(doc, player_view) {
   }
 }
 
-export {createBoard, renderBoard, renderLog, renderHand, createActionPanel, NORTH_PLAYER, SOUTH_PLAYER};
+export {createBoard, renderBoard, renderLog, renderHand, createActionPanel, NORTH_PLAYER, SOUTH_PLAYER, PLAYERS};

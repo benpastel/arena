@@ -78,11 +78,14 @@ body {
   border-left: 1px solid;
   height: 100%;
 }
-.actions.highlight {
+.tile-button.highlight {
   color: black;
   font-weight: bold;
+}
+.outlined-button.highlight {
   border-width: thick;
   border-color: black;
+  color: black;
 }
 .chosen-action {
   border-radius: 100%;

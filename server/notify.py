@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import Dict, Optional, List
+from typing import Dict, Optional
 
 from websockets.server import WebSocketServerProtocol
 
