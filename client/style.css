@@ -22,18 +22,9 @@ body {
   width: 100vw;
   height: 100vh;
 }
-
 .grid-element {
   border: 5px solid black;
 }
-/*
-.title-box {
-  position: relative;
-  top: -20%;
-  display: inline;
-  font-size: 40px;
-  background-color: white;
-}*/
 
 /* the player-info box displays coins and tiles in hand */
 .player-info {
@@ -65,6 +56,9 @@ explaining what happened in previous turns
   grid-column: 3 / 4;
   grid-row: 1 / 2;
   overflow-y:auto;
+
+  line-height: 2vmin;
+  font-size: 2vmin;
 }
 
 /*
@@ -85,16 +79,18 @@ currently available actions are highlighted
   font-weight: light;
 }
 .tile-button {
-  font-size: 310%;
-
+  line-height: 7vmin;
+  font-size: 7vmin;
 }
 .outlined-button {
   font-size: 200%;
   border-radius: 8%;
   border: 1px solid grey;
-  height: 6vmin;
   width: 5vmin;
-  /* TODO these icons don't look vertically centered in the box */
+  line-height: 6.5vmin;
+  font-size: 5vmin;
+  vertical-align: middle;
+  /* TODO the emoji aren't quite vertically centered in the box */
 }
 .action-separator {
   border-left: 1px solid;
@@ -121,7 +117,8 @@ explaining what the player should do next
 .prompt {
   grid-column: 1 / 4;
   grid-row: 3 / 4;
-  font-size: 150%;
+  font-size: 3vmin;
+  line-height: 3vmin;
   font-style: italic;
 
   overflow-x:auto;
