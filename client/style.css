@@ -7,8 +7,7 @@ body {
   position: fixed;
 }
 
-/* Top-level grid containing elements for the board, log, action buttons, etc. */
-
+/* top-level grid containing the board, log, action panel, player info, etc. */
 .container {
   display: grid;
   grid-template-columns: 1fr 82vmin 1fr;
@@ -36,13 +35,12 @@ body {
   background-color: white;
 }
 
-/** the player-info box displays coins and tiles in hand. */
+/* the player-info box displays coins and tiles in hand */
 .player-info {
   grid-column: 1 / 2;
   grid-row: 1 / 2;
 
   display: flex;
-/*  align-items: center;*/
   justify-content: center;
   flex-direction: column;
   position: relative;
@@ -59,11 +57,20 @@ body {
   font-weight: bold;
 }
 
+/*
+the log is a list of text notes on the right side of the screen
+explaining what happened in previous turns
+*/
 .log {
   grid-column: 3 / 4;
   grid-row: 1 / 2;
   overflow-y:auto;
 }
+
+/*
+the action panel has buttons for move, smite, the tiles, and the responses
+currently available actions are highlighted
+*/
 .actions {
   grid-column: 1 / 4;
   grid-row: 2 / 3;
@@ -105,6 +112,50 @@ body {
   border-radius: 100%;
   border: 1px solid;
 }
+
+/*
+the prompt is a text string at the bottom of the screen
+explaining what the player should do next
+*/
+.prompt {
+  grid-column: 1 / 4;
+  grid-row: 3 / 4;
+  font-size: 150%;
+  font-style: italic;
+
+  overflow-x:auto;
+}
+
+/* the board is a 5x5 display with the tiles on board */
+.board {
+  grid-column: 2 / 3;
+  grid-row: 1 / 2;
+  aspect-ratio: 1;
+
+  background-color: gray;
+  display: flex;
+  flex-direction: row;
+  padding: 2% 2%;
+  position: relative;
+  border: 1px solid gray;
+}
+.column {
+  box-sizing: border-box;
+  width: 20%; /* assumes a 5x5 board */
+}
+.cell {
+  box-sizing: border-box;
+  height: 20%; /* assumes a 5x5 board */
+  border: 1px solid darkgrey;
+  background-color: white;
+  position: relative;
+
+  line-height: 14vmin;
+  font-size: 14vmin;
+}
+.cell.highlight {
+  background-color: lightgray;
+}
 .chosen-start::before {
   position: absolute;
   content: 'O';
@@ -122,47 +173,6 @@ body {
   left: 0;
   right: 0;
   margin: auto;
-}
-
-.prompt {
-  grid-column: 1 / 4;
-  grid-row: 3 / 4;
-  font-size: 150%;
-  font-style: italic;
-
-  overflow-x:auto;
-}
-
-.board {
-  grid-column: 2 / 3;
-  grid-row: 1 / 2;
-  aspect-ratio: 1;
-
-  background-color: gray;
-  display: flex;
-  flex-direction: row;
-  padding: 2% 2%;
-  position: relative;
-  border: 1px solid gray;
-}
-
-.column {
-  box-sizing: border-box;
-  width: 20%; /* assumes a 5x5 board */
-}
-
-.cell {
-  box-sizing: border-box;
-  height: 20%; /* assumes a 5x5 board */
-  border: 1px solid darkgrey;
-  background-color: white;
-  position: relative;
-
-  line-height: 14vmin;
-  font-size: 14vmin;
-}
-.cell.highlight {
-  background-color: lightgray;
 }
 
 .north {
