@@ -48,21 +48,7 @@ async def _resolve_action(
     # `hits` is a possibly-empty list of tiles hit by the action
     hits = take_action(start, action, target, state)
 
-    match action:
-        case OtherAction.MOVE:
-            state.log(f"{start} moves to {target}")
-        case OtherAction.SMITE:
-            state.log(f"{start} smites {target}")
-        case Tile.FLOWER | Tile.BIRD:
-            state.log(f"{start} uses {action} to move to {target}")
-        case Tile.HOOK:
-            state.log(f"{start} hooks {target}")
-        case Tile.GRENADES:
-            state.log(f"{start} throws a grenade at {target}, hitting {hits}")
-        case Tile.KNIVES:
-            state.log(f"{start} stabs {target}")
-        case _:
-            assert False
+    state.log(f"{state.current_player} uses {action}")
 
     for hit in hits:
         await _lose_tile(hit, state, websockets)

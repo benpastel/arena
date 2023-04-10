@@ -20,7 +20,11 @@ then enemy has a clear line of retreat unless you've backed them into a corner
 
 - BUG: grappling doesn't work on UPPER RIGHT diagonels?
 
-
+- when a player wins, send a message!
+    for now just ALERT
+    later:
+    + track the match score in a new panel
+    + immediately start a new game
 
 
 # TODO: UI
@@ -31,8 +35,6 @@ then enemy has a clear line of retreat unless you've backed them into a corner
 - draw an arrow on move selections
 
 - when highlighting a possible START, highlight the TILE not the SQUARE
-
-- clean up log; no Square coordinates
 
 - highlight selected tile for losing (wipe highlighted target?)
 
