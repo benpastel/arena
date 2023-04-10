@@ -34,10 +34,12 @@ then enemy has a clear line of retreat unless you've backed them into a corner
 
 - draw an arrow on move selections
 
-- when highlighting a possible START, highlight the TILE not the SQUARE
+- when highlighting a possible START, highlight the TILE not the SQUARE?
 
 - highlight selected tile for losing (wipe highlighted target?)
 
 - display challenge success/failure in prompt or log
 
 - disconnect BOTH players whenever either player disconnects (for now)
+
+- hand should resize when window resizes!
