@@ -112,11 +112,11 @@ class OtherAction(str, Enum):
     """
 
     # Move 1 square and gain 1 mana
-    MOVE = "move"
+    MOVE = "↕"
 
     # Pay 7 mana to kill at any range.
     # If a player has above 10 mana they must smite on their turn.
-    SMITE = "smite"
+    SMITE = "⚡"
 
     def __str__(self) -> str:
         return f"{self.value} ({self.name.lower()})"
@@ -145,9 +145,12 @@ class GameResult(str, Enum):
 class Response(str, Enum):
     # TODO explain
     # these must match javascript
-    ACCEPT = "ACCEPT"
-    CHALLENGE = "CHALLENGE"
-    BLOCK = "BLOCK"
+    ACCEPT = "👍"
+    CHALLENGE = "🚩"
+    BLOCK = "TODO-REMOVE"
+
+    def __str__(self) -> str:
+        return f"{self.value} ({self.name.lower()})"
 
 
 class OutEventType(str, Enum):

@@ -18,12 +18,12 @@ const TILES = {
   "🀍": "🀍",
 };
 const OTHER_ACTIONS = {
-  "move": "↕",
-  "smite": "⚡",
+  "↕": "↕",
+  "⚡": "⚡",
 };
 const RESPONSES = {
-  "ACCEPT": "👍",
-  "CHALLENGE": "🚩",
+  "👍": "👍",
+  "🚩": "🚩",
 };
 
 
