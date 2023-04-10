@@ -36,18 +36,29 @@ body {
   background-color: white;
 }
 
+/** the player-info box displays coins and tiles in hand. */
 .player-info {
   grid-column: 1 / 2;
   grid-row: 1 / 2;
 
   display: flex;
-  align-items: center;
+/*  align-items: center;*/
   justify-content: center;
   flex-direction: column;
   position: relative;
-  font-size: 400%;
   padding: 2% 2%;
+
+  line-height: 10vmin;
+  font-size: 10vmin;
 }
+.hand-tile {
+  font-weight: light;
+}
+.hand-tile.highlight {
+  color: black;
+  font-weight: bold;
+}
+
 .log {
   grid-column: 3 / 4;
   grid-row: 1 / 2;
@@ -168,13 +179,5 @@ body {
 
 .target-south.chosen-target::before {
   color: blue
-}
-
-.hand-tile {
-  font-weight: light;
-}
-.hand-tile.highlight {
-  color: black;
-  font-weight: bold;
 }
 
