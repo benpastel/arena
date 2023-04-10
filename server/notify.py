@@ -28,7 +28,6 @@ async def notify_selection_changed(
     start: Optional[Square],
     action: Optional[Action],
     target: Optional[Square],
-    actions_and_targets: Dict[Action, List[Square]],
     websocket: WebSocketServerProtocol,
 ) -> None:
     """
@@ -46,7 +45,6 @@ async def notify_selection_changed(
         "start": start,
         "action": action,
         "target": target,
-        "actionTargets": actions_and_targets,
     }
     message = json.dumps(event)
     await websocket.send(message)

@@ -3,16 +3,14 @@
 import {PLAYERS} from "./renderState.js";
 
 // must match css classes
-const HIGHLIGHT_SQUARE = "highlight-square";
-const HIGHLIGHT_ACTION = "highlight-action";
-const HIGHLIGHT_HAND = "highlight-hand";
+const HIGHLIGHT = "highlight";
 
 function highlightSquares(squares, board) {
   // highlight some squares on the board
   // pass an empty list to clear all highlighting
   for (const element of board.querySelectorAll(".cell")) {
     // default unhighlighted
-    element.classList.remove(HIGHLIGHT_SQUARE);
+    element.classList.remove(HIGHLIGHT);
 
     // highlight if in target list
     const r = parseInt(element.dataset.row);
@@ -21,7 +19,7 @@ function highlightSquares(squares, board) {
     // can't use "in" on arrays in javascript, so iterate through targets explicitly
     for (const [targetRow, targetCol] of targets) {
       if ((r === targetRow) && (c === targetCol)) {
-        element.classList.add(HIGHLIGHT_SQUARE);
+        element.classList.add(HIGHLIGHT);
       }
     }
   }
@@ -29,29 +27,24 @@ function highlightSquares(squares, board) {
 
 function highlightActions(actions, actionPanel) {
   // highlight action or response icons
-  // pass an empty list to clear all highlighting
+  // pass an empty list to clear highlighting
   for (const element of actionPanel.querySelectorAll("div")) {
     if (element.dataset.name in actions) {
-      element.classList.add(HIGHLIGHT_ACTION);
+      element.classList.add(HIGHLIGHT);
     } else {
-      element.classList.remove(HIGHLIGHT_ACTION);
+      element.classList.remove(HIGHLIGHT);
     }
   }
 }
 
-// TODO LEFT OFF HERE:
-// - register listener
-// - update a bunch of CSS
-// - remove actionTargets
-// - try it!
-
 function highlightHand(handTiles, hand) {
-  // TODO explain
+  // highlight tiles in hand
+  // pass an empty list to clear highlighting
   for (const element of panel.querySelectorAll('.hand-tile')) {
     if (element.dataset.tileName in handTiles) {
-      panel.classList.add(HIGHLIGHT_HAND);
+      panel.classList.add(HIGHLIGHT);
     } else {
-      panel.classList.remove(HIGHLIGHT_HAND);
+      panel.classList.remove(HIGHLIGHT);
     }
   }
 }

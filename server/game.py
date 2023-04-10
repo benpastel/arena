@@ -106,7 +106,7 @@ async def _select_action(
         # display the partial selection and valid actions/targets to the
         # current player
         await notify_selection_changed(
-            state.current_player, start, action, None, actions_and_targets, websocket
+            state.current_player, start, action, None, websocket
         )
 
         if not action and len(possible_starts) == 1:
@@ -312,7 +312,7 @@ async def _play_one_turn(
     async with asyncio.TaskGroup() as tg:
         for websocket in websockets.values():
             coroutine = notify_selection_changed(
-                state.current_player, start, action, target, {}, websocket
+                state.current_player, start, action, target, websocket
             )
             tg.create_task(coroutine)
 

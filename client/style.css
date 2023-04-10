@@ -78,9 +78,11 @@ body {
   border-left: 1px solid;
   height: 100%;
 }
-.valid-action {
+.actions.highlight {
   color: black;
   font-weight: bold;
+  border-width: thick;
+  border-color: black;
 }
 .chosen-action {
   border-radius: 100%;
@@ -140,7 +142,7 @@ body {
   line-height: 14vmin;
   font-size: 14vmin;
 }
-.valid-target {
+.cell.highlight {
   background-color: lightgray;
 }
 
@@ -159,3 +161,12 @@ body {
 .target-south.chosen-target::before {
   color: blue
 }
+
+.hand-tile {
+  font-weight: light;
+}
+.hand-tile.highlight {
+  color: black;
+  font-weight: bold;
+}
+

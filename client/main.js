@@ -72,9 +72,11 @@ window.addEventListener("DOMContentLoaded", () => {
 
   receiveSelection(board, actionPanel, websocket);
 
-  receiveMoves(board, actionPanel, document, websocket);
+  receiveMoves(board, actionPanel, websocket);
 
   receivePrompt(prompt, websocket);
+
+  receiveHighlights(board, actionPanel, hand, websocket);
 });
 
 function showMessage(message) {
@@ -176,9 +178,9 @@ function receiveHighlights(board, actionPanel, hand, websocket) {
   });
 }
 
-function receiveMoves(board, actionPanel, doc, websocket) {
+function receiveMoves(board, actionPanel, websocket) {
   // update the UI with changes to the persistent game state
-  const log = doc.querySelector(".log");
+  const log = document.querySelector(".log");
 
   websocket.addEventListener("message", ({ data }) => {
     const event = JSON.parse(data);
