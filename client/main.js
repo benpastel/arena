@@ -62,13 +62,13 @@ window.addEventListener("DOMContentLoaded", () => {
   const prompt = document.querySelector(".prompt");
   prompt.innerHTML = "Waiting for other player to join.";
 
-  const hand = document.querySelector(".hand");
+  const infoPanel = document.querySelector(".player-info");
 
   // Open the WebSocket connection and register event handlers.
   const websocket = new WebSocket("ws://localhost:8001/");
   joinGame(prompt, websocket);
 
-  sendSelection(board, actionPanel, hand, websocket);
+  sendSelection(board, actionPanel, infoPanel, websocket);
 
   receiveSelection(board, actionPanel, websocket);
 
@@ -76,14 +76,14 @@ window.addEventListener("DOMContentLoaded", () => {
 
   receivePrompt(prompt, websocket);
 
-  receiveHighlights(board, actionPanel, hand, websocket);
+  receiveHighlights(board, actionPanel, infoPanel, websocket);
 });
 
 function showMessage(message) {
   window.setTimeout(() => window.alert(message), 50);
 }
 
-function sendSelection(board, actionPanel, hand, websocket) {
+function sendSelection(board, actionPanel, infoPanel, websocket) {
   // send all clicks on the board
   // and let the server decide if they are valid start/target selections
   board.addEventListener("click", ({ target }) => {
@@ -99,14 +99,6 @@ function sendSelection(board, actionPanel, hand, websocket) {
       })
     );
   });
-
-  // TODO:
-  //  - fix action highlighting & include responses
-  //  - send hand clicks to server
-  //  - highlight selected tile for losing (wipe highlighted target?)
-  //  - display challenge success/failure in prompt or log
-  //  - disconnect BOTH players whenever either player disconnects (for now)
-  //  - fix bug: hand click is not getting sent by 2nd player?  or after 1st tile lost?
 
   // send all clicks on the action panel
   // and let the server decide if they are valid actions or responses
@@ -127,9 +119,8 @@ function sendSelection(board, actionPanel, hand, websocket) {
   // and let server decide if they are valid replacements for a lost tile
   //
   // clicks on the opponent's tiles are also sent, but they are Tile.HIDDEN so never valid
-  hand.addEventListener("click", ({ target }) => {
+  infoPanel.addEventListener("click", ({ target }) => {
     const tile = target.dataset.tileName;
-    console.log(`Sending hand ${tile}`);
     if (tile === undefined) {
       return;
     }
@@ -160,7 +151,7 @@ function receiveSelection(board, actionPanel, websocket) {
   });
 }
 
-function receiveHighlights(board, actionPanel, hand, websocket) {
+function receiveHighlights(board, actionPanel, infoPanel, websocket) {
   // highlight possible squares, actions, responses, or tiles in hand
   // the server should call this again with empty lists to clear the highlights
   websocket.addEventListener("message", ({ data }) => {
@@ -173,7 +164,7 @@ function receiveHighlights(board, actionPanel, hand, websocket) {
 
       highlightSquares(squares, board);
       highlightActions(actions, actionPanel);
-      highlightHand(handTiles, hand);
+      highlightHand(handTiles, infoPanel);
     }
   });
 }

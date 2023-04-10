@@ -28,26 +28,23 @@ function highlightSquares(squares, board) {
 function highlightActions(actions, actionPanel) {
   // highlight action or response icons
   // pass an empty list to clear highlighting
-  console.log(`start highlightActions, highlight ${actions}`);
   for (const element of actionPanel.querySelectorAll("div")) {
     if (actions.includes(element.dataset.name)) {
       element.classList.add(HIGHLIGHT);
-      console.log(`highlight ${element.dataset.name}`);
     } else {
       element.classList.remove(HIGHLIGHT);
-      console.log(`skip ${element.dataset.name}`);
     }
   }
 }
 
-function highlightHand(handTiles, hand) {
+function highlightHand(handTiles, infoPanel) {
   // highlight tiles in hand
   // pass an empty list to clear highlighting
-  for (const element of hand.querySelectorAll('.hand-tile')) {
+  for (const element of infoPanel.querySelectorAll('.hand-tile')) {
     if (handTiles.includes(element.dataset.tileName)) {
-      hand.classList.add(HIGHLIGHT);
+      element.classList.add(HIGHLIGHT);
     } else {
-      hand.classList.remove(HIGHLIGHT);
+      element.classList.remove(HIGHLIGHT);
     }
   }
 }

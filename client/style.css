@@ -72,7 +72,7 @@ body {
   border: 1px solid grey;
   height: 6vmin;
   width: 5vmin;
-  /* TODO the icons don't look vertically centered in the box */
+  /* TODO these icons don't look vertically centered in the box */
 }
 .action-separator {
   border-left: 1px solid;

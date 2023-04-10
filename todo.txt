@@ -1,0 +1,41 @@
+
+# TODO: GAME RULE CHANGES
+
+- randomize start positions
+
+- randomize center positions?  (first implement center stuff!!)
+
+- add diagonals back?
+
+- reconsider grappler
+I think we want to go back to: enemy gets pulled to you
+plus diagonals
+then enemy has a clear line of retreat unless you've backed them into a corner
+
+
+# TODO: SERVER
+- move icons to javascript only?
+
+- remove Response.BLOCK & clean up Action | Response
+
+- BUG: grappling doesn't work on UPPER RIGHT diagonels?
+
+
+
+
+# TODO: UI
+- leave a mark on the selected action while waiting for a challenge
+
+- enumerate the list of possible responses in the prompt?
+
+- draw an arrow on move selections
+
+- when highlighting a possible START, highlight the TILE not the SQUARE
+
+- clean up log; no Square coordinates
+
+- highlight selected tile for losing (wipe highlighted target?)
+
+- display challenge success/failure in prompt or log
+
+- disconnect BOTH players whenever either player disconnects (for now)
