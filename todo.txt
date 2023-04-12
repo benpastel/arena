@@ -20,6 +20,7 @@ then enemy has a clear line of retreat unless you've backed them into a corner
 - BUG: disconnect BOTH players whenever either player disconnects (for now)
 
 - move icons to javascript only?
+    (or at least constants file!)
 
 - remove Response.BLOCK & clean up Action | Response
 
@@ -44,4 +45,6 @@ then enemy has a clear line of retreat unless you've backed them into a corner
 - when highlighting a possible START, highlight the TILE not the SQUARE?
 
 - highlight selected tile for losing (wipe highlighted target?)
+
+- informational tooltips everywhere!!!!
 

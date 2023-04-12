@@ -12,7 +12,7 @@ from arena.server.game import play_one_game
 
 # For now we support at most one game at a time.
 # this tracks the websocket of each connected player
-# until both player are connected and we can start the game.
+# until both players are connected and we can start the game.
 WEBSOCKETS: Dict[Player, WebSocketServerProtocol] = {}
 
 
@@ -31,27 +31,24 @@ async def handler(websocket: WebSocketServerProtocol) -> None:
     assert event["type"] == "join"
 
     player = Player(event["player"])
-    assert player not in WEBSOCKETS
     WEBSOCKETS[player] = websocket
     print(f"{player} connected")
 
     try:
-        if len(WEBSOCKETS) == 2:
+        if len(WEBSOCKETS) == 2 and all(w.open for w in WEBSOCKETS.values()):
             # both players are connected, so start the game.
             await play_one_game(WEBSOCKETS)
         else:
             # wait forever for the other player to connect
-            # TODO:
-            #   - needs to consume messages so we hear a disconnect
-            #   - but then stop consuming messages once the game starts
-            #   - and also exit when the game exits....
             await websocket.wait_closed()
     finally:
-        # TODO:
-        #   - try to close both connections & the ongoing game to get back to a clean state
-        #   currently if only one player refreshes we are in trouble
-        del WEBSOCKETS[player]
-        print(f"{player} disconnected")
+        # whichever handler gets here closes both connections
+        # both players will need to refresh to play a new game
+        #
+        # TODO: think the synchronization here through more carefully
+        # and also what behavior you'd like if someone loses connection
+        for websocket in WEBSOCKETS.values():
+            await websocket.close()
 
 
 async def main() -> None:

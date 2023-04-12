@@ -17,7 +17,9 @@ run: lint
 
 .PHONY: run-client
 run-client:
-	cd client && python3 -m http.server
+	cd client && python3 -m http.server 8000
+	# find external IP address with: `ifconfig | rg en0 --after-context=6 | rg inet`
+
 
 
 .PHONY: run-server
