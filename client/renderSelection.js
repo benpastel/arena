@@ -1,15 +1,16 @@
 "use strict";
 
-import {NORTH_PLAYER, SOUTH_PLAYER} from "./renderState.js";
+import {
+  NORTH_PLAYER,
+  SOUTH_PLAYER,
+  CHOSEN_START,
+  CHOSEN_ACTION,
+  CHOSEN_TARGET,
+  NORTH_TARGET,
+  SOUTH_TARGET,
+} from "./constants.js";
 
-// must match css
-const CHOSEN_START = "chosen-start";
-const CHOSEN_ACTION = "chosen-action";
-const CHOSEN_TARGET = "chosen-target";
-const NORTH_TARGET = "target-north";
-const SOUTH_TARGET = "target-south";
 
-// TODO abstract the cell stuff
 function markChosenStart(board, start) {
   for (const element of board.querySelectorAll(".cell")) {
     element.classList.remove(CHOSEN_START);

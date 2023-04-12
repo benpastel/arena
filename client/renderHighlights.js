@@ -1,9 +1,7 @@
 "use strict";
 
-import {PLAYERS} from "./renderState.js";
+import {PLAYERS, HIGHLIGHT} from "./constants.js";
 
-// must match css classes
-const HIGHLIGHT = "highlight";
 
 function highlightSquares(squares, board) {
   // highlight some squares on the board

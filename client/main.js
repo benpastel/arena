@@ -2,13 +2,16 @@
 // it initializes the board, listens for moves, and sends moves to the server
 
 import {
+  NORTH_PLAYER,
+  SOUTH_PLAYER,
+} from "./constants.js";
+
+import {
   createBoard,
   renderBoard,
   renderLog,
   renderHand,
   createActionPanel,
-  NORTH_PLAYER,
-  SOUTH_PLAYER,
 } from "./renderState.js";
 
 import {

@@ -17,11 +17,6 @@ then enemy has a clear line of retreat unless you've backed them into a corner
 
 - BUG: grappling doesn't work on UPPER RIGHT diagonels?
 
-- BUG: disconnect BOTH players whenever either player disconnects (for now)
-
-- move icons to javascript only?
-    (or at least constants file!)
-
 - remove Response.BLOCK & clean up Action | Response
 
 - when a player wins, send a message!

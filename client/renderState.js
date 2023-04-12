@@ -1,30 +1,15 @@
 "use strict";
 
-const ROWS = 5;
-const COLUMNS = 5;
-
-// must match both css and python
-// TODO: move to constants.js
-const NORTH_PLAYER = "north";
-const SOUTH_PLAYER = "south";
-const PLAYERS = [NORTH_PLAYER, SOUTH_PLAYER];
-
-// TODO: set all icons only in javascript; use text always in python
-const TILES = {
-  "🀥": "🀥",
-  "🀐": "🀐",
-  "🀛": "🀛",
-  "🀒": "🀒",
-  "🀍": "🀍",
-};
-const OTHER_ACTIONS = {
-  "↕": "↕",
-  "⚡": "⚡",
-};
-const RESPONSES = {
-  "👍": "👍",
-  "🚩": "🚩",
-};
+import {
+  ROWS,
+  COLUMNS,
+  OTHER_ACTIONS,
+  TILES,
+  RESPONSES,
+  PLAYERS,
+  NORTH_PLAYER,
+  SOUTH_PLAYER
+} from "./constants.js";
 
 
 function createBoard(board) {
@@ -149,4 +134,4 @@ function renderHand(player_view) {
   }
 }
 
-export {createBoard, renderBoard, renderLog, renderHand, createActionPanel, NORTH_PLAYER, SOUTH_PLAYER, PLAYERS};
+export {createBoard, renderBoard, renderLog, renderHand, createActionPanel};
