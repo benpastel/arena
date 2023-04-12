@@ -206,6 +206,24 @@ class State(BaseModel):
         self.current_player = other_player(self.current_player)
         self.other_player = other_player(self.other_player)
 
+    def score(self) -> Dict[Player, int]:
+        """
+        The score is how many kills each player has achieved.
+        Eventually we'll use this instead of game result for multi-game matches.
+        """
+
+        # starting tiles
+        # minus opponent's tiles remaining on board
+        #   and opponent's tiles remaining in hand
+        return {
+            player: (
+                4
+                - len(self.tiles_on_board[other_player(player)])
+                - len(self.tiles_in_hand[other_player(player)])
+            )
+            for player in Player
+        }
+
 
 def new_state() -> State:
     """

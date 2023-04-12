@@ -80,6 +80,8 @@ window.addEventListener("DOMContentLoaded", () => {
   receivePrompt(prompt, websocket);
 
   receiveHighlights(board, actionPanel, infoPanel, websocket);
+
+  receiveGameOver(websocket);
 });
 
 function showMessage(message) {
@@ -195,6 +197,15 @@ function receivePrompt(prompt, websocket) {
     if (event.type === "PROMPT") {
       prompt.innerHTML = event.prompt;
       CHOICE_ID = parseInt(event.choiceId);
+    }
+  });
+}
+
+function receiveGameOver(websocket) {
+  websocket.addEventListener("message", ({ data }) => {
+    const event = JSON.parse(data);
+    if (event.type === "MATCH_CHANGE") {
+      alert(event.message);
     }
   });
 }

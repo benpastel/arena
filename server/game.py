@@ -22,7 +22,11 @@ from arena.server.choices import (
     choose_response,
     send_prompt,
 )
-from arena.server.notify import notify_state_changed, notify_selection_changed
+from arena.server.notify import (
+    notify_state_changed,
+    notify_selection_changed,
+    notify_game_over,
+)
 
 
 def _auto_place_tiles(player: Player, state: State) -> None:
@@ -385,8 +389,8 @@ async def play_one_game(
 
         await notify_state_changed(state, websockets)
 
-    # later: prompt for a new game with starting player rotated
-    # also keep a running total score for longer matches
     state.log(f"Game over!  {state.game_result()}!")
-    print(f"Game over!  {state.game_result()}!")
+    await notify_state_changed(state, websockets)
+    await notify_game_over(websockets, state.score())
+
     return state.game_result()

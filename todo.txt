@@ -21,12 +21,6 @@ LATER:
 
 - BUG: grappling doesn't work on UPPER RIGHT diagonels?
 
-- when a player wins, send a message!
-    for now just ALERT
-    later:
-    + track the match score in a new panel
-    + immediately start a new game
-
 
 # TODO: UI
 

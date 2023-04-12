@@ -5,7 +5,7 @@ from typing import Dict, Optional
 from websockets.server import WebSocketServerProtocol
 
 from arena.server.state import State
-from arena.server.constants import Player, Square, Action, OutEventType
+from arena.server.constants import Player, Square, Action, OutEventType, other_player
 
 
 async def notify_state_changed(
@@ -48,3 +48,23 @@ async def notify_selection_changed(
     }
     message = json.dumps(event)
     await websocket.send(message)
+
+
+async def notify_game_over(
+    websockets: Dict[Player, WebSocketServerProtocol], score: Dict[Player, int]
+) -> None:
+    async with asyncio.TaskGroup() as tg:
+        for player, websocket in websockets.items():
+            us = score[player]
+            them = score[other_player(player)]
+            if us > them:
+                msg = f"You won {us} to {them}!"
+            elif us == them:
+                msg = f"Tie! {us} - {them}."
+            else:
+                msg = f"You lost {us} to {them}."
+            msg += " Luck, I'm sure.  Refresh to try again!"
+            event = {"type": OutEventType.MATCH_CHANGE.value, "message": msg}
+            message = json.dumps(event)
+            coroutine = websocket.send(message)
+            tg.create_task(coroutine)
