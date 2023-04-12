@@ -1,5 +1,5 @@
 import asyncio
-from typing import Dict, Tuple, Optional, cast
+from typing import Dict, Tuple, Optional, cast, List, Literal
 
 from websockets.server import WebSocketServerProtocol
 
@@ -245,12 +245,16 @@ async def _select_response(
     target: Square,
     state: State,
     websockets: Dict[Player, WebSocketServerProtocol],
-) -> Response:
+) -> Response | Literal[Tile.HOOK]:
     assert action in Tile
 
-    possible_responses = [Response.ACCEPT, Response.CHALLENGE]
+    possible_responses: List[Response | Literal[Tile.HOOK]] = [
+        Response.ACCEPT,
+        Response.CHALLENGE,
+    ]
     if action == Tile.HOOK:
-        possible_responses.append(Response.BLOCK)
+        # Tile.HOOK blocks Tile.HOOK
+        possible_responses.append(Tile.HOOK)
 
     await send_prompt(
         "Waiting for opponent to respond.", websockets[state.current_player]
@@ -269,12 +273,12 @@ async def _select_block_response(
     await send_prompt(
         "Waiting for opponent to respond to block.", websockets[state.other_player]
     )
-
-    return await choose_response(
+    response = await choose_response(
         [Response.ACCEPT, Response.CHALLENGE],
         f"Opponent blocked with {Tile.HOOK}.  Choose your response.",
         websockets[state.current_player],
     )
+    return cast(Response, response)
 
 
 async def _play_one_turn(
@@ -326,8 +330,8 @@ async def _play_one_turn(
             state.log(msg + " Challenge succeeds!")
             await _lose_tile(state.current_player, state, websockets)
     else:
-        # the response was to block
-        # blocking means the target is Tile.HOOK in response to a HOOK
+        assert response == Tile.HOOK
+        # the response was to block a HOOK with a HOOK
         # which the original player may challenge
         block_response = await _select_block_response(state, websockets)
         target_tile = state.tile_at(target)

@@ -1,23 +1,25 @@
 
 # TODO: GAME RULE CHANGES
 
-- randomize start positions
-
-- randomize center positions?  (first implement center stuff!!)
-
-- add diagonals back?
+- add diagonals back?  but not for knives?
 
 - reconsider grappler
 I think we want to go back to: enemy gets pulled to you
 plus diagonals
 then enemy has a clear line of retreat unless you've backed them into a corner
 
+- IMPLEMENT START CENTER STUFF
+    triggers whenever you END YOUR TURN on a square
+
+LATER:
+    - randomize start positions
+    - randomize center positions? can even change # of stuff and size of + points
+    - instead of win/lose/draw, return scores (per kill), which update the match points
+
 
 # TODO: SERVER
 
 - BUG: grappling doesn't work on UPPER RIGHT diagonels?
-
-- remove Response.BLOCK & clean up Action | Response
 
 - when a player wins, send a message!
     for now just ALERT

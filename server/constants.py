@@ -147,7 +147,6 @@ class Response(str, Enum):
     # these must match javascript
     ACCEPT = "👍"
     CHALLENGE = "🚩"
-    BLOCK = "TODO-REMOVE"
 
     def __str__(self) -> str:
         return f"{self.value} ({self.name.lower()})"
