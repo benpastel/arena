@@ -54,13 +54,12 @@ class Square(NamedTuple):
 # Where S is a tile in play, F is the mana fountain, B and is a Book.
 
 # There are two tiles facedown on each book square.
-# when player moves onto a book square & ends their turn on a book square
+# when you move onto the square
 # they can freely swap those tiles
-# TODO implement these
 BOOK_POSITIONS = [Square(2, 0), Square(2, 4)]
 
-# The fountain gives +1 mana when someone moves onto it
-FOUNTAIN_POSITION = Square(2, 2)
+# The bonus gives +1 coin when the tile that acted ends their turn on it
+BONUS_POSITION = Square(2, 2)
 
 # TODO randomize instead
 START_POSITIONS = {

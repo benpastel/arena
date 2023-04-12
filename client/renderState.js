@@ -8,7 +8,7 @@ import {
   RESPONSES,
   PLAYERS,
   NORTH_PLAYER,
-  SOUTH_PLAYER
+  SOUTH_PLAYER,
 } from "./constants.js";
 
 
@@ -62,6 +62,13 @@ function createActionPanel(action_panel) {
   return action_panel;
 }
 
+function findCell(board, row, col) {
+  // input: board element, row index, col index
+  // returns the cell element corresponding to the square
+  const columnElement = board.querySelectorAll(".column")[col];
+  return columnElement.querySelectorAll(".cell")[row];
+}
+
 function renderBoard(board, player_view) {
   // TODO:
   //  - save references directly to the elements instead of querying them each time?
@@ -69,15 +76,21 @@ function renderBoard(board, player_view) {
   //  - only change the elements that changed?
 
   // set board empty
-  // TODO just query all cells
-  for (let c = 0; c < COLUMNS; c++) {
-    const columnElement = board.querySelectorAll(".column")[c];
-    for (let r = 0; r < ROWS; r++) {
-      const cellElement = columnElement.querySelectorAll(".cell")[r];
-      cellElement.innerHTML = "";
-      cellElement.classList = "cell invalid-target";
-    }
+  for (const cell of board.querySelectorAll(".cell")) {
+    cell.innerHTML = "";
+    cell.classList = "cell invalid-target";
   }
+  // draw special board tiles
+  // these are overwritten by player tiles
+  const [bonusRow, bonusCol] = player_view.bonus_position;
+  const bonusCell = findCell(board, bonusRow, bonusCol);
+  bonusCell.innerHTML = "+1";
+  for (let t = 0; t < player_view.book_positions.length; t++) {
+    const [bookRow, bookCol] = player_view.book_positions[t];
+    const bookCell = findCell(board, bookRow, bookCol);
+    bookCell.innerHTML = player_view.book_tiles[t].join('');
+  }
+
   // set player tiles
   for (const player of PLAYERS) {
     const tiles = player_view.tiles_on_board[player];
@@ -86,16 +99,10 @@ function renderBoard(board, player_view) {
     for (let t = 0; t < tiles.length; t++) {
       const char = tiles[t];
       const [row, col] = positions[t];
-
-      const columnElement = board.querySelectorAll(".column")[col];
-      const cellElement = columnElement.querySelectorAll(".cell")[row];
-
-      if (!cellElement) {
-        throw new Error(`Cell not found for ${row}, ${col}, ${char}`);
-      }
-      cellElement.innerHTML = char;
-      cellElement.classList.remove(NORTH_PLAYER, SOUTH_PLAYER);
-      cellElement.classList.add(player);
+      const cell = findCell(board, row, col);
+      cell.innerHTML = char;
+      cell.classList.remove(NORTH_PLAYER, SOUTH_PLAYER);
+      cell.classList.add(player);
     }
   }
 }

@@ -57,6 +57,21 @@ async def _resolve_action(
     for hit in hits:
         await _lose_tile(hit, state, websockets)
 
+    # if we moved onto a special square, handle their effect
+    # TODO also handle HOOK move case
+    if (
+        action in (OtherAction.MOVE, Tile.FLOWER, Tile.BIRD)
+        and target == state.bonus_position
+    ):
+        state.log("+$1 for moving onto BONUS")
+        state.coins[state.current_player] += 1
+
+    if (
+        action in (OtherAction.MOVE, Tile.FLOWER, Tile.BIRD)
+        and target in state.book_positions
+    ):
+        state.log("TODO: handle book positions...")
+
 
 async def _select_action(
     state: State, websockets: Dict[Player, WebSocketServerProtocol]

@@ -9,6 +9,7 @@ from arena.server.constants import (
     GameResult,
     Tile,
     BOOK_POSITIONS,
+    BONUS_POSITION,
     other_player,
 )
 
@@ -35,7 +36,7 @@ class State(BaseModel):
     positions: Dict[Player, List[Square]]
 
     # The two tiles on each book square.
-    # These correspond by position to BOOK_POSITIONS.
+    # These correspond by index to book_positions.
     book_tiles: List[Tuple[Tile, Tile]]
 
     # The remaining tile tiles are hidden off-board and never revealed.
@@ -57,6 +58,12 @@ class State(BaseModel):
     # redundant attributes for easier communication with frontend
     current_player: Player
     other_player: Player
+
+    # position of the book squares that allow swapping tiles
+    book_positions: List[Square] = BOOK_POSITIONS
+
+    # Position of the bonus that gives +1 coin
+    bonus_position: Square = BONUS_POSITION
 
     def tile_at(self, square: Square) -> Tile:
         """The tile occupying on the board at this square.  Error if there isn't one."""
