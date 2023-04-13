@@ -160,19 +160,17 @@ explaining what the player should do next
 .cell.highlight {
   background-color: lightgray;
 }
-.cell.book {
-  display: flex;
-  flex-direction: row;
+.cell.special {
   font-size: 7vmin;
   line-height: 7vmin;
+}
+.specialRow {
+  display: flex;
+  flex-direction: row;
   justify-content: space-evenly;
 
   color: grey;
   font-weight: light;
-}
-.bookTile {
-  line-height: unset;
-  font-size: unset;
 }
 .chosen-start::before {
   position: absolute;

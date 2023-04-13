@@ -86,26 +86,42 @@ function renderBoard(board, player_view) {
 
   const [bonusRow, bonusCol] = player_view.bonus_position;
   const bonusCell = findCell(board, bonusRow, bonusCol);
-  bonusCell.classList.add('book');
+  bonusCell.classList.add('special');
+
+  // TODO naming
+  const bonusTopRow = document.createElement("div");
+  bonusTopRow.classList = 'specialRow topRow';
+  bonusCell.append(bonusTopRow);
+
+  const bonusBottomRow = document.createElement("div");
+  bonusBottomRow.classList = 'specialRow bottomRow';
+  bonusCell.append(bonusBottomRow);
 
   const bonusElement = document.createElement("div");
   bonusElement.innerHTML = "+1";
   bonusElement.classList = "bonus";
-  bonusCell.append(bonusElement);
+  bonusTopRow.append(bonusElement);
 
   for (let p = 0; p < player_view.book_positions.length; p++) {
     const [bookRow, bookCol] = player_view.book_positions[p];
     const bookCell = findCell(board, bookRow, bookCol);
-    bookCell.classList.add('book');
+    bookCell.classList.add('special');
+
+    const topRow = document.createElement("div");
+    topRow.classList = 'specialRow topRow';
+    bookCell.append(topRow);
+
+    const bottomRow = document.createElement("div");
+    bottomRow.classList = 'specialRow bottomRow';
+    bookCell.append(bottomRow);
 
     for (const bookTile of player_view.book_tiles[p]) {
 
       // TODO find or create this element
+      // TODO sometimes clickable for exchanging identity
       const element = document.createElement("div");
-      element.classList = `bookTile ${bookTile}`;
       element.innerHTML = bookTile;
-
-      bookCell.append(element);
+      topRow.append(element);
     }
   }
 
@@ -118,9 +134,20 @@ function renderBoard(board, player_view) {
       const char = tiles[t];
       const [row, col] = positions[t];
       const cell = findCell(board, row, col);
-      cell.innerHTML = char;
-      cell.classList.remove(NORTH_PLAYER, SOUTH_PLAYER);
-      cell.classList.add(player);
+
+      let container;
+      if (cell.classList.contains("special")) {
+        // this cell has 2 rows
+        // put the tile in the bottom row
+        container = cell.querySelector('.bottomRow');
+      } else {
+        // this cell has nothing else
+        // put the tile directly in the cell
+        container = cell;
+      }
+      container.innerHTML = char;
+      container.classList.remove(NORTH_PLAYER, SOUTH_PLAYER);
+      container.classList.add(player);
     }
   }
 }
