@@ -23,6 +23,7 @@ const TILES = {
   "🀒": "🀒", // knives
   "🀍": "🀍", // hook
 };
+const HIDDEN_TILE = "🀫";
 const OTHER_ACTIONS = {
   "↕": "↕", // move
   "⚡": "⚡", // smite
@@ -46,5 +47,6 @@ export {
   TILES,
   OTHER_ACTIONS,
   RESPONSES,
+  HIDDEN_TILE,
 };
 

@@ -133,6 +133,7 @@ class State(BaseModel):
             # all tile positions are public knowledge
             positions=self.positions,
             # we can't see the book tiles
+            # TODO: unless we are standing on the square!
             book_tiles=[
                 (Tile.HIDDEN, Tile.HIDDEN),
                 (Tile.HIDDEN, Tile.HIDDEN),

@@ -90,24 +90,33 @@ function showMessage(message) {
 
 function sendSelection(board, actionPanel, infoPanel, websocket) {
   // send all clicks on the board
-  // and let the server decide if they are valid start/target selections
   board.addEventListener("click", ({ target }) => {
 
-    // "target" could be a cell or an element in a bonus or book
-    // find the containing cell
+    // send the (row, column) and let the server decide if it's a valid start or target
+    // selection
     const cell = target.closest(".cell");
-
     const row = parseInt(cell.dataset.row);
     const column = parseInt(cell.dataset.column);
-    if (!Number.isInteger(row) || !Number.isInteger(column)) {
-      return;
+    if (Number.isInteger(row) && Number.isInteger(column)) {
+      websocket.send(
+        JSON.stringify({
+          choiceId: CHOICE_ID,
+          data: {row, column}
+        })
+      );
     }
-    websocket.send(
-      JSON.stringify({
-        choiceId: CHOICE_ID,
-        data: {row, column}
-      })
-    );
+
+    // if clicked on clicked on a tile, send the tile and let the server decide
+    // if it's a valid choice for a book tile
+    const bookTile = target.dataset.tileName;
+    if (bookTile !== undefined) {
+      websocket.send(
+        JSON.stringify({
+          choiceId: CHOICE_ID,
+          data: {bookTile}
+        })
+      );
+    }
   });
 
   // send all clicks on the action panel

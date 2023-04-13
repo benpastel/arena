@@ -9,6 +9,7 @@ import {
   PLAYERS,
   NORTH_PLAYER,
   SOUTH_PLAYER,
+  HIDDEN_TILE,
 } from "./constants.js";
 
 
@@ -72,7 +73,8 @@ function findCell(board, row, col) {
 function addSpecialBottomRow(cell, contents) {
   // convert board cell to two rows and add book tiles or bonus to the bottom row
   //
-  // `contents`: array of innerHtml to set the new elements to
+  // `contents`: array to set inner html of the new elements
+  // also set the tileName to those contents if they are tiles
 
   // TODO don't re-add every time, but do rewrite contents if they change
 
@@ -93,10 +95,11 @@ function addSpecialBottomRow(cell, contents) {
   cell.append(bottomRow);
 
   for (const content of contents) {
-    // TODO find or create this element
-    // TODO sometimes clickable for exchanging identity
     const element = document.createElement("div");
     element.innerHTML = content;
+    if (content in TILES || content === HIDDEN_TILE) {
+      element.dataset.tileName = content;
+    }
     bottomRow.append(element);
   }
 }
@@ -133,7 +136,9 @@ function renderBoard(board, player_view) {
       let container;
       if (cell.classList.contains("special")) {
         // put the tile in the top row
+        // also annotate the row with the tile for exchanges
         container = cell.querySelector('.topRow');
+        container.dataset.tileName = char;
       } else {
         // put the tile directly in the cell
         container = cell;
