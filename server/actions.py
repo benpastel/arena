@@ -76,7 +76,7 @@ def _manhattan_dist(s1: Square, s2: Square) -> int:
     return abs(s1.row - s2.row) + abs(s1.col - s2.col)
 
 
-def _grapple_end_square(
+def grapple_end_square(
     start: Square, target: Square, obstructions: List[Square]
 ) -> Optional[Square]:
     """
@@ -215,9 +215,9 @@ def valid_targets(start: Square, state: State) -> Dict[Action, List[Square]]:
         Tile.BIRD: [s for s, dist in empty_targets.items() if 1 <= dist <= 2],
     }
 
-    # see `_grapple_end_square` for the definition of valid grapple targets
+    # see `grapple_end_square` for the definition of valid grapple targets
     actions[Tile.HOOK] = [
-        s for s in enemy_targets if _grapple_end_square(start, s, obstructions)
+        s for s in enemy_targets if grapple_end_square(start, s, obstructions)
     ]
 
     if coins >= SMITE_COST:
@@ -272,7 +272,7 @@ def take_action(
 
     if action == Tile.HOOK:
         # move target next to us
-        end_square = _grapple_end_square(start, target, obstructions=[])
+        end_square = grapple_end_square(start, target, obstructions=[])
         assert end_square
         state.positions[enemy].remove(target)
         state.positions[enemy].append(end_square)

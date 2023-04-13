@@ -4,7 +4,7 @@ from random import shuffle
 
 from websockets.server import WebSocketServerProtocol
 
-from arena.server.actions import valid_targets, take_action
+from arena.server.actions import valid_targets, take_action, grapple_end_square
 from arena.server.state import new_state, State
 from arena.server.constants import (
     Player,
@@ -44,6 +44,51 @@ def _auto_place_tiles(player: Player, state: State) -> None:
         state.positions[player].append(target)
 
 
+def _resolve_bonus(
+    square: Square,
+    state: State,
+) -> None:
+    """Give a player +A$1 for moving onto the bonus square"""
+    player = state.player_at(square)
+    state.log(f"{player}: +$1 bonus")
+    state.coins[player] += 1
+
+
+async def _resolve_book_exchange(
+    square: Square,
+    state: State,
+    websockets: Dict[Player, WebSocketServerProtocol],
+) -> None:
+    """Allow a player to exchange with a book square"""
+    player = state.player_at(square)
+    await notify_state_changed(state, websockets)
+    await send_prompt(
+        "Waiting for opponent to exchange book tiles.",
+        websockets[other_player(player)],
+    )
+    book_index = state.book_positions.index(square)
+    tile_on_board_index = state.positions[player].index(square)
+
+    old_tile = state.tile_at(square)
+    exchange_choices = state.book_tiles[book_index] + [old_tile]
+    choice = await choose_book_exchange(
+        exchange_choices,
+        "Select a book tile, or your current tile.",
+        websockets[player],
+    )
+
+    if choice != old_tile:
+        # they swapped with a book tile
+        state.tiles_on_board[player][tile_on_board_index] = choice
+        state.book_tiles[book_index].remove(choice)
+        state.book_tiles[book_index].append(old_tile)
+
+        # shuffle to hide which tile they placed
+        shuffle(state.book_tiles[book_index])
+
+    state.log(f"{player} exchanged book tiles.")
+
+
 async def _resolve_action(
     start: Square,
     action: Action,
@@ -59,40 +104,22 @@ async def _resolve_action(
     for hit in hits:
         await _lose_tile(hit, state, websockets)
 
-    # if we moved onto a special square, handle their effect
-    # TODO also handle HOOK move case
+    # we may have moved onto a special square
     if action in (OtherAction.MOVE, Tile.FLOWER, Tile.BIRD):
         if target == state.bonus_position:
-            state.log("+$1 bonus")
-            state.coins[state.current_player] += 1
+            _resolve_bonus(target, state)
 
         if target in state.book_positions:
-            await notify_state_changed(state, websockets)
-            await send_prompt(
-                "Waiting for opponent to exchange book tiles.",
-                websockets[state.other_player],
-            )
-            book_index = state.book_positions.index(target)
-            tile_on_board_index = state.positions[state.current_player].index(target)
+            await _resolve_book_exchange(target, state, websockets)
 
-            old_tile = state.tile_at(target)
-            exchange_choices = state.book_tiles[book_index] + [old_tile]
-            choice = await choose_book_exchange(
-                exchange_choices,
-                "Select a book tile, or your current tile.",
-                websockets[state.current_player],
-            )
+    # we may have grappled the opponent onto one
+    if action == Tile.HOOK:
+        end_square = grapple_end_square(start, target, obstructions=[])
+        if end_square == state.bonus_position:
+            _resolve_bonus(end_square, state)
 
-            if choice != old_tile:
-                # they swapped with a book tile
-                state.tiles_on_board[state.current_player][tile_on_board_index] = choice
-                state.book_tiles[book_index].remove(choice)
-                state.book_tiles[book_index].append(old_tile)
-
-                # shuffle to hide which tile they placed
-                shuffle(state.book_tiles[book_index])
-
-            state.log("exchanged book tiles")
+        if end_square in state.book_positions:
+            await _resolve_book_exchange(end_square, state, websockets)
 
 
 async def _select_action(
