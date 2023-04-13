@@ -121,6 +121,14 @@ class State(BaseModel):
         # identity
         opponent_board = [Tile.HIDDEN for tile in self.tiles_on_board[opponent]]
 
+        # we can see book tiles if we are standing on them
+        book_tiles = []
+        for b, position in enumerate(self.book_positions):
+            if position in self.positions[player]:
+                book_tiles.append(self.book_tiles[b])
+            else:
+                book_tiles.append((Tile.HIDDEN, Tile.HIDDEN))
+
         return State(
             tiles_in_hand={
                 player: self.tiles_in_hand[player],
@@ -130,14 +138,9 @@ class State(BaseModel):
                 player: self.tiles_on_board[player],
                 opponent: opponent_board,
             },
+            book_tiles=book_tiles,
             # all tile positions are public knowledge
             positions=self.positions,
-            # we can't see the book tiles
-            # TODO: unless we are standing on the square!
-            book_tiles=[
-                (Tile.HIDDEN, Tile.HIDDEN),
-                (Tile.HIDDEN, Tile.HIDDEN),
-            ],
             # we can't see the unused tiles
             unused_tiles=[Tile.HIDDEN, Tile.HIDDEN, Tile.HIDDEN],
             # we can see everything else
