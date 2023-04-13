@@ -40,6 +40,11 @@ body {
   line-height: 10vmin;
   font-size: 10vmin;
 }
+/*
+  TODO: layout the hand tiles side-by side too
+  display: flex;
+  flex-direction: row;
+*/
 .hand-tile {
   font-weight: light;
 }
@@ -144,6 +149,7 @@ explaining what the player should do next
 .cell {
   box-sizing: border-box;
   height: 20%; /* assumes a 5x5 board */
+  width: 100%;
   border: 1px solid darkgrey;
   background-color: white;
   position: relative;
@@ -153,6 +159,20 @@ explaining what the player should do next
 }
 .cell.highlight {
   background-color: lightgray;
+}
+.cell.book {
+  display: flex;
+  flex-direction: row;
+  font-size: 7vmin;
+  line-height: 7vmin;
+  justify-content: space-evenly;
+
+  color: grey;
+  font-weight: light;
+}
+.bookTile {
+  line-height: unset;
+  font-size: unset;
 }
 .chosen-start::before {
   position: absolute;

@@ -82,13 +82,31 @@ function renderBoard(board, player_view) {
   }
   // draw special board tiles
   // these are overwritten by player tiles
+  // TODO don't redraw every time?
+
   const [bonusRow, bonusCol] = player_view.bonus_position;
   const bonusCell = findCell(board, bonusRow, bonusCol);
-  bonusCell.innerHTML = "+1";
-  for (let t = 0; t < player_view.book_positions.length; t++) {
-    const [bookRow, bookCol] = player_view.book_positions[t];
+  bonusCell.classList.add('book');
+
+  const bonusElement = document.createElement("div");
+  bonusElement.innerHTML = "+1";
+  bonusElement.classList = "bonus";
+  bonusCell.append(bonusElement);
+
+  for (let p = 0; p < player_view.book_positions.length; p++) {
+    const [bookRow, bookCol] = player_view.book_positions[p];
     const bookCell = findCell(board, bookRow, bookCol);
-    bookCell.innerHTML = player_view.book_tiles[t].join('');
+    bookCell.classList.add('book');
+
+    for (const bookTile of player_view.book_tiles[p]) {
+
+      // TODO find or create this element
+      const element = document.createElement("div");
+      element.classList = `bookTile ${bookTile}`;
+      element.innerHTML = bookTile;
+
+      bookCell.append(element);
+    }
   }
 
   // set player tiles
