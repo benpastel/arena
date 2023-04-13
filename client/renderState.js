@@ -83,12 +83,12 @@ function renderBoard(board, player_view) {
   // draw special board tiles
   // these are overwritten by player tiles
   // TODO don't redraw every time?
+  // TODO abstract?
 
   const [bonusRow, bonusCol] = player_view.bonus_position;
   const bonusCell = findCell(board, bonusRow, bonusCol);
   bonusCell.classList.add('special');
 
-  // TODO naming
   const bonusTopRow = document.createElement("div");
   bonusTopRow.classList = 'specialRow topRow';
   bonusCell.append(bonusTopRow);

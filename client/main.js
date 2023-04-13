@@ -92,8 +92,13 @@ function sendSelection(board, actionPanel, infoPanel, websocket) {
   // send all clicks on the board
   // and let the server decide if they are valid start/target selections
   board.addEventListener("click", ({ target }) => {
-    const row = parseInt(target.dataset.row);
-    const column = parseInt(target.dataset.column);
+
+    // "target" could be a cell or an element in a bonus or book
+    // find the containing cell
+    const cell = target.closest(".cell");
+
+    const row = parseInt(cell.dataset.row);
+    const column = parseInt(cell.dataset.column);
     if (!Number.isInteger(row) || !Number.isInteger(column)) {
       return;
     }
