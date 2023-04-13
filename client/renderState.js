@@ -93,6 +93,12 @@ function renderBoard(board, player_view) {
   bonusTopRow.classList = 'specialRow topRow';
   bonusCell.append(bonusTopRow);
 
+  // put an empty div in the top row to hold the vertical space
+  // TODO: but overwrite it with tile?
+  const bonusEmpty = document.createElement("div");
+  bonusEmpty.innerHTML = '​';
+  bonusTopRow.append(bonusEmpty);
+
   const bonusBottomRow = document.createElement("div");
   bonusBottomRow.classList = 'specialRow bottomRow';
   bonusCell.append(bonusBottomRow);
@@ -100,7 +106,7 @@ function renderBoard(board, player_view) {
   const bonusElement = document.createElement("div");
   bonusElement.innerHTML = "+1";
   bonusElement.classList = "bonus";
-  bonusTopRow.append(bonusElement);
+  bonusBottomRow.append(bonusElement);
 
   for (let p = 0; p < player_view.book_positions.length; p++) {
     const [bookRow, bookCol] = player_view.book_positions[p];
@@ -110,6 +116,12 @@ function renderBoard(board, player_view) {
     const topRow = document.createElement("div");
     topRow.classList = 'specialRow topRow';
     bookCell.append(topRow);
+
+    // put an empty div in the top row to hold the vertical space
+    // TODO: but overwrite it with tile?
+    const empty = document.createElement("div");
+    empty.innerHTML = '​';
+    topRow.append(empty);
 
     const bottomRow = document.createElement("div");
     bottomRow.classList = 'specialRow bottomRow';
@@ -121,7 +133,7 @@ function renderBoard(board, player_view) {
       // TODO sometimes clickable for exchanging identity
       const element = document.createElement("div");
       element.innerHTML = bookTile;
-      topRow.append(element);
+      bottomRow.append(element);
     }
   }
 
@@ -138,8 +150,8 @@ function renderBoard(board, player_view) {
       let container;
       if (cell.classList.contains("special")) {
         // this cell has 2 rows
-        // put the tile in the bottom row
-        container = cell.querySelector('.bottomRow');
+        // put the tile in the top row
+        container = cell.querySelector('.topRow');
       } else {
         // this cell has nothing else
         // put the tile directly in the cell
