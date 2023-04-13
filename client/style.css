@@ -207,3 +207,11 @@ explaining what the player should do next
   color: blue
 }
 
+.start-north {
+  color: red
+}
+
+.start-south {
+  color: blue
+}
+

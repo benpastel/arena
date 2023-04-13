@@ -6,26 +6,24 @@ import {
   CHOSEN_START,
   CHOSEN_ACTION,
   CHOSEN_TARGET,
-  NORTH_TARGET,
-  SOUTH_TARGET,
 } from "./constants.js";
 
+import {findCell} from "./renderState.js";
 
-function markChosenStart(board, start) {
+
+function markChosenStart(board, start, player) {
   for (const element of board.querySelectorAll(".cell")) {
     element.classList.remove(CHOSEN_START);
+    element.classList.remove(`start-${NORTH_PLAYER}`);
+    element.classList.remove(`start-${SOUTH_PLAYER}`);
   }
   if (!start) {
     return;
   }
-  const [targetRow, targetCol] = start;
-  for (const element of board.querySelectorAll(".cell")) {
-    const r = parseInt(element.dataset.row);
-    const c = parseInt(element.dataset.column);
-    if ((r === targetRow) && (c === targetCol)) {
-      element.classList.add(CHOSEN_START);
-    }
-  }
+  const [row, col] = start;
+  const element = findCell(board, row, col);
+  element.classList.add(CHOSEN_START);
+  element.classList.add(`start-${player}`);
 }
 
 function markChosenAction(actionPanel, actionName) {
@@ -41,29 +39,16 @@ function markChosenAction(actionPanel, actionName) {
 function markChosenTarget(board, target, player) {
   for (const element of board.querySelectorAll(".cell")) {
     element.classList.remove(CHOSEN_TARGET);
-    element.classList.remove(NORTH_TARGET);
-    element.classList.remove(SOUTH_TARGET);
+    element.classList.remove(`target-${NORTH_PLAYER}`);
+    element.classList.remove(`target-${SOUTH_PLAYER}`);
   }
   if (!target) {
     return;
   }
-  const [targetRow, targetCol] = target;
-
-  let targetPlayerClass = "target-none";
-  if (player === NORTH_PLAYER) {
-    targetPlayerClass = NORTH_TARGET;
-  } else if (player === SOUTH_PLAYER) {
-    targetPlayerClass = SOUTH_TARGET;
-  }
-
-  for (const element of board.querySelectorAll(".cell")) {
-    const r = parseInt(element.dataset.row);
-    const c = parseInt(element.dataset.column);
-    if ((r === targetRow) && (c === targetCol)) {
-      element.classList.add(CHOSEN_TARGET);
-      element.classList.add(targetPlayerClass);
-    }
-  }
+  const [row, col] = target;
+  const element = findCell(board, row, col);
+  element.classList.add(CHOSEN_TARGET);
+  element.classList.add(`target-${player}`);
 }
 
 export {markChosenStart, markChosenAction, markChosenTarget};

@@ -154,7 +154,7 @@ function receiveSelection(board, actionPanel, websocket) {
       const action = event["action"];
       const target = event["target"];
 
-      markChosenStart(board, start);
+      markChosenStart(board, start, player);
       markChosenAction(actionPanel, action);
       markChosenTarget(board, target, player);
     }

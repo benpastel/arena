@@ -179,4 +179,4 @@ function renderHand(player_view) {
   }
 }
 
-export {createBoard, renderBoard, renderLog, renderHand, createActionPanel};
+export {createBoard, renderBoard, renderLog, renderHand, createActionPanel, findCell};

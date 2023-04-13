@@ -258,10 +258,9 @@ def new_state() -> State:
         ],
         unused_tiles=tiles[12:15],
         discard=[],
-        # first player starts with 1 fewer coins
-        coins={Player.N: 1, Player.S: 2},
+        coins={Player.N: 2, Player.S: 2},
         public_log=[],
-        # currently N hardcoded to go first
-        current_player=Player.N,
-        other_player=Player.S,
+        # currently S hardcoded to go first
+        current_player=Player.S,
+        other_player=Player.N,
     )
