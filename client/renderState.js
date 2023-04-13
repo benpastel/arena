@@ -69,72 +69,55 @@ function findCell(board, row, col) {
   return columnElement.querySelectorAll(".cell")[row];
 }
 
-function renderBoard(board, player_view) {
-  // TODO:
-  //  - save references directly to the elements instead of querying them each time?
-  //  - what's standard assert / error handling?
-  //  - only change the elements that changed?
+function addSpecialBottomRow(cell, contents) {
+  // convert board cell to two rows and add book tiles or bonus to the bottom row
+  //
+  // `contents`: array of innerHtml to set the new elements to
 
+  // TODO don't re-add every time, but do rewrite contents if they change
+
+  cell.classList.add('special');
+
+  const topRow = document.createElement("div");
+  topRow.classList = 'specialRow topRow';
+  cell.append(topRow);
+
+  // put an empty div in the top row to hold the vertical space
+  // TODO less hacky with a grid layout
+  const empty = document.createElement("div");
+  empty.innerHTML = '​';
+  topRow.append(empty);
+
+  const bottomRow = document.createElement("div");
+  bottomRow.classList = 'specialRow bottomRow';
+  cell.append(bottomRow);
+
+  for (const content of contents) {
+    // TODO find or create this element
+    // TODO sometimes clickable for exchanging identity
+    const element = document.createElement("div");
+    element.innerHTML = content;
+    bottomRow.append(element);
+  }
+}
+
+function renderBoard(board, player_view) {
   // set board empty
   for (const cell of board.querySelectorAll(".cell")) {
     cell.innerHTML = "";
     cell.classList = "cell invalid-target";
   }
-  // draw special board tiles
-  // these are overwritten by player tiles
-  // TODO don't redraw every time?
-  // TODO abstract?
 
+  // create the bonus +1 square
   const [bonusRow, bonusCol] = player_view.bonus_position;
   const bonusCell = findCell(board, bonusRow, bonusCol);
-  bonusCell.classList.add('special');
+  addSpecialBottomRow(bonusCell, ["+1"]);
 
-  const bonusTopRow = document.createElement("div");
-  bonusTopRow.classList = 'specialRow topRow';
-  bonusCell.append(bonusTopRow);
-
-  // put an empty div in the top row to hold the vertical space
-  // TODO: but overwrite it with tile?
-  const bonusEmpty = document.createElement("div");
-  bonusEmpty.innerHTML = '​';
-  bonusTopRow.append(bonusEmpty);
-
-  const bonusBottomRow = document.createElement("div");
-  bonusBottomRow.classList = 'specialRow bottomRow';
-  bonusCell.append(bonusBottomRow);
-
-  const bonusElement = document.createElement("div");
-  bonusElement.innerHTML = "+1";
-  bonusElement.classList = "bonus";
-  bonusBottomRow.append(bonusElement);
-
+  // create the book tile squares
   for (let p = 0; p < player_view.book_positions.length; p++) {
     const [bookRow, bookCol] = player_view.book_positions[p];
     const bookCell = findCell(board, bookRow, bookCol);
-    bookCell.classList.add('special');
-
-    const topRow = document.createElement("div");
-    topRow.classList = 'specialRow topRow';
-    bookCell.append(topRow);
-
-    // put an empty div in the top row to hold the vertical space
-    // TODO: but overwrite it with tile?
-    const empty = document.createElement("div");
-    empty.innerHTML = '​';
-    topRow.append(empty);
-
-    const bottomRow = document.createElement("div");
-    bottomRow.classList = 'specialRow bottomRow';
-    bookCell.append(bottomRow);
-
-    for (const bookTile of player_view.book_tiles[p]) {
-
-      // TODO find or create this element
-      // TODO sometimes clickable for exchanging identity
-      const element = document.createElement("div");
-      element.innerHTML = bookTile;
-      bottomRow.append(element);
-    }
+    addSpecialBottomRow(bookCell, player_view.book_tiles[p]);
   }
 
   // set player tiles
@@ -149,11 +132,9 @@ function renderBoard(board, player_view) {
 
       let container;
       if (cell.classList.contains("special")) {
-        // this cell has 2 rows
         // put the tile in the top row
         container = cell.querySelector('.topRow');
       } else {
-        // this cell has nothing else
         // put the tile directly in the cell
         container = cell;
       }
