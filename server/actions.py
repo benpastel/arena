@@ -80,14 +80,14 @@ def _grapple_end_square(
     start: Square, target: Square, obstructions: List[Square]
 ) -> Optional[Square]:
     """
-    If the grapple is valid, return the square `start` ends up after grappling.
+    If the grapple is valid, return the square the enemy is pulled to.
     Otherwise return None.
 
     A grapple is valid if the target is a Queen move away (straight line or diagonal)
     and the enemy is in line of sight.
 
-    The end square the square adjacent to `target` which is nearest to `start` -
-    i.e. the penultimate square along the line of sight.
+    The end square is the square adjacent to `start` which is nearest to `target` -
+    i.e. the first square along the line of sight.
     """
     row_diff = target.row - start.row
     col_diff = target.col - start.col
@@ -97,7 +97,7 @@ def _grapple_end_square(
         and col_diff != 0
         or row_diff != 0
         and col_diff == 0
-        or row_diff == col_diff
+        or abs(row_diff) == abs(col_diff)
     ):
         # not in a straight line / diagonal
         return None
@@ -107,6 +107,9 @@ def _grapple_end_square(
     col_step = col_diff // abs(col_diff) if col_diff != 0 else 0
     assert row_step != 0 or col_step != 0
 
+    end_square = Square(row=start.row + row_step, col=start.col + col_step)
+
+    # walk through the path and make sure no obstructions
     current_square = start
     while True:
         next_square = Square(
@@ -118,7 +121,7 @@ def _grapple_end_square(
 
         if next_square == target:
             # this is the final square before target
-            return current_square
+            return end_square
 
         if next_square in obstructions:
             # we hit an obstruction first; this is not a legal move
@@ -268,11 +271,11 @@ def take_action(
         return []
 
     if action == Tile.HOOK:
-        # move next to target
+        # move target next to us
         end_square = _grapple_end_square(start, target, obstructions=[])
         assert end_square
-        state.positions[player].remove(start)
-        state.positions[player].append(end_square)
+        state.positions[enemy].remove(target)
+        state.positions[enemy].append(end_square)
 
         # steal
         steal_amount = min(GRAPPLE_STEAL_AMOUNT, state.coins[enemy])
