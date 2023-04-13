@@ -1,5 +1,6 @@
 import asyncio
 from typing import Dict, Tuple, Optional, cast, List, Literal
+from random import shuffle
 
 from websockets.server import WebSocketServerProtocol
 
@@ -20,6 +21,7 @@ from arena.server.choices import (
     choose_action_or_square,
     choose_square_or_hand,
     choose_response,
+    choose_book_exchange,
     send_prompt,
 )
 from arena.server.notify import (
@@ -59,18 +61,38 @@ async def _resolve_action(
 
     # if we moved onto a special square, handle their effect
     # TODO also handle HOOK move case
-    if (
-        action in (OtherAction.MOVE, Tile.FLOWER, Tile.BIRD)
-        and target == state.bonus_position
-    ):
-        state.log("+$1 for moving onto BONUS")
-        state.coins[state.current_player] += 1
+    if action in (OtherAction.MOVE, Tile.FLOWER, Tile.BIRD):
+        if target == state.bonus_position:
+            state.log("+$1 bonus")
+            state.coins[state.current_player] += 1
 
-    if (
-        action in (OtherAction.MOVE, Tile.FLOWER, Tile.BIRD)
-        and target in state.book_positions
-    ):
-        state.log("TODO: handle book positions...")
+        if target in state.book_positions:
+            await notify_state_changed(state, websockets)
+            await send_prompt(
+                "Waiting for opponent to exchange book tiles.",
+                websockets[state.other_player],
+            )
+            book_index = state.book_positions.index(target)
+            tile_on_board_index = state.positions[state.current_player].index(target)
+
+            old_tile = state.tile_at(target)
+            exchange_choices = state.book_tiles[book_index] + [old_tile]
+            choice = await choose_book_exchange(
+                exchange_choices,
+                "Select a book tile, or your current tile.",
+                websockets[state.current_player],
+            )
+
+            if choice != old_tile:
+                # they swapped with a book tile
+                state.tiles_on_board[state.current_player][tile_on_board_index] = choice
+                state.book_tiles[book_index].remove(choice)
+                state.book_tiles[book_index].append(old_tile)
+
+                # shuffle to hide which tile they placed
+                shuffle(state.book_tiles[book_index])
+
+            state.log("exchanged book tiles")
 
 
 async def _select_action(

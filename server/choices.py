@@ -72,12 +72,14 @@ async def _send_highlights(
     squares: List[Square],
     actions: List[Action | Response],
     hand_tiles: List[Tile],
+    board_tiles: List[Tile],
 ):
     event = {
         "type": OutEventType.HIGHLIGHT_CHANGE,
         "squares": squares,
         "actions": actions,
         "handTiles": hand_tiles,
+        "boardTiles": board_tiles,
     }
     await websocket.send(json.dumps(event))
 
@@ -90,11 +92,12 @@ async def _highlighted(
     squares: List[Square] = [],
     actions: List[Action | Response] = [],
     hand_tiles: List[Tile] = [],
+    board_tiles: List[Tile] = [],
 ):
-    await _send_highlights(websocket, squares, actions, hand_tiles)
+    await _send_highlights(websocket, squares, actions, hand_tiles, board_tiles)
     yield
     # clear highlights in UI by highlighting empty lists
-    await _send_highlights(websocket, [], [], [])
+    await _send_highlights(websocket, [], [], [], [])
 
 
 async def choose_action_or_square(
@@ -163,7 +166,7 @@ async def choose_square_or_hand(
 
             # try parsing as a Tile
             try:
-                tile = Tile(data["tile"])
+                tile = Tile(data["handTile"])
                 if tile in possible_hand_tiles:
                     return tile
             except:
@@ -203,3 +206,27 @@ async def choose_response(
 
             # it's not valid; get a new choice
             print(f"Ignoring invalid choice {data=}, {possible_responses=}")
+
+
+async def choose_book_exchange(
+    choices: List[Tile],
+    prompt: str,
+    websocket: WebSocketServerProtocol,
+) -> Tile:
+    async with _highlighted(websocket, board_tiles=choices):
+        # loop until we get a valid response
+        while True:
+            data = await _get_choice(
+                prompt,
+                websocket,
+            )
+            # try parsing as a Tile
+            try:
+                tile = Tile(data["boardTile"])
+                if tile in choices:
+                    return tile
+            except:
+                pass
+
+            # it's not valid; get a new choice
+            print(f"Ignoring invalid choice {data=}, {choices=}")

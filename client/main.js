@@ -108,12 +108,12 @@ function sendSelection(board, actionPanel, infoPanel, websocket) {
 
     // if clicked on clicked on a tile, send the tile and let the server decide
     // if it's a valid choice for a book tile
-    const bookTile = target.dataset.tileName;
-    if (bookTile !== undefined) {
+    const boardTile = target.dataset.tileName;
+    if (boardTile !== undefined) {
       websocket.send(
         JSON.stringify({
           choiceId: CHOICE_ID,
-          data: {bookTile}
+          data: {boardTile}
         })
       );
     }
@@ -139,14 +139,14 @@ function sendSelection(board, actionPanel, infoPanel, websocket) {
   //
   // clicks on the opponent's tiles are also sent, but they are Tile.HIDDEN so never valid
   infoPanel.addEventListener("click", ({ target }) => {
-    const tile = target.dataset.tileName;
-    if (tile === undefined) {
+    const handTile = target.dataset.tileName;
+    if (handTile === undefined) {
       return;
     }
     websocket.send(
       JSON.stringify({
         choiceId: CHOICE_ID,
-        data: {tile}
+        data: {handTile}
       })
     );
   });

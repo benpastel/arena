@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple
+from typing import List, Dict
 from random import shuffle
 
 from pydantic import BaseModel
@@ -37,7 +37,7 @@ class State(BaseModel):
 
     # The two tiles on each book square.
     # These correspond by index to book_positions.
-    book_tiles: List[Tuple[Tile, Tile]]
+    book_tiles: List[List[Tile]]
 
     # The remaining tile tiles are hidden off-board and never revealed.
     unused_tiles: List[Tile]
@@ -127,7 +127,7 @@ class State(BaseModel):
             if position in self.positions[player]:
                 book_tiles.append(self.book_tiles[b])
             else:
-                book_tiles.append((Tile.HIDDEN, Tile.HIDDEN))
+                book_tiles.append([Tile.HIDDEN, Tile.HIDDEN])
 
         return State(
             tiles_in_hand={
