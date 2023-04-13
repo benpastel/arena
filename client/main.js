@@ -93,31 +93,30 @@ function sendSelection(board, actionPanel, infoPanel, websocket) {
   // send all clicks on the board
   board.addEventListener("click", ({ target }) => {
 
-    // send the (row, column) and let the server decide if it's a valid start or target
-    // selection
+    // send both the square's (row, column)
+    // and the tile if it exists
+    // and let the server decide if it's a valid start, target, or exchange tile
+    const boardTile = target.dataset.tileName;
     const cell = target.closest(".cell");
     const row = parseInt(cell.dataset.row);
     const column = parseInt(cell.dataset.column);
+
+    const data = {};
+
     if (Number.isInteger(row) && Number.isInteger(column)) {
-      websocket.send(
-        JSON.stringify({
-          choiceId: CHOICE_ID,
-          data: {row, column}
-        })
-      );
+      data.row = row;
+      data.column = column;
+    }
+    if (boardTile !== undefined) {
+      data.boardTile = boardTile;
     }
 
-    // if clicked on clicked on a tile, send the tile and let the server decide
-    // if it's a valid choice for a book tile
-    const boardTile = target.dataset.tileName;
-    if (boardTile !== undefined) {
-      websocket.send(
-        JSON.stringify({
-          choiceId: CHOICE_ID,
-          data: {boardTile}
-        })
-      );
-    }
+    websocket.send(
+      JSON.stringify({
+        choiceId: CHOICE_ID,
+        data
+      })
+    );
   });
 
   // send all clicks on the action panel

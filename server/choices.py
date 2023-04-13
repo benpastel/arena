@@ -29,7 +29,6 @@ NEXT_CHOICE_ID: WeakKeyDictionary[WebSocketServerProtocol, int] = WeakKeyDiction
 async def send_prompt(
     prompt: str, websocket: WebSocketServerProtocol, choice_id: int = 0
 ) -> None:
-    # TODO explain choice_id
     event = {"type": "PROMPT", "choiceId": choice_id, "prompt": prompt}
     await websocket.send(json.dumps(event))
 
