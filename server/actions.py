@@ -32,7 +32,7 @@ def _all_distances(
     cols: int = COLUMNS,
 ) -> Dict[Square, int]:
     """
-    Return the manhattan distance from the start to all squares, with routes:
+    Return the distance from the start to all squares, with routes:
         - allowed to end on an obstruction
         - not allowed to pass through an obstruction as an intermediate step
     """
@@ -48,17 +48,26 @@ def _all_distances(
     while to_explore:
         s = to_explore.pop(0)
         dist = to_explore_dists.pop(0)
+        if s in explored:
+            continue
+
         explored[s] = dist
+
         if s in obstructions:
             continue
+
         for r, c in [
-            (s.row - 1, s.col),
-            (s.row + 1, s.col),
-            (s.row, s.col - 1),
-            (s.row, s.col + 1),
+            (s.row - 1, s.col - 1),
+            (s.row - 1, s.col + 0),
+            (s.row - 1, s.col + 1),
+            (s.row + 0, s.col - 1),
+            (s.row + 0, s.col + 1),
+            (s.row + 1, s.col - 1),
+            (s.row + 1, s.col + 0),
+            (s.row + 1, s.col + 1),
         ]:
-            if 0 <= r < rows and 0 <= c < cols and Square(r, c) not in explored:
-                to_explore.append(Square(r, c))
+            if 0 <= r < rows and 0 <= c < cols and Square(row=r, col=c) not in explored:
+                to_explore.append(Square(row=r, col=c))
                 to_explore_dists.append(dist + 1)
     return explored
 

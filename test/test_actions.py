@@ -12,6 +12,8 @@ def test_all_distances():
     #
     # where X is the start square and Os are obstructions.
 
+    # TODO: update to non-manhattan distances
+
     start = Square(1, 2)
     obstructions = [
         Square(0, 1),
@@ -25,13 +27,14 @@ def test_all_distances():
         Square(0, 2): 1,
         Square(1, 1): 1,
         Square(2, 2): 1,
-        Square(3, 2): 2,
-        Square(0, 1): 2,
+        Square(2, 1): 1,
+        Square(0, 1): 1,
+        Square(0, 0): 2,
         Square(1, 0): 2,
-        Square(2, 1): 2,
-        Square(3, 1): 3,
-        Square(3, 0): 4,
-        Square(2, 0): 5,
+        Square(3, 1): 2,
+        Square(3, 2): 2,
+        Square(2, 0): 2,
+        Square(3, 0): 3,
     }
 
 
