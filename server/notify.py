@@ -58,12 +58,12 @@ async def notify_game_over(
             us = score[player]
             them = score[other_player(player)]
             if us > them:
-                msg = f"🎉🎉🎉 You won {us} to {them}!  Dang, nice job!"
+                msg = f"🎉🎉🎉 You won {us} to {them}.  Dang, nice job!"
             elif us == them:
                 msg = f"Tie! {us} - {them}."
             else:
                 msg = f"You lost {us} to {them} :(  This game is mostly luck..."
-            msg += "  Refresh to try again!"
+            msg += "  Refresh to try again."
             event = {"type": OutEventType.MATCH_CHANGE.value, "message": msg}
             message = json.dumps(event)
             coroutine = websocket.send(message)

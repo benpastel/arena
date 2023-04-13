@@ -78,22 +78,22 @@ class Tile(str, Enum):
     if challenged and you aren't that tile.
     """
 
-    # move 1 & gain 3 mana
+    # move 1 & gain $3
     FLOWER = "🀥"
 
-    # pull yourself to any enemy at a Queen move & steal 2 mana
+    # pull yourself to any enemy at a Queen move & steal $2
     HOOK = "🀍"
 
-    # move 1-2 & gain 2 mana
+    # move 1-2 & gain $2
     BIRD = "🀐"
 
-    # spend 3 mana to kill in a 3x3 square
+    # $3 to kill in a 3x3 square
     # around an empty square 2 squares away in a cardinal direction
     GRENADES = "🀛"
 
     # spend:
-    #   - 3 mana to kill @ range 1
-    #   - 5 mana to kill @ range 2
+    #   - $3 to kill @ manhattan distance range 1
+    #   - $5 to kill @ manhattan distance range 2
     KNIVES = "🀒"
 
     # Represents a tile with value unknown to a player

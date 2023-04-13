@@ -72,6 +72,10 @@ def _all_distances(
     return explored
 
 
+def _manhattan_dist(s1: Square, s2: Square) -> int:
+    return abs(s1.row - s2.row) + abs(s1.col - s2.col)
+
+
 def _grapple_end_square(
     start: Square, target: Square, obstructions: List[Square]
 ) -> Optional[Square]:
@@ -219,11 +223,11 @@ def valid_targets(start: Square, state: State) -> Dict[Action, List[Square]]:
 
     if coins >= KNIVES_RANGE_2_COST:
         actions[Tile.KNIVES] = [
-            s for s, dist in enemy_targets.items() if 1 <= dist <= 2
+            s for s in enemy_targets if 1 <= _manhattan_dist(start, s) <= 2
         ]
     elif coins >= KNIVES_RANGE_1_COST:
         actions[Tile.KNIVES] = [
-            s for s, dist in enemy_targets.items() if 1 <= dist <= 2
+            s for s in enemy_targets if 1 == _manhattan_dist(start, s)
         ]
 
     if coins >= GRENADES_COST:
