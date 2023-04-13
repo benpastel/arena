@@ -99,6 +99,7 @@ function addSpecialBottomRow(cell, contents) {
     element.innerHTML = content;
     if (content in TILES || content === HIDDEN_TILE) {
       element.dataset.tileName = content;
+      element.classList.add('board-tile');
     }
     bottomRow.append(element);
   }
@@ -136,9 +137,10 @@ function renderBoard(board, player_view) {
       let container;
       if (cell.classList.contains("special")) {
         // put the tile in the top row
-        // also annotate the row with the tile for exchanges
+        // also annotate the tile for exchanges
         container = cell.querySelector('.topRow');
         container.dataset.tileName = char;
+        container.classList.add('board-tile');
       } else {
         // put the tile directly in the cell
         container = cell;

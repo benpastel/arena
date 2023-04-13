@@ -24,6 +24,7 @@ import {
   highlightSquares,
   highlightActions,
   highlightHand,
+  highlightBoardTiles,
 } from "./renderHighlights.js";
 
 
@@ -180,10 +181,12 @@ function receiveHighlights(board, actionPanel, infoPanel, websocket) {
       const squares = event["squares"];
       const actions = event["actions"];
       const handTiles = event["handTiles"];
+      const boardTiles = event["boardTiles"];
 
       highlightSquares(squares, board);
       highlightActions(actions, actionPanel);
       highlightHand(handTiles, infoPanel);
+      highlightBoardTiles(boardTiles, board);
     }
   });
 }

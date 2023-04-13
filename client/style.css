@@ -168,9 +168,13 @@ explaining what the player should do next
   display: flex;
   flex-direction: row;
   justify-content: space-evenly;
-
   color: grey;
+}
+.board-tile {
   font-weight: light;
+}
+.board-tile.highlight {
+  font-weight: bold;
 }
 .chosen-start::before {
   position: absolute;

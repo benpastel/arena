@@ -47,4 +47,16 @@ function highlightHand(handTiles, infoPanel) {
   }
 }
 
-export {highlightSquares, highlightActions, highlightHand};
+function highlightBoardTiles(boardTiles, board) {
+  // highlight tiles on board
+  // pass an empty list to clear highlighting
+  for (const element of board.querySelectorAll('.board-tile')) {
+    if (boardTiles.includes(element.dataset.tileName)) {
+      element.classList.add(HIGHLIGHT);
+    } else {
+      element.classList.remove(HIGHLIGHT);
+    }
+  }
+}
+
+export {highlightSquares, highlightActions, highlightHand, highlightBoardTiles};
