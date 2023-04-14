@@ -1,14 +1,6 @@
 
 # TODO: GAME RULE CHANGES
 
-- add diagonals back?  but not for knives?
-
-- reconsider grappler
-I think we want to go back to: enemy gets pulled to you
-plus diagonals
-then enemy has a clear line of retreat unless you've backed them into a corner
-
-
 LATER:
     - randomize start positions
     - randomize center positions? can even change # of stuff and size of + points
@@ -17,7 +9,15 @@ LATER:
 
 # TODO: SERVER
 
-- BUG: grappling doesn't work on UPPER RIGHT diagonels?
+- tiles just changed after swap?
+- maybe challenge loss should resolve after action loss
+
+- configurable button for random start
+
+- DID HER TILES CHANGE BEFORE SWAP???
+
+CONSIDER: changing bird back to +1
+
 
 
 # TODO: UI
@@ -37,3 +37,23 @@ LATER:
 
 - informational tooltips everywhere!!!!
 
+- clickable things transform cursor into a pointer finger
+- phrasing on exchanged tiles
+- bolding tiles looks weird.  change color?  alpha?  highlight?
+
+- show selected money spend in UI somehow
+    in corner?
+
+- don't need to select a source tile for choosing smite
+- CRITICAL: indicate to player which tile lost before they replace tile
+- BUG: tiles swap when fail a challenge???
+    failed challenge on a bird???
+
+ - draw A/B on the tiles?  or give them colors?
+
+4-3
+1-4
+
+5-7
+
+4-1

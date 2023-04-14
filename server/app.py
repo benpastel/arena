@@ -9,6 +9,13 @@ from websockets.server import WebSocketServerProtocol, serve
 from arena.server.constants import Player
 from arena.server.game import play_one_game
 
+# For now we don't use SSL because it's local-network only
+# import ssl
+
+# ssl_context = ssl.create_default_context()
+# ssl_context.check_hostname = False
+# ssl_context.verify_mode = ssl.CERT_NONE
+
 
 # For now we support at most one game at a time.
 # this tracks the websocket of each connected player
@@ -52,7 +59,8 @@ async def handler(websocket: WebSocketServerProtocol) -> None:
 
 
 async def main() -> None:
-    async with serve(handler, "", 8001):  # type: ignore
+    # , ssl=ssl_context
+    async with serve(handler, "", 8001):
         await asyncio.Future()  # run forever
 
 
