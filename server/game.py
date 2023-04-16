@@ -223,8 +223,9 @@ async def _lose_tile(
         # a specific square was lost to an attack, so they get no choice
         player = state.player_at(player_or_square)
         possible_squares = [player_or_square]
-    elif player_or_square in Player:
+    else:
         # they lost a challenge, so they get a choice if they have multiple tiles
+        assert player_or_square in Player
         player = player_or_square
         possible_squares = state.positions[player]
 

@@ -9,15 +9,9 @@ LATER:
 
 # TODO: SERVER
 
-- tiles just changed after swap?
 - maybe challenge loss should resolve after action loss
 
 - configurable button for random start
-
-- DID HER TILES CHANGE BEFORE SWAP???
-
-CONSIDER: changing bird back to +1
-
 
 
 # TODO: UI
@@ -46,14 +40,13 @@ CONSIDER: changing bird back to +1
 
 - don't need to select a source tile for choosing smite
 - CRITICAL: indicate to player which tile lost before they replace tile
-- BUG: tiles swap when fail a challenge???
-    failed challenge on a bird???
 
- - draw A/B on the tiles?  or give them colors?
 
-4-3
-1-4
 
-5-7
+MAYBE:
+    - change bird back to +1, but make center tile +2?
+    - 6x5 board?
+    - draw A/B on the tiles?  or give them colors?
 
-4-1
+
+

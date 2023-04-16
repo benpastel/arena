@@ -261,8 +261,8 @@ def take_action(
 
     if action in (OtherAction.MOVE, Tile.FLOWER, Tile.BIRD):
         # move to the target square
-        state.positions[player].remove(start)
-        state.positions[player].append(target)
+        start_index = state.positions[player].index(start)
+        state.positions[player][start_index] = target
 
         # gain coins
         state.coins[player] += COIN_GAIN[action]
@@ -274,8 +274,8 @@ def take_action(
         # move target next to us
         end_square = grapple_end_square(start, target, obstructions=[])
         assert end_square
-        state.positions[enemy].remove(target)
-        state.positions[enemy].append(end_square)
+        target_index = state.positions[enemy].index(target)
+        state.positions[enemy][target_index] = end_square
 
         # steal
         steal_amount = min(GRAPPLE_STEAL_AMOUNT, state.coins[enemy])
