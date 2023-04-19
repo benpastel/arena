@@ -197,26 +197,30 @@ explaining what the player should do next
 }
 
 .north {
-  color: red
+  color: red;
 }
 
 .south {
-  color: blue
+  color: blue;
 }
 
 .target-north.chosen-target::before {
-  color: red
+  color: red;
 }
 
 .target-south.chosen-target::before {
-  color: blue
+  color: blue;
 }
 
 .start-north {
-  color: red
+  color: red;
 }
 
 .start-south {
-  color: blue
+  color: blue;
+}
+
+.highlight {
+  cursor: pointer;
 }
 
