@@ -50,7 +50,7 @@ def _resolve_bonus(
 ) -> None:
     """Give a player +A$1 for moving onto the bonus square"""
     player = state.player_at(square)
-    state.log(f"{player}: +$1 bonus")
+    state.log(f"{player.format_for_log()}: +$1 bonus")
     state.coins[player] += 1
 
 
@@ -86,7 +86,7 @@ async def _resolve_exchange(
         # shuffle to hide which tile they placed
         shuffle(state.exchange_tiles[exchange_index])
 
-    state.log(f"{player} may have exchanged tiles.")
+    state.log(f"{player.format_for_log()} may have exchanged tiles.")
 
 
 async def _resolve_action(
@@ -99,7 +99,7 @@ async def _resolve_action(
     # `hits` is a possibly-empty list of tiles hit by the action
     hits = take_action(start, action, target, state)
 
-    state.log(f"{state.current_player} uses {action}")
+    state.log(f"{state.current_player.format_for_log()} uses {action}")
 
     for hit in hits:
         await _lose_tile(hit, state, websockets)
@@ -309,10 +309,12 @@ async def _lose_tile(
         state.tiles_on_board[player].append(replacement)
         state.positions[player].append(square)
         state.log(
-            f"{player} lost {tile} on {square.format_for_log()} and replaced it from hand."
+            f"{player.format_for_log()} lost {tile} on {square.format_for_log()} and replaced it from hand."
         )
     else:
-        state.log(f"{player} lost {tile} on {square.format_for_log()}.")
+        state.log(
+            f"{player.format_for_log()} lost {tile} on {square.format_for_log()}."
+        )
 
     await notify_state_changed(state, websockets)
 
@@ -395,13 +397,13 @@ async def _play_one_turn(
 
     elif response == Response.CHALLENGE:
         start_tile = state.tile_at(start)
-        msg = f"{state.current_player} reveals a {start_tile}."
+        msg = f"{state.current_player.format_for_log()} reveals a {start_tile}."
         if action == start_tile:
             # challenge fails
             # original action succeeds
             state.log(
                 msg
-                + f" Challenge fails!  First the {action} happens, then {state.other_player} will choose a tile to lose."
+                + f" Challenge fails!  First the {action} happens, then {state.other_player.format_for_log()} will choose a tile to lose."
             )
             await _resolve_action(start, action, target, state, websockets)
             await _lose_tile(state.other_player, state, websockets)
@@ -416,7 +418,7 @@ async def _play_one_turn(
         # which the original player may challenge
         block_response = await _select_block_response(state, websockets)
         target_tile = state.tile_at(target)
-        reveal_msg = f"{state.other_player} reveals a {target_tile}."
+        reveal_msg = f"{state.other_player.format_for_log()} reveals a {target_tile}."
 
         if block_response == Response.ACCEPT:
             # block succeeds
@@ -434,7 +436,7 @@ async def _play_one_turn(
             # original action succeeds
             state.log(
                 reveal_msg
-                + f" Challenge succeeds!  First the {action} happens, then {state.other_player} will choose a tile to lose."
+                + f" Challenge succeeds!  First the {action} happens, then {state.other_player.format_for_log()} will choose a tile to lose."
             )
             await _resolve_action(start, action, target, state, websockets)
             await _lose_tile(state.other_player, state, websockets)

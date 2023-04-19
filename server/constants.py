@@ -11,6 +11,9 @@ class Player(str, Enum):
     N = "north"
     S = "south"
 
+    def format_for_log(self) -> str:
+        return self.value.upper()
+
 
 def other_player(p: Player) -> Player:
     return Player.S if p == Player.N else Player.N
