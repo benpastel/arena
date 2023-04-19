@@ -41,11 +41,6 @@ body {
   line-height: 10vmin;
   font-size: 10vmin;
 }
-/*
-  TODO: layout the hand tiles side-by side too
-  display: flex;
-  flex-direction: row;
-*/
 .hand-tile {
   font-weight: light;
 }

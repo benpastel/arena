@@ -119,7 +119,6 @@ function addSpecialBottomRow(cell, contents) {
 }
 
 function renderBoard(board, player_view) {
-  // TODO: don't remove selection stuff
   // set board empty
   for (const cell of board.querySelectorAll(".cell")) {
     cell.innerHTML = "";
@@ -160,7 +159,6 @@ function renderBoard(board, player_view) {
         container = cell;
       }
       container.innerHTML = char;
-      // container.classList.remove(NORTH_PLAYER, SOUTH_PLAYER); // TODO I think don't need now?
       container.classList.add(player);
     }
   }
@@ -190,7 +188,7 @@ function renderHand(player_view) {
         panel.removeChild(element);
       }
       for (const tile of hand) {
-        const element = document.createElement("div");
+        const element = document.createElement("span");
         element.innerHTML = tile;
         element.dataset.tileName = tile;
         element.classList.add('hand-tile');
