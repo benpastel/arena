@@ -29,6 +29,21 @@ NEXT_CHOICE_ID: WeakKeyDictionary[WebSocketServerProtocol, int] = WeakKeyDiction
 async def send_prompt(
     prompt: str, websocket: WebSocketServerProtocol, choice_id: int = 0
 ) -> None:
+    """
+    Update the player's prompt.
+
+    If we need them to make a choice, choice_id should be set to an incrementing ID
+    so that we can ignore old clicks from before this prompt.
+    We add alert emoji around the prompt.
+
+    If we don't need them to make a choice, we keep choice_id = 0.  We add
+    hourglass emoji around the prompt.
+    """
+    if choice_id > 0:
+        prompt = f"⚠️ {prompt} ⚠️"
+    else:
+        prompt = f"⌛ {prompt} ⌛"
+
     event = {"type": "PROMPT", "choiceId": choice_id, "prompt": prompt}
     await websocket.send(json.dumps(event))
 
@@ -42,7 +57,7 @@ async def _get_choice(prompt: str, websocket: WebSocketServerProtocol) -> dict:
 
     # increment choice id
     # we use this to ignore old messages
-    expected_choice_id = NEXT_CHOICE_ID.get(websocket, 0)
+    expected_choice_id = NEXT_CHOICE_ID.get(websocket, 1)
     NEXT_CHOICE_ID[websocket] = expected_choice_id + 1
     await send_prompt(prompt, websocket, expected_choice_id)
 

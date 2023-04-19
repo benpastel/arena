@@ -123,9 +123,10 @@ explaining what the player should do next
   grid-column: 1 / 4;
   grid-row: 3 / 4;
   font-size: 3vmin;
-  line-height: 3vmin;
+  line-height: 4vmin;
   font-style: italic;
 
+  vertical-align: middle;
   overflow-x:auto;
 }
 
