@@ -116,6 +116,37 @@ currently available actions are highlighted
   border-radius: 100%;
   border: 1px solid;
 }
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+.tooltip .tooltiptext {
+  line-height: 2vmin;
+  font-size: 2vmin;
+
+  background-color: black;
+  color: white;
+
+  visibility: hidden;
+  text-align: center;
+  padding: 5px 0;
+  border-radius: 6px;
+
+  border-width: 1px;
+  border-color: black;
+
+  position: absolute;
+  z-index: 1;
+
+  width: 20vmin;
+  bottom: 100%;
+  left: 50%;
+  margin-left: -10vmin;
+}
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+}
 
 /*
 the prompt is a text string at the bottom of the screen

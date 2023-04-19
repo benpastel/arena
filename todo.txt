@@ -15,5 +15,3 @@ MAYBE:
 CRITICAL:
     - don't need to select a source tile for choosing smite
 
-    - informational tooltips everywhere!!!!
-

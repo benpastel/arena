@@ -10,6 +10,7 @@ import {
   NORTH_PLAYER,
   SOUTH_PLAYER,
   HIDDEN_TILE,
+  TOOLTIPS,
 } from "./constants.js";
 
 
@@ -31,34 +32,45 @@ function createBoard(board) {
   return board;
 }
 
+function addTooltip(element, text) {
+  element.classList.add('tooltip');
+  const textElement = document.createElement("span");
+  textElement.classList = 'tooltiptext';
+  textElement.innerHTML = text;
+  element.append(textElement)
+}
+
 function createActionPanel(action_panel) {
 
   for (const name in OTHER_ACTIONS) {
     const element = document.createElement("div");
     element.innerHTML = OTHER_ACTIONS[name];
     element.dataset.name = name;
-    element.classList.add("outlined-button");
+    element.classList = "outlined-button";
     action_panel.append(element);
+    addTooltip(element, TOOLTIPS[name]);
   }
   const sep1 = document.createElement('div');
-  sep1.classList.add("action-separator");
+  sep1.classList = "action-separator";
   action_panel.append(sep1);
   for (const name in TILES) {
     const element = document.createElement("div");
     element.innerHTML = TILES[name];
     element.dataset.name = name;
-    element.classList.add("tile-button");
+    element.classList = "tile-button";
     action_panel.append(element);
+    addTooltip(element, TOOLTIPS[name]);
   }
   const sep2 = document.createElement('div');
-  sep2.classList.add("action-separator");
+  sep2.classList = "action-separator";
   action_panel.append(sep2);
   for (const name in RESPONSES) {
     const element = document.createElement("div");
     element.innerHTML = RESPONSES[name];
     element.dataset.name = name;
-    element.classList.add("outlined-button");
+    element.classList = "outlined-button";
     action_panel.append(element);
+    addTooltip(element, TOOLTIPS[name]);
   }
   return action_panel;
 }

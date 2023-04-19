@@ -33,6 +33,35 @@ const RESPONSES = {
   "🚩": "🚩", // challenge
 };
 
+const TOOLTIPS = {
+  "↕": "MOVE: move 1<br>gain $1",
+  "⚡": "SMITE: pay $7<br>kill any enemy",
+  "🀥": "FLOWER: move 1<br>gain $3",
+  "🀐": "BIRD: move 2<br>gain $2",
+  "🀛": "GRENADES: pay $3<br>kill 3x3 around empty square:<br>"
+    + "<br>"
+    + ". . X . .<br>"
+    + ". . . . .<br>"
+    + "X . O . X<br>"
+    + ". . . . .<br>"
+    + ". . X . .",
+  "🀒": "KNIVES: pay $3 to kill:<br>"
+    + "<br>"
+    + ". X .<br>"
+    + "X O X<br>"
+    + ". X .<br>"
+    + "<br>"
+    + "or $5 to kill:<br>"
+    + "<br>"
+    + ". . X . .<br>"
+    + ". X . X .<br>"
+    + "X . O . X<br>"
+    + ". X . X .<br>"
+    + ". . X . .",
+  "🀍": "HOOK: steal $2<br>in straight or diagonal line<br>blocked by HOOK",
+  "👍": "ACCEPT",
+  "🚩": "CHALLENGE",
+}
 
 export {
   ROWS,
@@ -48,5 +77,6 @@ export {
   OTHER_ACTIONS,
   RESPONSES,
   HIDDEN_TILE,
+  TOOLTIPS,
 };
 
