@@ -237,6 +237,11 @@ async def _lose_tile(
             "Waiting for opponent to lose tile.", websockets[other_player(player)]
         )
 
+    if len(possible_squares) == 0:
+        # they have no tiles to lose
+        # i.e. their last tile was already killed by action
+        return
+
     websocket = websockets[player]
     if len(possible_squares) > 1:
         choice = await choose_square_or_hand(
@@ -390,9 +395,12 @@ async def _play_one_turn(
         if action == start_tile:
             # challenge fails
             # original action succeeds
-            state.log(msg + " Challenge fails!")
-            await _lose_tile(state.other_player, state, websockets)
+            state.log(
+                msg
+                + f" Challenge fails!  First the {action} happens, then {state.other_player} will choose a tile to lose."
+            )
             await _resolve_action(start, action, target, state, websockets)
+            await _lose_tile(state.other_player, state, websockets)
         else:
             # challenge succeeds
             # original action fails
@@ -420,9 +428,12 @@ async def _play_one_turn(
             # challenge succeeds
             # block fails
             # original action succeeds
-            state.log(reveal_msg + " Challenge succeeds!")
-            await _lose_tile(state.other_player, state, websockets)
+            state.log(
+                reveal_msg
+                + f" Challenge succeeds!  First the {action} happens, then {state.other_player} will choose a tile to lose."
+            )
             await _resolve_action(start, action, target, state, websockets)
+            await _lose_tile(state.other_player, state, websockets)
 
 
 async def play_one_game(

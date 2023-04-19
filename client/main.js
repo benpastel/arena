@@ -69,7 +69,9 @@ window.addEventListener("DOMContentLoaded", () => {
   const infoPanel = document.querySelector(".player-info");
 
   // Open the WebSocket connection and register event handlers.
-  const websocket = new WebSocket("ws://100.104.255.121:8001/");
+  // ws://100.104.255.121:8001/
+  //
+  const websocket = new WebSocket("ws://192.168.1.65:8001/");
   joinGame(prompt, websocket);
 
   sendSelection(board, actionPanel, infoPanel, websocket);
