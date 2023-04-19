@@ -36,6 +36,10 @@ class Square(NamedTuple):
         row, col = coords
         return cls(row, col)
 
+    def format_for_log(self) -> str:
+        """The player-facing log is 1-indexed."""
+        return f"({self.row + 1}, {self.col + 1})"
+
 
 # Board setup looks like this:
 #

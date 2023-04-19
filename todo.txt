@@ -19,18 +19,12 @@ LATER:
 - don't need to select a source tile for choosing smite
 
 - informational tooltips everywhere!!!!
+- show selected money spend in UI somehow
+    in corner?
 
 - clickable things transform cursor into a pointer finger
 - phrasing on exchanged tiles
 - bolding tiles looks weird.  change color?  alpha?  highlight?
-
-- show selected money spend in UI somehow
-    in corner?
-
-
-- when challenge fails, log doesn't show which identity
-
-"may have exchanged"
 
 MAYBE:
     - change bird back to +1, but make center tile +2?

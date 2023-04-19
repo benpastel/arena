@@ -308,8 +308,12 @@ async def _lose_tile(
         state.tiles_in_hand[player].remove(replacement)
         state.tiles_on_board[player].append(replacement)
         state.positions[player].append(square)
+        state.log(
+            f"{player} lost {tile} on {square.format_for_log()} and replaced it from hand."
+        )
+    else:
+        state.log(f"{player} lost {tile} on {square.format_for_log()}.")
 
-    state.log(f"{player} lost {tile}.")
     await notify_state_changed(state, websockets)
 
 
