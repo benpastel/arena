@@ -123,6 +123,7 @@ currently available actions are highlighted
 .tooltip .tooltiptext {
   line-height: 2vmin;
   font-size: 2vmin;
+  font-weight: normal;
 
   background-color: black;
   color: white;
@@ -131,9 +132,6 @@ currently available actions are highlighted
   text-align: center;
   padding: 5px 0;
   border-radius: 6px;
-
-  border-width: 1px;
-  border-color: black;
 
   position: absolute;
   z-index: 1;

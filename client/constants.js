@@ -34,18 +34,18 @@ const RESPONSES = {
 };
 
 const TOOLTIPS = {
-  "↕": "MOVE: move 1<br>gain $1",
-  "⚡": "SMITE: pay $7<br>kill any enemy",
-  "🀥": "FLOWER: move 1<br>gain $3",
-  "🀐": "BIRD: move 2<br>gain $2",
-  "🀛": "GRENADES: pay $3<br>kill 3x3 around empty square:<br>"
+  "↕": "MOVE<br>move 1<br>gain $1",
+  "⚡": "SMITE<br>pay $7<br>kill any enemy",
+  "🀥": "FLOWER<br>move 1<br>gain $3",
+  "🀐": "BIRD<br>move 2<br>gain $2",
+  "🀛": "GRENADES<br>pay $3<br>kill 3x3 around empty square:<br>"
     + "<br>"
     + ". . X . .<br>"
     + ". . . . .<br>"
     + "X . O . X<br>"
     + ". . . . .<br>"
     + ". . X . .",
-  "🀒": "KNIVES: pay $3 to kill:<br>"
+  "🀒": "KNIVES<br>pay $3 to kill:<br>"
     + "<br>"
     + ". X .<br>"
     + "X O X<br>"
@@ -58,7 +58,7 @@ const TOOLTIPS = {
     + "X . O . X<br>"
     + ". X . X .<br>"
     + ". . X . .",
-  "🀍": "HOOK: steal $2<br>in straight or diagonal line<br>blocked by HOOK",
+  "🀍": "HOOK<br>steal $2<br>in straight or diagonal line<br>blocked by HOOK",
   "👍": "ACCEPT",
   "🚩": "CHALLENGE",
 }
