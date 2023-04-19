@@ -4,8 +4,6 @@ LATER:
     - randomize center positions? can even change # of stuff and size of + points
     - instead of win/lose/draw, return scores (per kill), which update the match points
 
-
-
 MAYBE:
     - draw an arrow on move selections?
     - change bird back to +1, but make center tile +2?
@@ -15,12 +13,7 @@ MAYBE:
 
 
 CRITICAL:
-
     - don't need to select a source tile for choosing smite
 
     - informational tooltips everywhere!!!!
-    - show selected money spend in UI somehow
-        in corner?
-
-    - clickable things transform cursor into a pointer finger
 
