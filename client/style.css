@@ -25,6 +25,16 @@ body {
 .grid-element {
   border: 5px solid black;
 }
+/* the score box displays the match score */
+.score {
+  grid-column: 1 / 2;
+  grid-row: 1 / 2;
+
+  font-size: 14vmin;
+  justify-content: center;
+  align-items: center;
+  border-bottom-width: 0;
+}
 
 /* the player-info box displays coins and tiles in hand */
 .player-info {
