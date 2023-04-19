@@ -8,6 +8,7 @@ from websockets.server import WebSocketServerProtocol, serve
 
 from arena.server.constants import Player
 from arena.server.game import play_one_game
+from arena.server.notify import broadcast_game_over
 
 # For now we don't use SSL because it's local-network only
 # import ssl
@@ -43,8 +44,13 @@ async def handler(websocket: WebSocketServerProtocol) -> None:
 
     try:
         if len(WEBSOCKETS) == 2 and all(w.open for w in WEBSOCKETS.values()):
-            # both players are connected, so start the game.
-            await play_one_game(WEBSOCKETS)
+            # both players are connected, so start the match.
+            match_score = {Player.N: 0, Player.S: 0}
+            while True:
+                game_score = await play_one_game(WEBSOCKETS)
+                for player, points in game_score.items():
+                    match_score[player] += points
+                await broadcast_game_over(WEBSOCKETS, game_score, match_score)
         else:
             # wait forever for the other player to connect
             await websocket.wait_closed()

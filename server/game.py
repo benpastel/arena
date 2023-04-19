@@ -27,7 +27,7 @@ from arena.server.notify import (
     broadcast_state_changed,
     notify_selection_changed,
     broadcast_selection_changed,
-    notify_game_over,
+    clear_selection,
 )
 
 
@@ -104,10 +104,7 @@ async def _resolve_action(
     for hit in hits:
         await _lose_tile(hit, state, websockets)
 
-    # the action has resolved, so clear selections from UI
-    await broadcast_selection_changed(
-        state.current_player, None, None, None, websockets
-    )
+    await clear_selection(websockets)
 
     # we may have moved onto a special square
     if action in (OtherAction.MOVE, Tile.FLOWER, Tile.BIRD):
@@ -267,6 +264,11 @@ async def _lose_tile(
     # choose replacement tile from hand in a loop
     # to enable choosing a different square to lose
     while True:
+        # mark the selected tile with an X for this player
+        await notify_selection_changed(
+            player, start=None, action=None, target=square, websocket=websocket
+        )
+
         tile = state.tile_at(square)
         hand_tiles = state.tiles_in_hand[player]
 
@@ -326,6 +328,7 @@ async def _lose_tile(
             f"{player.format_for_log()} lost {tile} on {square.format_for_log()}."
         )
 
+    await clear_selection(websockets)
     await broadcast_state_changed(state, websockets)
 
 
@@ -413,6 +416,7 @@ async def _play_one_turn(
             # challenge succeeds
             # original action fails
             state.log(msg + " Challenge succeeds!")
+            await clear_selection(websockets)
             await _lose_tile(state.current_player, state, websockets)
     else:
         assert response == Tile.HOOK
@@ -426,11 +430,13 @@ async def _play_one_turn(
             # block succeeds
             # original action fails
             state.log("Hook blocked.")
+            await clear_selection(websockets)
         elif target_tile == Tile.HOOK:
             # challenge fails
             # block succeeds
             # original action fails
             state.log(reveal_msg + " Challenge fails!")
+            await clear_selection(websockets)
             await _lose_tile(state.current_player, state, websockets)
         else:
             # challenge succeeds
@@ -446,9 +452,9 @@ async def _play_one_turn(
 
 async def play_one_game(
     websockets: Dict[Player, WebSocketServerProtocol]
-) -> GameResult:
+) -> Dict[Player, int]:
     """
-    Play one game on the connected websockets.
+    Play one game on the connected websockets and return the score.
 
     No graceful handling of disconnects or other websocket exceptions yet.
     """
@@ -475,6 +481,4 @@ async def play_one_game(
 
     state.log(f"Game over!  {state.game_result()}!")
     await broadcast_state_changed(state, websockets)
-    await notify_game_over(websockets, state.score())
-
-    return state.game_result()
+    return state.score()

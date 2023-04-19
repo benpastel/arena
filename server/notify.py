@@ -23,8 +23,15 @@ async def broadcast_state_changed(
             tg.create_task(coroutine)
 
 
+async def clear_selection(websockets: Dict[Player, WebSocketServerProtocol]) -> None:
+    """
+    Remove any selection from both players' UI.
+    """
+    await broadcast_selection_changed(None, None, None, None, websockets)
+
+
 async def broadcast_selection_changed(
-    selecting_player: Player,
+    selecting_player: Optional[Player],
     start: Optional[Square],
     action: Optional[Action],
     target: Optional[Square],
@@ -42,7 +49,7 @@ async def broadcast_selection_changed(
 
 
 async def notify_selection_changed(
-    selecting_player: Player,
+    selecting_player: Optional[Player],
     start: Optional[Square],
     action: Optional[Action],
     target: Optional[Square],
@@ -71,21 +78,27 @@ async def notify_selection_changed(
     await websocket.send(message)
 
 
-async def notify_game_over(
-    websockets: Dict[Player, WebSocketServerProtocol], score: Dict[Player, int]
+async def broadcast_game_over(
+    websockets: Dict[Player, WebSocketServerProtocol],
+    game_score: Dict[Player, int],
+    match_score: Dict[Player, int],
 ) -> None:
     async with asyncio.TaskGroup() as tg:
         for player, websocket in websockets.items():
-            us = score[player]
-            them = score[other_player(player)]
+            us = game_score[player]
+            them = game_score[other_player(player)]
             if us > them:
                 msg = f"🎉🎉🎉 You won {us} to {them}.  Dang, nice job!"
             elif us == them:
                 msg = f"Tie! {us} - {them}."
             else:
                 msg = f"You lost {us} to {them} :(  This game is mostly luck..."
-            msg += "  Refresh to try again."
-            event = {"type": OutEventType.MATCH_CHANGE.value, "message": msg}
+            event = {
+                "type": OutEventType.MATCH_CHANGE.value,
+                "message": msg,
+                "matchScore": match_score,
+            }
             message = json.dumps(event)
+            print(message)  # TODO
             coroutine = websocket.send(message)
             tg.create_task(coroutine)

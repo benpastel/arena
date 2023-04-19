@@ -148,8 +148,6 @@ class GameResult(str, Enum):
 
 
 class Response(str, Enum):
-    # TODO explain
-    # these must match javascript
     ACCEPT = "👍"
     CHALLENGE = "🚩"
 
