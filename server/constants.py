@@ -45,23 +45,22 @@ class Square(NamedTuple):
 #        +---------+
 #      A |S| | | |S|
 #      B | | | | | |
-# rows C |B| |F| |B|
+# rows C |E| |B| |E|
 #      D | | | | | |
 #      E |S| | | |S|
 #        +---------+
 #    South Player's Side
 #
-# Where S is a tile in play, F is the mana fountain, B and is a Book.
+# Where S is a tile in play, B is the $1 bonus, E and is a Exchange.
 
-# There are two tiles facedown on each book square.
+# There are two tiles facedown on each exchange square.
 # when you move onto the square
 # they can freely swap those tiles
-BOOK_POSITIONS = [Square(2, 0), Square(2, 4)]
+EXCHANGE_POSITIONS = [Square(2, 0), Square(2, 4)]
 
 # The bonus gives +1 coin when the tile that acted ends their turn on it
 BONUS_POSITION = Square(2, 2)
 
-# TODO randomize instead
 START_POSITIONS = {
     Player.N: (Square(0, 0), Square(0, 4)),
     Player.S: (Square(4, 0), Square(4, 4)),

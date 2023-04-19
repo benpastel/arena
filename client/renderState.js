@@ -71,7 +71,7 @@ function findCell(board, row, col) {
 }
 
 function addSpecialBottomRow(cell, contents) {
-  // convert board cell to two rows and add book tiles or bonus to the bottom row
+  // convert board cell to two rows and add exchange tiles or bonus to the bottom row
   //
   // `contents`: array to set inner html of the new elements
   // also set the tileName to those contents if they are tiles
@@ -117,11 +117,11 @@ function renderBoard(board, player_view) {
   const bonusCell = findCell(board, bonusRow, bonusCol);
   addSpecialBottomRow(bonusCell, ["+1"]);
 
-  // create the book tile squares
-  for (let p = 0; p < player_view.book_positions.length; p++) {
-    const [bookRow, bookCol] = player_view.book_positions[p];
-    const bookCell = findCell(board, bookRow, bookCol);
-    addSpecialBottomRow(bookCell, player_view.book_tiles[p]);
+  // create the exchange tile squares
+  for (let p = 0; p < player_view.exchange_positions.length; p++) {
+    const [exchangeRow, exchangeCol] = player_view.exchange_positions[p];
+    const exchangeCell = findCell(board, exchangeRow, exchangeCol);
+    addSpecialBottomRow(exchangeCell, player_view.exchange_tiles[p]);
   }
 
   // set player tiles

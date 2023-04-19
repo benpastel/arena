@@ -12,7 +12,7 @@ LATER:
 
 - move the prompt to the log somewhere?  like float it on the top or on the bottom?
     otherwise need to read multiple places...
-- COLOR the bottom bar or otherwise highlight that it's your turn (esp for book exchange)
+- COLOR the bottom bar or otherwise highlight that it's your turn (esp for exchange)
 
 
 - draw an arrow on move selections

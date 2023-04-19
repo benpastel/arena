@@ -8,7 +8,7 @@ from arena.server.constants import (
     Square,
     GameResult,
     Tile,
-    BOOK_POSITIONS,
+    EXCHANGE_POSITIONS,
     BONUS_POSITION,
     other_player,
 )
@@ -35,9 +35,9 @@ class State(BaseModel):
     # See `tiles_on_board` for the corresponding tile.
     positions: Dict[Player, List[Square]]
 
-    # The two tiles on each book square.
-    # These correspond by index to book_positions.
-    book_tiles: List[List[Tile]]
+    # The two tiles on each exchange square.
+    # These correspond by index to exchange_positions.
+    exchange_tiles: List[List[Tile]]
 
     # The remaining tile tiles are hidden off-board and never revealed.
     unused_tiles: List[Tile]
@@ -59,8 +59,8 @@ class State(BaseModel):
     current_player: Player
     other_player: Player
 
-    # position of the book squares that allow swapping tiles
-    book_positions: List[Square] = BOOK_POSITIONS
+    # position of the exchange squares that allow swapping tiles
+    exchange_positions: List[Square] = EXCHANGE_POSITIONS
 
     # Position of the bonus that gives +1 coin
     bonus_position: Square = BONUS_POSITION
@@ -121,13 +121,13 @@ class State(BaseModel):
         # identity
         opponent_board = [Tile.HIDDEN for tile in self.tiles_on_board[opponent]]
 
-        # we can see book tiles if we are standing on them
-        book_tiles = []
-        for b, position in enumerate(self.book_positions):
+        # we can see exchange tiles if we are standing on them
+        exchange_tiles = []
+        for b, position in enumerate(self.exchange_positions):
             if position in self.positions[player]:
-                book_tiles.append(self.book_tiles[b])
+                exchange_tiles.append(self.exchange_tiles[b])
             else:
-                book_tiles.append([Tile.HIDDEN, Tile.HIDDEN])
+                exchange_tiles.append([Tile.HIDDEN, Tile.HIDDEN])
 
         return State(
             tiles_in_hand={
@@ -138,7 +138,7 @@ class State(BaseModel):
                 player: self.tiles_on_board[player],
                 opponent: opponent_board,
             },
-            book_tiles=book_tiles,
+            exchange_tiles=exchange_tiles,
             # all tile positions are public knowledge
             positions=self.positions,
             # we can't see the unused tiles
@@ -171,7 +171,7 @@ class State(BaseModel):
         for tile in self.discard:
             tile_counts[tile] += 1
 
-        for tile_1, tile_2 in self.book_tiles:
+        for tile_1, tile_2 in self.exchange_tiles:
             tile_counts[tile_1] += 1
             tile_counts[tile_2] += 1
 
@@ -245,7 +245,7 @@ def new_state() -> State:
 
     # check that we didn't change the count of stuff in the rules and forget to change this method
     assert len(tiles) == 15
-    assert len(BOOK_POSITIONS) == 2
+    assert len(EXCHANGE_POSITIONS) == 2
 
     # shuffle, then deal out the cards from fixed indices
     shuffle(tiles)
@@ -256,7 +256,7 @@ def new_state() -> State:
         },
         tiles_on_board={Player.N: [], Player.S: []},
         positions={Player.N: [], Player.S: []},
-        book_tiles=[
+        exchange_tiles=[
             (tiles[8], tiles[9]),
             (tiles[10], tiles[11]),
         ],

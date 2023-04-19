@@ -207,7 +207,7 @@ async def choose_response(
             print(f"Ignoring invalid choice {data=}, {possible_responses=}")
 
 
-async def choose_book_exchange(
+async def choose_exchange(
     choices: List[Tile],
     prompt: str,
     websocket: WebSocketServerProtocol,

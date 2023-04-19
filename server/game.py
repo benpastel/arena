@@ -21,7 +21,7 @@ from arena.server.choices import (
     choose_action_or_square,
     choose_square_or_hand,
     choose_response,
-    choose_book_exchange,
+    choose_exchange,
     send_prompt,
 )
 from arena.server.notify import (
@@ -54,39 +54,39 @@ def _resolve_bonus(
     state.coins[player] += 1
 
 
-async def _resolve_book_exchange(
+async def _resolve_exchange(
     square: Square,
     state: State,
     websockets: Dict[Player, WebSocketServerProtocol],
 ) -> None:
-    """Allow a player to exchange with a book square"""
+    """Allow a player to exchange with a exchange square"""
     player = state.player_at(square)
     await notify_state_changed(state, websockets)
     await send_prompt(
-        "Waiting for opponent to exchange book tiles.",
+        "Waiting for opponent to exchange tiles.",
         websockets[other_player(player)],
     )
-    book_index = state.book_positions.index(square)
+    exchange_index = state.exchange_positions.index(square)
     tile_on_board_index = state.positions[player].index(square)
 
     old_tile = state.tile_at(square)
-    exchange_choices = state.book_tiles[book_index] + [old_tile]
-    choice = await choose_book_exchange(
+    exchange_choices = state.exchange_tiles[exchange_index] + [old_tile]
+    choice = await choose_exchange(
         exchange_choices,
-        "Select a book tile, or your current tile.",
+        "Exchange tiles, or keep your current tile.",
         websockets[player],
     )
 
     if choice != old_tile:
-        # they swapped with a book tile
+        # they swapped with a exchange tile
         state.tiles_on_board[player][tile_on_board_index] = choice
-        state.book_tiles[book_index].remove(choice)
-        state.book_tiles[book_index].append(old_tile)
+        state.exchange_tiles[exchange_index].remove(choice)
+        state.exchange_tiles[exchange_index].append(old_tile)
 
         # shuffle to hide which tile they placed
-        shuffle(state.book_tiles[book_index])
+        shuffle(state.exchange_tiles[exchange_index])
 
-    state.log(f"{player} exchanged book tiles.")
+    state.log(f"{player} may have exchanged tiles.")
 
 
 async def _resolve_action(
@@ -109,8 +109,8 @@ async def _resolve_action(
         if target == state.bonus_position:
             _resolve_bonus(target, state)
 
-        if target in state.book_positions:
-            await _resolve_book_exchange(target, state, websockets)
+        if target in state.exchange_positions:
+            await _resolve_exchange(target, state, websockets)
 
     # we may have grappled the opponent onto one
     if action == Tile.HOOK:
@@ -118,8 +118,8 @@ async def _resolve_action(
         if end_square == state.bonus_position:
             _resolve_bonus(end_square, state)
 
-        if end_square in state.book_positions:
-            await _resolve_book_exchange(end_square, state, websockets)
+        if end_square in state.exchange_positions:
+            await _resolve_exchange(end_square, state, websockets)
 
 
 async def _select_action(
