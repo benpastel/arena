@@ -13,6 +13,7 @@ body {
   grid-template-columns: 1fr 82vmin 1fr;
   grid-template-rows: 82vmin 2fr 1fr;
   border: 1px solid black;
+  cursor: default;
 
   font-family: 'Courier New';
   font-weight: normal;
@@ -64,6 +65,7 @@ explaining what happened in previous turns
 
   line-height: 2vmin;
   font-size: 2vmin;
+  cursor: text;
 }
 
 /*
