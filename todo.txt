@@ -5,29 +5,22 @@ LATER:
     - instead of win/lose/draw, return scores (per kill), which update the match points
 
 
-# TODO: SERVER
-
-
-# TODO: UI
-- draw an arrow on move selections?
-
-- when highlighting a possible START, highlight the TILE not the SQUARE?
-
-- leave a mark on the selected action while waiting for a challenge
-- highlight selected tile for losing (wipe highlighted target?)
-- CRITICAL: indicate to player which tile lost before they replace tile
-- don't need to select a source tile for choosing smite
-
-- informational tooltips everywhere!!!!
-- show selected money spend in UI somehow
-    in corner?
-
-- clickable things transform cursor into a pointer finger
-- phrasing on exchanged tiles
-- bolding tiles looks weird.  change color?  alpha?  highlight?
 
 MAYBE:
+    - draw an arrow on move selections?
     - change bird back to +1, but make center tile +2?
     - 6x5 board?
     - draw A/B on the tiles?  or give them colors?
+    - bolding tiles looks weird.  change color?  alpha?  highlight?
+
+
+CRITICAL:
+
+    - don't need to select a source tile for choosing smite
+
+    - informational tooltips everywhere!!!!
+    - show selected money spend in UI somehow
+        in corner?
+
+    - clickable things transform cursor into a pointer finger
 

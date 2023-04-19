@@ -8,7 +8,7 @@ from arena.server.state import State
 from arena.server.constants import Player, Square, Action, OutEventType, other_player
 
 
-async def notify_state_changed(
+async def broadcast_state_changed(
     state: State, websockets: Dict[Player, WebSocketServerProtocol]
 ) -> None:
     """Notify both players that the state changed."""
@@ -20,6 +20,24 @@ async def notify_state_changed(
             }
             message = json.dumps(event)
             coroutine = websocket.send(message)
+            tg.create_task(coroutine)
+
+
+async def broadcast_selection_changed(
+    selecting_player: Player,
+    start: Optional[Square],
+    action: Optional[Action],
+    target: Optional[Square],
+    websockets: Dict[Player, WebSocketServerProtocol],
+) -> None:
+    """
+    Notify both players a selection changed.  See `notify_selection_changed` for details.
+    """
+    async with asyncio.TaskGroup() as tg:
+        for websocket in websockets.values():
+            coroutine = notify_selection_changed(
+                selecting_player, start, action, target, websocket
+            )
             tg.create_task(coroutine)
 
 
@@ -38,6 +56,9 @@ async def notify_selection_changed(
 
     If they opponent needs to respond, we notify them once
     so that we can display the selection before they respond.
+
+    The game removes the selection from both players after the action is resolved
+    by calling this with all None.
     """
     event = {
         "type": OutEventType.SELECTION_CHANGE.value,

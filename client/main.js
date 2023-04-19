@@ -155,7 +155,8 @@ function sendSelection(board, actionPanel, infoPanel, websocket) {
 }
 
 function receiveSelection(board, actionPanel, websocket) {
-  // update the UI with changes to the current (partially) selected moves
+  // update the UI with changes to the current (partially) selected moves.
+  // the server should call this again with null selections to clear the highlights.
   websocket.addEventListener("message", ({ data }) => {
     const event = JSON.parse(data);
 

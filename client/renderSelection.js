@@ -28,10 +28,14 @@ function markChosenStart(board, start, player) {
 
 function markChosenAction(actionPanel, actionName) {
   for (const element of actionPanel.querySelectorAll("div")) {
-    if (element.dataset.actionName === actionName) {
+    element.classList.remove(CHOSEN_ACTION);
+  }
+  if (!actionName) {
+    return;
+  }
+  for (const element of actionPanel.querySelectorAll("div")) {
+    if (element.dataset.name === actionName) {
       element.classList.add(CHOSEN_ACTION);
-    } else {
-      element.classList.remove(CHOSEN_ACTION);
     }
   }
 }

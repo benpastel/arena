@@ -1,4 +1,3 @@
-import asyncio
 from typing import Dict, Tuple, Optional, cast, List, Literal
 from random import shuffle
 
@@ -25,8 +24,9 @@ from arena.server.choices import (
     send_prompt,
 )
 from arena.server.notify import (
-    notify_state_changed,
+    broadcast_state_changed,
     notify_selection_changed,
+    broadcast_selection_changed,
     notify_game_over,
 )
 
@@ -61,7 +61,7 @@ async def _resolve_exchange(
 ) -> None:
     """Allow a player to exchange with a exchange square"""
     player = state.player_at(square)
-    await notify_state_changed(state, websockets)
+    await broadcast_state_changed(state, websockets)
     await send_prompt(
         "Waiting for opponent to exchange tiles.",
         websockets[other_player(player)],
@@ -103,6 +103,11 @@ async def _resolve_action(
 
     for hit in hits:
         await _lose_tile(hit, state, websockets)
+
+    # the action has resolved, so clear selections from UI
+    await broadcast_selection_changed(
+        state.current_player, None, None, None, websockets
+    )
 
     # we may have moved onto a special square
     if action in (OtherAction.MOVE, Tile.FLOWER, Tile.BIRD):
@@ -184,6 +189,11 @@ async def _select_action(
             # we should now have all 3 selected
             assert action is not None
             target = cast(Square, choice)
+
+            # show both players the proposed action
+            await broadcast_selection_changed(
+                state.current_player, start, action, target, websockets
+            )
             return start, action, target
         elif choice in possible_actions:
             # they chose an action
@@ -232,7 +242,7 @@ async def _lose_tile(
     if len(possible_squares) > 1 or len(state.tiles_in_hand[player]) > 0:
         # current player will need to choose something, so set a waiting prompt for opponent
         # and send any state updates so far to both players
-        await notify_state_changed(state, websockets)
+        await broadcast_state_changed(state, websockets)
         await send_prompt(
             "Waiting for opponent to lose tile.", websockets[other_player(player)]
         )
@@ -316,7 +326,7 @@ async def _lose_tile(
             f"{player.format_for_log()} lost {tile} on {square.format_for_log()}."
         )
 
-    await notify_state_changed(state, websockets)
+    await broadcast_state_changed(state, websockets)
 
 
 async def _select_response(
@@ -379,14 +389,6 @@ async def _play_one_turn(
         # so no possibility of challenge
         await _resolve_action(start, action, target, state, websockets)
         return
-
-    # show both players the proposed action
-    async with asyncio.TaskGroup() as tg:
-        for websocket in websockets.values():
-            coroutine = notify_selection_changed(
-                state.current_player, start, action, target, websocket
-            )
-            tg.create_task(coroutine)
 
     # ask opponent to accept, challenge, or block as appropriate
     response = await _select_response(start, action, target, state, websockets)
@@ -460,7 +462,7 @@ async def play_one_game(
     _auto_place_tiles(Player.S, state)
     state.log("New game!")
     print("Sending initial state to both players.")
-    await notify_state_changed(state, websockets)
+    await broadcast_state_changed(state, websockets)
 
     while state.game_result() == GameResult.ONGOING:
         state.check_consistency()
@@ -469,10 +471,10 @@ async def play_one_game(
 
         state.next_turn()
 
-        await notify_state_changed(state, websockets)
+        await broadcast_state_changed(state, websockets)
 
     state.log(f"Game over!  {state.game_result()}!")
-    await notify_state_changed(state, websockets)
+    await broadcast_state_changed(state, websockets)
     await notify_game_over(websockets, state.score())
 
     return state.game_result()

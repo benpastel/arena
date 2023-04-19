@@ -77,6 +77,7 @@ function addSpecialBottomRow(cell, contents) {
   // also set the tileName to those contents if they are tiles
 
   // TODO don't re-add every time, but do rewrite contents if they change
+  // re-adding everytime will drop any target selection
 
   cell.classList.add('special');
 
@@ -106,10 +107,11 @@ function addSpecialBottomRow(cell, contents) {
 }
 
 function renderBoard(board, player_view) {
+  // TODO: don't remove selection stuff
   // set board empty
   for (const cell of board.querySelectorAll(".cell")) {
     cell.innerHTML = "";
-    cell.classList = "cell invalid-target";
+    cell.classList.remove(NORTH_PLAYER, SOUTH_PLAYER, 'board-tile');
   }
 
   // create the bonus +1 square
@@ -146,7 +148,7 @@ function renderBoard(board, player_view) {
         container = cell;
       }
       container.innerHTML = char;
-      container.classList.remove(NORTH_PLAYER, SOUTH_PLAYER);
+      // container.classList.remove(NORTH_PLAYER, SOUTH_PLAYER); // TODO I think don't need now?
       container.classList.add(player);
     }
   }
