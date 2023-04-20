@@ -30,15 +30,14 @@ body {
   grid-column: 1 / 2;
   grid-row: 1 / 2;
 
-  font-size: 6vmax;
-  justify-content: center;
-  align-items: center;
-  border-bottom-width: 0;
+  font-size: 10vh;
 
   display: flex;
   justify-content: center;
   flex-direction: row;
-  position: relative;
+  align-items: center;
+
+  border-bottom-width: 0;
 }
 
 /* the player-info box displays coins and tiles in hand */
@@ -49,11 +48,9 @@ body {
   display: flex;
   justify-content: center;
   flex-direction: column;
-  position: relative;
-  padding: 2% 2%;
+  align-items: center;
 
-  line-height: 6vmax;
-  font-size: 6vmax;
+  font-size: 10vh;
   border-bottom-width: 0;
 }
 .hand-tile {
