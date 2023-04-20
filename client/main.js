@@ -56,6 +56,20 @@ function joinGame(prompt, websocket) {
   });
 }
 
+function getWebSocketServer() {
+  // TODO host somewhere real!
+  if (window.location.host === "100.104.255.121:8000") {
+    // tailscale
+    return "ws://100.104.255.121:8001/";
+  } else if (window.location.host === "192.168.1.65:8000") {
+    // local network
+    // find IP address with: `ifconfig | rg en0 --after-context=6 | rg inet`
+    return "ws://192.168.1.65:8001/";
+  } else {
+    throw new Error(`Unsupported host: ${window.location.host}`);
+  }
+}
+
 window.addEventListener("DOMContentLoaded", () => {
   // Initialize the UI.
   const board = document.querySelector(".board");
@@ -70,9 +84,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const infoPanel = document.querySelector(".player-info");
 
   // Open the WebSocket connection and register event handlers.
-  // ws://100.104.255.121:8001/
-  // TODO: read from env variable
-  const websocket = new WebSocket("ws://192.168.1.65:8001/");
+  const websocket = new WebSocket(getWebSocketServer());
   joinGame(prompt, websocket);
 
   sendSelection(board, actionPanel, infoPanel, websocket);

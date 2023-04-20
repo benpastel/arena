@@ -53,7 +53,7 @@ async def handler(websocket: WebSocketServerProtocol) -> None:
                     match_score[player] += points
 
                 # let the player's board redraw before sending the game over alert
-                asyncio.sleep(0.5)
+                await asyncio.sleep(0.5)
 
                 await broadcast_game_over(WEBSOCKETS, game_score)
         else:
