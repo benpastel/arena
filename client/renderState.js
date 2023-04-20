@@ -198,4 +198,12 @@ function renderHand(player_view) {
   }
 }
 
-export {createBoard, renderBoard, renderLog, renderHand, createActionPanel, findCell};
+function renderScore(player_view) {
+  for (const player of PLAYERS) {
+    const score = player_view.match_score[player];
+    const element = document.querySelector(`.score .${player}`);
+    element.innerHTML = score;
+  }
+}
+
+export {createBoard, renderBoard, renderLog, renderHand, createActionPanel, findCell, renderScore};

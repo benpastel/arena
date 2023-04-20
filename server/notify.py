@@ -81,7 +81,6 @@ async def notify_selection_changed(
 async def broadcast_game_over(
     websockets: Dict[Player, WebSocketServerProtocol],
     game_score: Dict[Player, int],
-    match_score: Dict[Player, int],
 ) -> None:
     async with asyncio.TaskGroup() as tg:
         for player, websocket in websockets.items():
@@ -96,9 +95,7 @@ async def broadcast_game_over(
             event = {
                 "type": OutEventType.MATCH_CHANGE.value,
                 "message": msg,
-                "matchScore": match_score,
             }
             message = json.dumps(event)
-            print(message)  # TODO
             coroutine = websocket.send(message)
             tg.create_task(coroutine)

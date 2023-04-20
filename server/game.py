@@ -236,6 +236,11 @@ async def _lose_tile(
         player = player_or_square
         possible_squares = state.positions[player]
 
+    if len(possible_squares) == 0:
+        # they have no tiles to lose
+        # i.e. their last tile was already killed by action
+        return
+
     if len(possible_squares) > 1 or len(state.tiles_in_hand[player]) > 0:
         # current player will need to choose something, so set a waiting prompt for opponent
         # and send any state updates so far to both players
@@ -243,11 +248,6 @@ async def _lose_tile(
         await send_prompt(
             "Waiting for opponent to lose tile.", websockets[other_player(player)]
         )
-
-    if len(possible_squares) == 0:
-        # they have no tiles to lose
-        # i.e. their last tile was already killed by action
-        return
 
     websocket = websockets[player]
     if len(possible_squares) > 1:
@@ -328,6 +328,7 @@ async def _lose_tile(
             f"{player.format_for_log()} lost {tile} on {square.format_for_log()}."
         )
 
+    state.score_point(other_player(player))
     await clear_selection(websockets)
     await broadcast_state_changed(state, websockets)
 
@@ -451,22 +452,22 @@ async def _play_one_turn(
 
 
 async def play_one_game(
-    websockets: Dict[Player, WebSocketServerProtocol]
+    match_score: Dict[Player, int], websockets: Dict[Player, WebSocketServerProtocol]
 ) -> Dict[Player, int]:
     """
-    Play one game on the connected websockets and return the score.
+    Play one game on the connected websockets.
+
+    Returns the game score.
 
     No graceful handling of disconnects or other websocket exceptions yet.
     """
-    print("New game")
-
     # initialize a new game
     # start with a hardcoded board for now
-    # later random + place_tiles
-    state = new_state()
+    # later random + place_tiles?
+    state = new_state(match_score)
     _auto_place_tiles(Player.N, state)
     _auto_place_tiles(Player.S, state)
-    state.log("New game!")
+    state.log(f"New game!")
     print("Sending initial state to both players.")
     await broadcast_state_changed(state, websockets)
 
@@ -481,4 +482,4 @@ async def play_one_game(
 
     state.log(f"Game over!  {state.game_result()}!")
     await broadcast_state_changed(state, websockets)
-    return state.score()
+    return state.game_score

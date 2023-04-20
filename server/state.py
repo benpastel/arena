@@ -50,14 +50,17 @@ class State(BaseModel):
     coins: Dict[Player, int]
 
     # human-readable event log of public information
-    # TODO: nested indentation
-    # TODO: tag with player so we can color-code them
+    # TODO: nested indentation?
+    # TODO: tag with player so we can color-code them?
     public_log: List[str]
 
     # current player is the player whose turn it currently is; other_player is the other
     # redundant attributes for easier communication with frontend
     current_player: Player
     other_player: Player
+
+    match_score: Dict[Player, int]
+    game_score: Dict[Player, int] = {Player.N: 0, Player.S: 0}
 
     # position of the exchange squares that allow swapping tiles
     exchange_positions: List[Square] = EXCHANGE_POSITIONS
@@ -149,6 +152,8 @@ class State(BaseModel):
             current_player=self.current_player,
             other_player=self.other_player,
             coins=self.coins,
+            match_score=self.match_score,
+            game_score=self.game_score,
         )
 
     def check_consistency(self) -> None:
@@ -217,26 +222,13 @@ class State(BaseModel):
         self.current_player = other_player(self.current_player)
         self.other_player = other_player(self.other_player)
 
-    def score(self) -> Dict[Player, int]:
-        """
-        The score is how many kills each player has achieved.
-        Eventually we'll use this instead of game result for multi-game matches.
-        """
-
-        # starting tiles
-        # minus opponent's tiles remaining on board
-        #   and opponent's tiles remaining in hand
-        return {
-            player: (
-                4
-                - len(self.tiles_on_board[other_player(player)])
-                - len(self.tiles_in_hand[other_player(player)])
-            )
-            for player in Player
-        }
+    def score_point(self, player: Player) -> None:
+        """Register that a player has scored a point by making a kill."""
+        self.game_score[player] += 1
+        self.match_score[player] += 1
 
 
-def new_state() -> State:
+def new_state(match_score: Dict[Player, int]) -> State:
     """
     Return a new state with the tiles randomly dealt.
     """
@@ -267,4 +259,5 @@ def new_state() -> State:
         # currently S hardcoded to go first
         current_player=Player.S,
         other_player=Player.N,
+        match_score=match_score,
     )

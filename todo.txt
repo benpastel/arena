@@ -2,7 +2,10 @@
 LATER:
     - randomize start positions (configurable button!)
     - randomize center positions? can even change # of stuff and size of + points
-    - instead of win/lose/draw, return scores (per kill), which update the match points
+
+    - in addition to win/lose/draw, return scores (per kill), which update the match points
+        + update match points as you go
+        + color-code them
 
 MAYBE:
     - draw an arrow on move selections?
