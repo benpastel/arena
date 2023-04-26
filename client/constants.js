@@ -42,20 +42,20 @@ const TOOLTIPS = {
     + "<br>"
     + ". . X . .<br>"
     + ". . . . .<br>"
-    + "X . O . X<br>"
+    + "X . 🀛 . X<br>"
     + ". . . . .<br>"
     + ". . X . .",
   "🀒": "KNIVES<br>pay $3 to kill:<br>"
     + "<br>"
     + ". X .<br>"
-    + "X O X<br>"
+    + "X 🀒 X<br>"
     + ". X .<br>"
     + "<br>"
     + "or $5 to kill:<br>"
     + "<br>"
     + ". . X . .<br>"
     + ". X . X .<br>"
-    + "X . O . X<br>"
+    + "X . 🀒 . X<br>"
     + ". X . X .<br>"
     + ". . X . .",
   "🀍": "HOOK<br>steal $2<br>in straight or diagonal line<br>blocked by HOOK",
