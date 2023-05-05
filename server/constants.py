@@ -69,8 +69,8 @@ EXCHANGE_POSITIONS = [Square(2, 0), Square(2, 4)]
 BONUS_POSITION = Square(2, 2)
 
 START_POSITIONS = {
-    Player.N: (Square(0, 0), Square(0, 4)),
-    Player.S: (Square(4, 0), Square(4, 4)),
+    Player.N: (Square(0, 1), Square(0, 3)),
+    Player.S: (Square(4, 1), Square(4, 3)),
 }
 
 

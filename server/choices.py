@@ -215,7 +215,10 @@ async def choose_response(
                 pass
 
             # try parsing as a HOOK
-            if data.get("button") == Tile.HOOK.value and Tile.HOOK in possible_responses:
+            if (
+                data.get("button") == Tile.HOOK.value
+                and Tile.HOOK in possible_responses
+            ):
                 return Tile.HOOK
 
             # it's not valid; get a new choice
