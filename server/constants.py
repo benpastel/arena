@@ -44,23 +44,6 @@ class Square(NamedTuple):
         return f"({self.row + 1}, {self.col + 1})"
 
 
-# Board setup looks like this:
-#
-#     North Player's Side
-#          columns
-#         1 2 3 4 5
-#        +---------+
-#      A |S| | | |S|
-#      B | | | | | |
-# rows C |E| |B| |E|
-#      D | | | | | |
-#      E |S| | | |S|
-#        +---------+
-#    South Player's Side
-#
-# Where S is a tile in play, B is the bonus, E and is a Exchange.
-
-
 class Tile(str, Enum):
     """
     The game pieces.

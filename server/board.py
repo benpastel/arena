@@ -3,6 +3,22 @@ Board start positions and randomization.
 
 When randomization is off, we use the default positions.
 When randomization is on, we randomize the default positions without their rows.
+
+Default board setup looks like this:
+
+    North Player's Side
+         columns
+        1 2 3 4 5
+       +---------+
+     A | |S| |S| |
+     B | | | | | |
+rows C |E| |B| |E|
+     D | | | | | |
+     E | |S| |S| |
+       +---------+
+   South Player's Side
+
+Where S is a tile in play, B is the bonus, E and is a Exchange.
 """
 from arena.server.constants import Square, Player
 
@@ -26,18 +42,11 @@ DEFAULT_START_POSITIONS = {
 DEFAULT_BONUS_AMOUNT = 2
 
 
-def exchange_positions() -> list[Square]:
+def bonus_and_exchange_positions() -> tuple[Square, list[Square]]:
     if RANDOMIZE_START:
         assert False
     else:
-        return DEFAULT_EXCHANGE_POSITIONS
-
-
-def bonus_position() -> Square:
-    if RANDOMIZE_START:
-        assert False
-    else:
-        return DEFAULT_BONUS_POSITION
+        return DEFAULT_BONUS_POSITION, DEFAULT_EXCHANGE_POSITIONS
 
 
 def bonus_amount() -> int:

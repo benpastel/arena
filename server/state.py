@@ -12,8 +12,7 @@ from arena.server.constants import (
 )
 from arena.server.board import (
     bonus_amount,
-    bonus_position,
-    exchange_positions,
+    bonus_and_exchange_positions,
     start_positions,
 )
 
@@ -64,14 +63,15 @@ class State(BaseModel):
     other_player: Player
 
     match_score: Dict[Player, int]
-    game_score: Dict[Player, int] = {Player.N: 0, Player.S: 0}
 
     # position of the exchange squares that allow swapping tiles
-    exchange_positions: List[Square] = exchange_positions()
+    exchange_positions: List[Square]
 
     # Position and value of the bonus square that gives extra + coin
-    bonus_position: Square = bonus_position()
-    bonus_amount: int = bonus_amount()
+    bonus_position: Square
+    bonus_amount: int
+
+    game_score: Dict[Player, int] = {Player.N: 0, Player.S: 0}
 
     def tile_at(self, square: Square) -> Tile:
         """The tile occupying on the board at this square.  Error if there isn't one."""
@@ -249,6 +249,8 @@ def new_state(match_score: Dict[Player, int]) -> State:
     # shuffle, then deal out the cards from fixed indices
     shuffle(tiles)
 
+    bonus_position, exchange_positions = bonus_and_exchange_positions()
+
     return State(
         tiles_in_hand={
             Player.N: tiles[0:2],
@@ -268,4 +270,7 @@ def new_state(match_score: Dict[Player, int]) -> State:
         current_player=Player.S,
         other_player=Player.N,
         match_score=match_score,
+        exchange_positions=exchange_positions,
+        bonus_position=bonus_position,
+        bonus_amount=bonus_amount(),
     )
