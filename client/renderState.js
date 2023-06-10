@@ -169,6 +169,8 @@ function renderLog(panel, player_view) {
   for (const line of player_view.public_log) {
     panel.innerHTML += `<p>${line}</p>`;
   }
+  // scroll the log down to the bottom, so the latest line is visible
+  panel.scrollTop = panel.scrollHeight;
 }
 
 function renderHand(player_view) {

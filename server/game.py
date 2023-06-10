@@ -49,9 +49,9 @@ def _resolve_bonus(
     square: Square,
     state: State,
 ) -> None:
-    """Give a player +A$1 for moving onto the bonus square"""
+    """Give a player bonus $ for moving onto the bonus square"""
     player = state.player_at(square)
-    state.log(f"{player.format_for_log()}: +$1{BONUS_AMOUNT} bonus")
+    state.log(f"{player.format_for_log()}: +${BONUS_AMOUNT} bonus")
     state.coins[player] += BONUS_AMOUNT
 
 
