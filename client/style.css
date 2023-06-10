@@ -57,7 +57,7 @@ body {
   font-weight: light;
 }
 .hand-tile.highlight {
-  color: black;
+  color: darkgreen;
   font-weight: bold;
 }
 
@@ -113,13 +113,13 @@ currently available actions are highlighted
   height: 100%;
 }
 .tile-button.highlight {
-  color: black;
+  color: darkgreen;
   font-weight: bold;
 }
 .outlined-button.highlight {
+  border-color: darkgreen;
   border-width: thick;
-  border-color: black;
-  color: black;
+  color: darkgreen;
 }
 .chosen-action {
   border-radius: 100%;
@@ -215,6 +215,7 @@ explaining what the player should do next
   font-weight: light;
 }
 .board-tile.highlight {
+  color: darkgreen;
   font-weight: bold;
 }
 .chosen-start::before {
