@@ -58,15 +58,17 @@ class Square(NamedTuple):
 #        +---------+
 #    South Player's Side
 #
-# Where S is a tile in play, B is the $1 bonus, E and is a Exchange.
+# Where S is a tile in play, B is the bonus, E and is a Exchange.
 
 # There are two tiles facedown on each exchange square.
 # when you move onto the square
 # they can freely swap those tiles
 EXCHANGE_POSITIONS = [Square(2, 0), Square(2, 4)]
 
-# The bonus gives +1 coin when the tile that acted ends their turn on it
+# The bonus gives + coins when a tile ends their movement on it,
+# including if they were moved there by an opponent's hook.
 BONUS_POSITION = Square(2, 2)
+BONUS_AMOUNT = 2
 
 START_POSITIONS = {
     Player.N: (Square(0, 1), Square(0, 3)),

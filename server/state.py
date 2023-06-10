@@ -10,6 +10,7 @@ from arena.server.constants import (
     Tile,
     EXCHANGE_POSITIONS,
     BONUS_POSITION,
+    BONUS_AMOUNT,
     other_player,
 )
 
@@ -65,8 +66,9 @@ class State(BaseModel):
     # position of the exchange squares that allow swapping tiles
     exchange_positions: List[Square] = EXCHANGE_POSITIONS
 
-    # Position of the bonus that gives +1 coin
+    # Position and value of the bonus square that gives extra + coin
     bonus_position: Square = BONUS_POSITION
+    bonus_amount: int = BONUS_AMOUNT
 
     def tile_at(self, square: Square) -> Tile:
         """The tile occupying on the board at this square.  Error if there isn't one."""

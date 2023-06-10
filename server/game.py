@@ -14,6 +14,7 @@ from arena.server.constants import (
     OtherAction,
     Response,
     START_POSITIONS,
+    BONUS_AMOUNT,
     other_player,
 )
 from arena.server.choices import (
@@ -50,8 +51,8 @@ def _resolve_bonus(
 ) -> None:
     """Give a player +A$1 for moving onto the bonus square"""
     player = state.player_at(square)
-    state.log(f"{player.format_for_log()}: +$1 bonus")
-    state.coins[player] += 1
+    state.log(f"{player.format_for_log()}: +$1{BONUS_AMOUNT} bonus")
+    state.coins[player] += BONUS_AMOUNT
 
 
 async def _resolve_exchange(

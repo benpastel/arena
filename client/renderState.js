@@ -125,10 +125,10 @@ function renderBoard(board, player_view) {
     cell.classList.remove(NORTH_PLAYER, SOUTH_PLAYER, 'board-tile');
   }
 
-  // create the bonus +1 square
+  // create the bonus square
   const [bonusRow, bonusCol] = player_view.bonus_position;
   const bonusCell = findCell(board, bonusRow, bonusCol);
-  addSpecialBottomRow(bonusCell, ["+1"]);
+  addSpecialBottomRow(bonusCell, [`+${player_view.bonus_amount}`]);
 
   // create the exchange tile squares
   for (let p = 0; p < player_view.exchange_positions.length; p++) {
