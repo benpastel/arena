@@ -8,10 +8,13 @@ from arena.server.constants import (
     Square,
     GameResult,
     Tile,
-    EXCHANGE_POSITIONS,
-    BONUS_POSITION,
-    BONUS_AMOUNT,
     other_player,
+)
+from arena.server.board import (
+    bonus_amount,
+    bonus_position,
+    exchange_positions,
+    start_positions,
 )
 
 
@@ -64,11 +67,11 @@ class State(BaseModel):
     game_score: Dict[Player, int] = {Player.N: 0, Player.S: 0}
 
     # position of the exchange squares that allow swapping tiles
-    exchange_positions: List[Square] = EXCHANGE_POSITIONS
+    exchange_positions: List[Square] = exchange_positions()
 
     # Position and value of the bonus square that gives extra + coin
-    bonus_position: Square = BONUS_POSITION
-    bonus_amount: int = BONUS_AMOUNT
+    bonus_position: Square = bonus_position()
+    bonus_amount: int = bonus_amount()
 
     def tile_at(self, square: Square) -> Tile:
         """The tile occupying on the board at this square.  Error if there isn't one."""
@@ -156,6 +159,9 @@ class State(BaseModel):
             coins=self.coins,
             match_score=self.match_score,
             game_score=self.game_score,
+            bonus_position=self.bonus_position,
+            bonus_amount=self.bonus_amount,
+            exchange_positions=self.exchange_positions,
         )
 
     def check_consistency(self) -> None:
@@ -239,17 +245,17 @@ def new_state(match_score: Dict[Player, int]) -> State:
 
     # check that we didn't change the count of stuff in the rules and forget to change this method
     assert len(tiles) == 15
-    assert len(EXCHANGE_POSITIONS) == 2
 
     # shuffle, then deal out the cards from fixed indices
     shuffle(tiles)
+
     return State(
         tiles_in_hand={
-            Player.N: tiles[0:4],
-            Player.S: tiles[4:8],
+            Player.N: tiles[0:2],
+            Player.S: tiles[2:4],
         },
-        tiles_on_board={Player.N: [], Player.S: []},
-        positions={Player.N: [], Player.S: []},
+        tiles_on_board={Player.N: tiles[4:6], Player.S: tiles[6:8]},
+        positions=start_positions(),
         exchange_tiles=[
             (tiles[8], tiles[9]),
             (tiles[10], tiles[11]),

@@ -13,8 +13,6 @@ from arena.server.constants import (
     Tile,
     OtherAction,
     Response,
-    START_POSITIONS,
-    BONUS_AMOUNT,
     other_player,
 )
 from arena.server.choices import (
@@ -32,27 +30,14 @@ from arena.server.notify import (
 )
 
 
-def _auto_place_tiles(player: Player, state: State) -> None:
-    """Arbitrarily place the starting tiles.  For testing."""
-    # TODO consider making this the actual rules and do it when state is initialized
-    # also randomize the columns (maybe with rotational symmetry?)
-    assert len(START_POSITIONS[player]) == 2
-
-    for target in START_POSITIONS[player]:
-        tile = state.tiles_in_hand[player][0]
-        state.tiles_in_hand[player].remove(tile)
-        state.tiles_on_board[player].append(tile)
-        state.positions[player].append(target)
-
-
 def _resolve_bonus(
     square: Square,
     state: State,
 ) -> None:
     """Give a player bonus $ for moving onto the bonus square"""
     player = state.player_at(square)
-    state.log(f"{player.format_for_log()}: +${BONUS_AMOUNT} bonus")
-    state.coins[player] += BONUS_AMOUNT
+    state.log(f"{player.format_for_log()}: +${state.bonus_amount} bonus")
+    state.coins[player] += state.bonus_amount
 
 
 async def _resolve_exchange(
@@ -463,11 +448,7 @@ async def play_one_game(
     No graceful handling of disconnects or other websocket exceptions yet.
     """
     # initialize a new game
-    # start with a hardcoded board for now
-    # later random + place_tiles?
     state = new_state(match_score)
-    _auto_place_tiles(Player.N, state)
-    _auto_place_tiles(Player.S, state)
     state.log("New game!")
     print("Sending initial state to both players.")
     await broadcast_state_changed(state, websockets)
