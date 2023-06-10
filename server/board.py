@@ -20,9 +20,13 @@ rows C |E| |B| |E|
 
 Where S is a tile in play, B is the bonus, E and is a Exchange.
 """
-from arena.server.constants import Square, Player
+import random
 
-RANDOMIZE_START = False
+from arena.server.constants import Square, Player, COLUMNS, ROWS
+
+# TODO: set this as a URL option or something?
+# eventually table option
+RANDOMIZE_START = True
 
 # There are two tiles facedown on each exchange square.
 # when you move onto the square
@@ -39,25 +43,38 @@ DEFAULT_START_POSITIONS = {
     Player.S: (Square(4, 1), Square(4, 3)),
 }
 
-DEFAULT_BONUS_AMOUNT = 2
+RANDOM_BONUS_AMOUNTS = [1, 2]
 
 
 def bonus_and_exchange_positions() -> tuple[Square, list[Square]]:
-    if RANDOMIZE_START:
-        assert False
-    else:
+    if not RANDOMIZE_START:
         return DEFAULT_BONUS_POSITION, DEFAULT_EXCHANGE_POSITIONS
+
+    # randomly shuffle the middle squares,
+    # then deal them out by index
+    squares = [Square(2, c) for c in range(COLUMNS)]
+    random.shuffle(squares)
+    return squares[0], [squares[1], squares[2]]
 
 
 def bonus_amount() -> int:
     if RANDOMIZE_START:
-        assert False
+        return random.choice(RANDOM_BONUS_AMOUNTS)
     else:
         return DEFAULT_BONUS_AMOUNT
 
 
 def start_positions() -> dict[Player, tuple[Square, Square]]:
-    if RANDOMIZE_START:
-        assert False
-    else:
+    if not RANDOMIZE_START:
         return DEFAULT_START_POSITIONS
+
+    # randomly shuffle the column indices for the first and last rows
+    # then deal them out by index
+    top = [Square(0, c) for c in range(COLUMNS)]
+    bottom = [Square(ROWS - 1, c) for c in range(COLUMNS)]
+    random.shuffle(top)
+    random.shuffle(bottom)
+    return {
+        Player.N: (top[0], top[1]),
+        Player.S: (bottom[0], bottom[1]),
+    }
