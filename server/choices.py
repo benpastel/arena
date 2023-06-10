@@ -40,9 +40,9 @@ async def send_prompt(
     hourglass emoji around the prompt.
     """
     if choice_id > 0:
-        prompt = f"⚠️ {prompt} ⚠️"
+        prompt = f"⚠️⚠️⚠️<br>{prompt}<br>⚠️⚠️⚠️"
     else:
-        prompt = f"⌛ {prompt} ⌛"
+        prompt = f"⌛⌛⌛<br>{prompt}<br>⌛⌛⌛"
 
     event = {"type": "PROMPT", "choiceId": choice_id, "prompt": prompt}
     await websocket.send(json.dumps(event))

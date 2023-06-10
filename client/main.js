@@ -43,7 +43,7 @@ function joinGame(prompt, websocket) {
     const params = new URLSearchParams(window.location.search);
     const player = params.get("player");
     if (! (player === NORTH_PLAYER || player === SOUTH_PLAYER)) {
-      const msg = `⚠️ Please set the url param ?player=${NORTH_PLAYER} or ?player=${SOUTH_PLAYER} ⚠️`;
+      const msg = `⚠️⚠️⚠️<br>Set your url to ?player=${NORTH_PLAYER} or ?player=${SOUTH_PLAYER}<br>⚠️⚠️⚠️`;
       prompt.innerHTML = msg;
       console.log(params);
       throw new Error(msg);
@@ -79,7 +79,7 @@ window.addEventListener("DOMContentLoaded", () => {
   createActionPanel(actionPanel);
 
   const prompt = document.querySelector(".prompt");
-  prompt.innerHTML = "⌛ Waiting for other player to join ⌛";
+  prompt.innerHTML = "⌛⌛⌛<br>Waiting for other player to join<br>⌛⌛⌛";
 
   const infoPanel = document.querySelector(".player-info");
 
