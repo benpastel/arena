@@ -143,6 +143,13 @@ def _grenade_hits(center: Square, positions: List[Square]) -> List[Square]:
     ]
 
 
+def midpoint(x: Square, y: Square) -> Square:
+    # TODO comment this sober
+    new_row = (x.row + y.row) // 2
+    new_col = (x.col + y.col) // 2
+    return Square(new_row, new_col)
+
+
 def _grenade_targets(
     start: Square, all_positions: List[Square], enemy_positions: List[Square]
 ) -> List[Square]:
@@ -150,7 +157,7 @@ def _grenade_targets(
     Return a possibly-empty list of valid squares to target a grenade.
 
     Grenades can be thrown exactly 2 squares in a cardinal direction onto an empty square.
-    They ignore LOS (i.e. they can go over obstructions).
+    They respect LOS (i.e. they cannot go over obstructions).
 
     For now we restrict to squares that hit at least one enemy to reduce misclicks.
     """
@@ -166,7 +173,9 @@ def _grenade_targets(
             Square(start.row, start.col + 2),
             Square(start.row, start.col - 2),
         ]
-        if t.on_board() and not t in all_positions
+        if t.on_board()
+        and not t in all_positions
+        and not midpoint(start, t) in all_positions
     ]
 
     # filter to ones that hit at least one enemy

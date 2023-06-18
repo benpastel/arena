@@ -43,7 +43,7 @@ DEFAULT_START_POSITIONS = {
     Player.S: (Square(4, 1), Square(4, 3)),
 }
 
-RANDOM_BONUS_AMOUNTS = [1, 2]
+RANDOM_BONUS_AMOUNTS = [2]
 
 
 def bonus_and_exchange_positions() -> tuple[Square, list[Square]]:
