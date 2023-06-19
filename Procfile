@@ -1,0 +1,1 @@
+web: cd .. && python -m arena.server.app
