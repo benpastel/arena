@@ -3,6 +3,8 @@
 import asyncio
 import json
 from typing import Dict
+import os
+import signal
 
 from websockets.server import WebSocketServerProtocol, serve
 
@@ -70,7 +72,6 @@ async def handler(websocket: WebSocketServerProtocol) -> None:
 
 
 async def main() -> None:
-
     # heroku sends SIGTERM when shutting down a dyno; listen & exit gracefully
     loop = asyncio.get_running_loop()
     stop = loop.create_future()
