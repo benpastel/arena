@@ -2,7 +2,7 @@
 lint:
 	black .
 	pyflakes .
-	cd .. && mypy -p arena
+	mypy -p server
 
 
 .PHONY: test
@@ -17,9 +17,9 @@ run: lint
 
 .PHONY: run-client
 run-client:
-	cd client && python3 -m http.server 8000
+	cd docs && python3 -m http.server 8000
 
 
 .PHONY: run-server
 run-server: lint
-	cd .. && python3 -m arena.server.app
+	python3 -m server.app

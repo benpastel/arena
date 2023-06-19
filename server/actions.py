@@ -1,7 +1,7 @@
 from typing import List, Dict, Optional
 
-from arena.server.state import State
-from arena.server.constants import (
+from server.state import State
+from server.constants import (
     Square,
     Action,
     OtherAction,

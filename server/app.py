@@ -6,9 +6,9 @@ from typing import Dict
 
 from websockets.server import WebSocketServerProtocol, serve
 
-from arena.server.constants import Player
-from arena.server.game import play_one_game
-from arena.server.notify import broadcast_game_over
+from server.constants import Player
+from server.game import play_one_game
+from server.notify import broadcast_game_over
 
 # For now we don't use SSL because it's local-network only
 # import ssl

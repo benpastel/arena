@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 
 from websockets.server import WebSocketServerProtocol
 
-from arena.server.constants import (
+from server.constants import (
     Tile,
     Action,
     OtherAction,

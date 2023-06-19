@@ -4,8 +4,8 @@ from typing import Dict, Optional
 
 from websockets.server import WebSocketServerProtocol
 
-from arena.server.state import State
-from arena.server.constants import Player, Square, Action, OutEventType, other_player
+from server.state import State
+from server.constants import Player, Square, Action, OutEventType, other_player
 
 
 async def broadcast_state_changed(

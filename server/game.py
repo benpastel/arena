@@ -3,9 +3,9 @@ from random import shuffle
 
 from websockets.server import WebSocketServerProtocol
 
-from arena.server.actions import valid_targets, take_action, grapple_end_square
-from arena.server.state import new_state, State
-from arena.server.constants import (
+from server.actions import valid_targets, take_action, grapple_end_square
+from server.state import new_state, State
+from server.constants import (
     Player,
     Square,
     GameResult,
@@ -15,14 +15,14 @@ from arena.server.constants import (
     Response,
     other_player,
 )
-from arena.server.choices import (
+from server.choices import (
     choose_action_or_square,
     choose_square_or_hand,
     choose_response,
     choose_exchange,
     send_prompt,
 )
-from arena.server.notify import (
+from server.notify import (
     broadcast_state_changed,
     notify_selection_changed,
     broadcast_selection_changed,

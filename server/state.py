@@ -3,14 +3,14 @@ from random import shuffle
 
 from pydantic import BaseModel
 
-from arena.server.constants import (
+from server.constants import (
     Player,
     Square,
     GameResult,
     Tile,
     other_player,
 )
-from arena.server.board import (
+from server.board import (
     bonus_amount,
     bonus_and_exchange_positions,
     start_positions,
