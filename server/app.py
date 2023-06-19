@@ -70,8 +70,17 @@ async def handler(websocket: WebSocketServerProtocol) -> None:
 
 
 async def main() -> None:
-    async with serve(handler, "", 8001):
-        await asyncio.Future()  # run forever
+
+    # heroku sends SIGTERM when shutting down a dyno; listen & exit gracefully
+    loop = asyncio.get_running_loop()
+    stop = loop.create_future()
+    loop.add_signal_handler(signal.SIGTERM, stop.set_result, None)
+
+    port = int(os.environ.get("PORT", "8001"))
+    print(f"Serving websocket server on port {port}.")
+
+    async with serve(handler, "", port):
+        await stop
 
 
 if __name__ == "__main__":
