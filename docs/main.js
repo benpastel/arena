@@ -65,6 +65,9 @@ function getWebSocketServer() {
     // local network
     // find IP address with: `ifconfig | rg en0 --after-context=6 | rg inet`
     return "ws://192.168.1.65:8001/";
+  } else if (window.location.host === "benpastel.github.io") {
+    // github pages => heroku
+    return "ws://benji-arena-7507cf3c8c79.herokuapp.com";
   } else {
     throw new Error(`Unsupported host: ${window.location.host}`);
   }
