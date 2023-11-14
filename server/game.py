@@ -3,7 +3,12 @@ from random import shuffle
 
 from websockets.server import WebSocketServerProtocol
 
-from server.actions import valid_targets, take_action, grapple_end_square
+from server.actions import (
+    valid_targets,
+    take_action,
+    reflect_action,
+    grapple_end_square,
+)
 from server.state import new_state, State
 from server.constants import (
     Player,
@@ -81,11 +86,15 @@ async def _resolve_action(
     target: Square,
     state: State,
     websockets: Dict[Player, WebSocketServerProtocol],
+    reflect: bool = False,
 ) -> None:
     # `hits` is a possibly-empty list of tiles hit by the action
-    hits = take_action(start, action, target, state)
-
-    state.log(f"{state.current_player.format_for_log()} uses {action}")
+    if reflect:
+        hits = reflect_action(start, action, target, state)
+        state.log(f"{state.other_player.format_for_log()} reflects {action}")
+    else:
+        hits = take_action(start, action, target, state)
+        state.log(f"{state.current_player.format_for_log()} uses {action}")
 
     for hit in hits:
         await _lose_tile(hit, state, websockets)
@@ -100,9 +109,13 @@ async def _resolve_action(
         if target in state.exchange_positions:
             await _resolve_exchange(target, state, websockets)
 
-    # we may have grappled the opponent onto one
+    # hook may have moved someone onto one
     if action == Tile.HOOK:
-        end_square = grapple_end_square(start, target, obstructions=[])
+        if reflect:
+            end_square = grapple_end_square(target, start, obstructions=[])
+        else:
+            end_square = grapple_end_square(start, target, obstructions=[])
+
         if end_square == state.bonus_position:
             _resolve_bonus(end_square, state)
 
@@ -325,16 +338,19 @@ async def _select_response(
     target: Square,
     state: State,
     websockets: Dict[Player, WebSocketServerProtocol],
-) -> Response | Literal[Tile.HOOK]:
+) -> Response | Literal[Tile.HOOK, Tile.KNIVES]:
     assert action in Tile
 
-    possible_responses: List[Response | Literal[Tile.HOOK]] = [
+    possible_responses: List[Response | Literal[Tile.HOOK, Tile.KNIVES]] = [
         Response.ACCEPT,
         Response.CHALLENGE,
     ]
     if action == Tile.HOOK:
-        # Tile.HOOK blocks Tile.HOOK
+        # Tile.HOOK reflects Tile.HOOK
         possible_responses.append(Tile.HOOK)
+    elif action == Tile.KNIVES:
+        # Tile.KNIVES reflects Tile.KNIVES
+        possible_responses.append(Tile.KNIVES)
 
     await send_prompt(
         "Waiting for opponent to respond.", websockets[state.current_player]
@@ -347,15 +363,15 @@ async def _select_response(
     )
 
 
-async def _select_block_response(
-    state: State, websockets: Dict[Player, WebSocketServerProtocol]
+async def _select_reflect_response(
+    action: Action, state: State, websockets: Dict[Player, WebSocketServerProtocol]
 ) -> Response:
     await send_prompt(
-        "Waiting for opponent to respond to block.", websockets[state.other_player]
+        "Waiting for opponent to respond to reflect.", websockets[state.other_player]
     )
     response = await choose_response(
         [Response.ACCEPT, Response.CHALLENGE],
-        f"Opponent blocked with {Tile.HOOK}.  Choose your response.",
+        f"Opponent reflected with {action}.  Choose your response.",
         websockets[state.current_player],
     )
     return cast(Response, response)
@@ -380,7 +396,7 @@ async def _play_one_turn(
         await _resolve_action(start, action, target, state, websockets)
         return
 
-    # ask opponent to accept, challenge, or block as appropriate
+    # ask opponent to accept, challenge, or reflect as appropriate
     response = await _select_response(start, action, target, state, websockets)
 
     if response == Response.ACCEPT:
@@ -406,28 +422,38 @@ async def _play_one_turn(
             await clear_selection(websockets)
             await _lose_tile(state.current_player, state, websockets)
     else:
-        assert response == Tile.HOOK
-        # the response was to block a HOOK with a HOOK
+        assert response in (Tile.HOOK, Tile.KNIVES)
+        assert action == response
+        # the response was to reflect hook with hook or knives with knives
         # which the original player may challenge
-        block_response = await _select_block_response(state, websockets)
+        reflect_response = await _select_reflect_response(response, state, websockets)
         target_tile = state.tile_at(target)
         reveal_msg = f"{state.other_player.format_for_log()} reveals a {target_tile}."
 
-        if block_response == Response.ACCEPT:
-            # block succeeds
+        if reflect_response == Response.ACCEPT:
+            # reflect succeeds
             # original action fails
-            state.log("Hook blocked.")
+            state.log("Hook reflected.")
             await clear_selection(websockets)
-        elif target_tile == Tile.HOOK:
+            await _resolve_action(
+                start, action, target, state, websockets, reflect=True
+            )
+        elif target_tile == response:
             # challenge fails
-            # block succeeds
+            # reflect succeeds
             # original action fails
-            state.log(reveal_msg + " Challenge fails!")
+            state.log(
+                reveal_msg
+                + f" Challenge fails!  First the {response} is reflected, then {state.current_player.format_for_log()} will choose a tile to lose."
+            )
             await clear_selection(websockets)
+            await _resolve_action(
+                start, action, target, state, websockets, reflect=True
+            )
             await _lose_tile(state.current_player, state, websockets)
         else:
             # challenge succeeds
-            # block fails
+            # reflect fails
             # original action succeeds
             state.log(
                 reveal_msg

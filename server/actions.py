@@ -19,7 +19,7 @@ COIN_GAIN = {
 }
 SMITE_COST = 7
 GRENADES_COST = 3
-KNIVES_RANGE_1_COST = 3
+KNIVES_RANGE_1_COST = 1
 KNIVES_RANGE_2_COST = 5
 GRAPPLE_STEAL_AMOUNT = 2
 MUST_SMITE_AT = 10
@@ -319,5 +319,39 @@ def take_action(
 
         # kill target
         return [target]
+
+    assert False, f"unknown {action=}"
+
+
+def reflect_action(
+    start: Square, action: Action, target: Square, state: State
+) -> List[Square]:
+    """
+    Updates the state with the result of the action reflected from target to start.
+    Assumes the action is valid.
+
+    Returns a possibly-empty list of casualties (positions of tiles that got killed)
+    """
+    player = state.current_player
+    enemy = state.other_player
+
+    if action == Tile.KNIVES:
+        # kill start @ no cost
+        return [start]
+
+    if action == Tile.HOOK:
+        # move start next to target
+        end_square = grapple_end_square(target, start, obstructions=[])
+        assert end_square
+        start_index = state.positions[player].index(start)
+        state.positions[player][start_index] = end_square
+
+        # steal
+        steal_amount = min(GRAPPLE_STEAL_AMOUNT, state.coins[player])
+        state.coins[enemy] += steal_amount
+        state.coins[player] -= steal_amount
+
+        # kill noboby
+        return []
 
     assert False, f"unknown {action=}"

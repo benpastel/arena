@@ -45,7 +45,7 @@ const TOOLTIPS = {
     + "X . 🀛 . X<br>"
     + ". . . . .<br>"
     + ". . X . .",
-  "🀒": "KNIVES<br>pay $3 to kill:<br>"
+  "🀒": "KNIVES<br>pay $1 to kill:<br>"
     + "<br>"
     + ". X .<br>"
     + "X 🀒 X<br>"
@@ -57,8 +57,9 @@ const TOOLTIPS = {
     + ". X . X .<br>"
     + "X . 🀒 . X<br>"
     + ". X . X .<br>"
-    + ". . X . .",
-  "🀍": "HOOK<br>steal $2<br>in straight or diagonal line<br>blocked by HOOK",
+    + ". . X . .<br>",
+    + "reflected by KNIVES",
+  "🀍": "HOOK<br>steal $2<br>in straight or diagonal line<br>reflected by HOOK",
   "👍": "ACCEPT",
   "🚩": "CHALLENGE",
 }

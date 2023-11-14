@@ -193,10 +193,10 @@ async def choose_square_or_hand(
 
 
 async def choose_response(
-    possible_responses: List[Response | Literal[Tile.HOOK]],
+    possible_responses: List[Response | Literal[Tile.HOOK, Tile.KNIVES]],
     prompt: str,
     websocket: WebSocketServerProtocol,
-) -> Response | Literal[Tile.HOOK]:
+) -> Response | Literal[Tile.HOOK, Tile.KNIVES]:
     async with _highlighted(
         websocket, actions=cast(List[Action | Response], possible_responses)
     ):
@@ -220,6 +220,13 @@ async def choose_response(
                 and Tile.HOOK in possible_responses
             ):
                 return Tile.HOOK
+
+            # try parsing as a KNIVES
+            if (
+                data.get("button") == Tile.KNIVES.value
+                and Tile.KNIVES in possible_responses
+            ):
+                return Tile.KNIVES
 
             # it's not valid; get a new choice
             print(f"Ignoring invalid choice {data=}, {possible_responses=}")

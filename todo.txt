@@ -15,3 +15,6 @@ CRITICAL:
     - don't need to select a source tile for choosing smite
 
     - host somewhere real!
+
+    - diagonel knives only cost 3
+    - can't continue playing because special tile frontend state
