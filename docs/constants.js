@@ -57,7 +57,7 @@ const TOOLTIPS = {
     + ". X . X .<br>"
     + "X . 🀒 . X<br>"
     + ". X . X .<br>"
-    + ". . X . .<br>",
+    + ". . X . .<br>"
     + "reflected by KNIVES",
   "🀍": "HOOK<br>steal $2<br>in straight or diagonal line<br>reflected by HOOK",
   "👍": "ACCEPT",
