@@ -56,17 +56,18 @@ async def _resolve_exchange(
     tile_on_board_index = state.positions[player].index(square)
 
     # player can now see the exchange position
-    # if they could, other player can no longer see the exchange position or tile
-    # because it they may have changed
     state.exchange_tiles_revealed[player][exchange_index] = True
-    state.exchange_tiles_revealed[other_player(player)][exchange_index] = False
-    state.tiles_on_board_revealed[player][tile_on_board_index] = False
 
     await broadcast_state_changed(state, websockets)
     await send_prompt(
         "Waiting for opponent to exchange tiles.",
         websockets[other_player(player)],
     )
+
+    # if they could, other player can no longer see the exchange position or tile
+    # because it may have change
+    state.exchange_tiles_revealed[other_player(player)][exchange_index] = False
+    state.tiles_on_board_revealed[player][tile_on_board_index] = False
 
     old_tile = state.tile_at(square)
     exchange_choices = state.exchange_tiles[exchange_index] + [old_tile]
