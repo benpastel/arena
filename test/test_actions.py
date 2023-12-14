@@ -63,7 +63,7 @@ def test_all_distances():
 
 #     )
 
-#     def _assert_targets(action: Action, expected: List[Square]) -> None:
+#     def _assert_targets(action: Action, expected: list[Square]) -> None:
 #         actual = valid_targets(Wizard.SW, action, positions)
 #         assert sorted(actual) == sorted(expected), f"{action=}"
 

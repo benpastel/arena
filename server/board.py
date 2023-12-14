@@ -39,8 +39,8 @@ DEFAULT_BONUS_POSITION = Square(2, 2)
 DEFAULT_BONUS_AMOUNT = 2
 
 DEFAULT_START_POSITIONS = {
-    Player.N: (Square(0, 1), Square(0, 3)),
-    Player.S: (Square(4, 1), Square(4, 3)),
+    Player.N: [Square(0, 1), Square(0, 3)],
+    Player.S: [Square(4, 1), Square(4, 3)],
 }
 
 RANDOM_BONUS_AMOUNTS = [2]
@@ -64,7 +64,7 @@ def bonus_amount() -> int:
         return DEFAULT_BONUS_AMOUNT
 
 
-def start_positions() -> dict[Player, tuple[Square, Square]]:
+def start_positions() -> dict[Player, list[Square]]:
     if not RANDOMIZE_START:
         return DEFAULT_START_POSITIONS
 
@@ -75,6 +75,6 @@ def start_positions() -> dict[Player, tuple[Square, Square]]:
     random.shuffle(top)
     random.shuffle(bottom)
     return {
-        Player.N: (top[0], top[1]),
-        Player.S: (bottom[0], bottom[1]),
+        Player.N: [top[0], top[1]],
+        Player.S: [bottom[0], bottom[1]],
     }

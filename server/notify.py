@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import Dict, Optional
+from typing import Optional
 
 from websockets.server import WebSocketServerProtocol
 
@@ -9,7 +9,7 @@ from server.constants import Player, Square, Action, OutEventType, other_player
 
 
 async def broadcast_state_changed(
-    state: State, websockets: Dict[Player, WebSocketServerProtocol]
+    state: State, websockets: dict[Player, WebSocketServerProtocol]
 ) -> None:
     """Notify both players that the state changed."""
     async with asyncio.TaskGroup() as tg:
@@ -23,7 +23,7 @@ async def broadcast_state_changed(
             tg.create_task(coroutine)
 
 
-async def clear_selection(websockets: Dict[Player, WebSocketServerProtocol]) -> None:
+async def clear_selection(websockets: dict[Player, WebSocketServerProtocol]) -> None:
     """
     Remove any selection from both players' UI.
     """
@@ -35,7 +35,7 @@ async def broadcast_selection_changed(
     start: Optional[Square],
     action: Optional[Action],
     target: Optional[Square],
-    websockets: Dict[Player, WebSocketServerProtocol],
+    websockets: dict[Player, WebSocketServerProtocol],
 ) -> None:
     """
     Notify both players a selection changed.  See `notify_selection_changed` for details.
@@ -79,8 +79,8 @@ async def notify_selection_changed(
 
 
 async def broadcast_game_over(
-    websockets: Dict[Player, WebSocketServerProtocol],
-    game_score: Dict[Player, int],
+    websockets: dict[Player, WebSocketServerProtocol],
+    game_score: dict[Player, int],
 ) -> None:
     async with asyncio.TaskGroup() as tg:
         for player, websocket in websockets.items():

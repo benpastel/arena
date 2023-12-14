@@ -1,5 +1,5 @@
 import json
-from typing import List, cast, Literal
+from typing import cast, Literal
 from weakref import WeakKeyDictionary
 from contextlib import asynccontextmanager
 
@@ -83,10 +83,10 @@ async def _get_choice(prompt: str, websocket: WebSocketServerProtocol) -> dict:
 
 async def _send_highlights(
     websocket: WebSocketServerProtocol,
-    squares: List[Square],
-    actions: List[Action | Response],
-    hand_tiles: List[Tile],
-    board_tiles: List[Tile],
+    squares: list[Square],
+    actions: list[Action | Response],
+    hand_tiles: list[Tile],
+    board_tiles: list[Tile],
 ):
     event = {
         "type": OutEventType.HIGHLIGHT_CHANGE,
@@ -103,10 +103,10 @@ async def _send_highlights(
 @asynccontextmanager
 async def _highlighted(
     websocket: WebSocketServerProtocol,
-    squares: List[Square] = [],
-    actions: List[Action | Response] = [],
-    hand_tiles: List[Tile] = [],
-    board_tiles: List[Tile] = [],
+    squares: list[Square] = [],
+    actions: list[Action | Response] = [],
+    hand_tiles: list[Tile] = [],
+    board_tiles: list[Tile] = [],
 ):
     await _send_highlights(websocket, squares, actions, hand_tiles, board_tiles)
     yield
@@ -115,14 +115,14 @@ async def _highlighted(
 
 
 async def choose_action_or_square(
-    possible_actions: List[Action],
-    possible_squares: List[Square],
+    possible_actions: list[Action],
+    possible_squares: list[Square],
     prompt: str,
     websocket: WebSocketServerProtocol,
 ) -> Action | Square:
     async with _highlighted(
         websocket,
-        actions=cast(List[Action | Response], possible_actions),
+        actions=cast(list[Action | Response], possible_actions),
         squares=possible_squares,
     ):
         # loop until we get a valid action or square
@@ -159,8 +159,8 @@ async def choose_action_or_square(
 
 
 async def choose_square_or_hand(
-    possible_squares: List[Square],
-    possible_hand_tiles: List[Tile],
+    possible_squares: list[Square],
+    possible_hand_tiles: list[Tile],
     prompt: str,
     websocket: WebSocketServerProtocol,
 ) -> Square | Tile:
@@ -193,12 +193,12 @@ async def choose_square_or_hand(
 
 
 async def choose_response(
-    possible_responses: List[Response | Literal[Tile.HOOK, Tile.KNIVES]],
+    possible_responses: list[Response | Literal[Tile.HOOK, Tile.KNIVES]],
     prompt: str,
     websocket: WebSocketServerProtocol,
 ) -> Response | Literal[Tile.HOOK, Tile.KNIVES]:
     async with _highlighted(
-        websocket, actions=cast(List[Action | Response], possible_responses)
+        websocket, actions=cast(list[Action | Response], possible_responses)
     ):
         # loop until we get a valid response
         while True:
@@ -233,7 +233,7 @@ async def choose_response(
 
 
 async def choose_exchange(
-    choices: List[Tile],
+    choices: list[Tile],
     prompt: str,
     websocket: WebSocketServerProtocol,
 ) -> Tile:

@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, Optional, cast, List, Literal
+from typing import Optional, cast, Literal
 from random import shuffle
 
 from websockets.server import WebSocketServerProtocol
@@ -48,7 +48,7 @@ def _resolve_bonus(
 async def _resolve_exchange(
     square: Square,
     state: State,
-    websockets: Dict[Player, WebSocketServerProtocol],
+    websockets: dict[Player, WebSocketServerProtocol],
 ) -> None:
     """Allow a player to exchange with a exchange square"""
     player = state.player_at(square)
@@ -85,7 +85,7 @@ async def _resolve_action(
     action: Action,
     target: Square,
     state: State,
-    websockets: Dict[Player, WebSocketServerProtocol],
+    websockets: dict[Player, WebSocketServerProtocol],
     reflect: bool = False,
 ) -> None:
     # `hits` is a possibly-empty list of tiles hit by the action
@@ -124,8 +124,8 @@ async def _resolve_action(
 
 
 async def _select_action(
-    state: State, websockets: Dict[Player, WebSocketServerProtocol]
-) -> Tuple[Square, Action, Square]:
+    state: State, websockets: dict[Player, WebSocketServerProtocol]
+) -> tuple[Square, Action, Square]:
     """
     Prompt the player to choose the action for their turn.
 
@@ -206,7 +206,7 @@ async def _select_action(
 async def _lose_tile(
     player_or_square: Player | Square,
     state: State,
-    websockets: Dict[Player, WebSocketServerProtocol],
+    websockets: dict[Player, WebSocketServerProtocol],
 ) -> None:
     """
      - Prompt the player to choose a tile to lose, if applicable
@@ -337,11 +337,11 @@ async def _select_response(
     action: Action,
     target: Square,
     state: State,
-    websockets: Dict[Player, WebSocketServerProtocol],
+    websockets: dict[Player, WebSocketServerProtocol],
 ) -> Response | Literal[Tile.HOOK, Tile.KNIVES]:
     assert action in Tile
 
-    possible_responses: List[Response | Literal[Tile.HOOK, Tile.KNIVES]] = [
+    possible_responses: list[Response | Literal[Tile.HOOK, Tile.KNIVES]] = [
         Response.ACCEPT,
         Response.CHALLENGE,
     ]
@@ -364,7 +364,7 @@ async def _select_response(
 
 
 async def _select_reflect_response(
-    action: Action, state: State, websockets: Dict[Player, WebSocketServerProtocol]
+    action: Action, state: State, websockets: dict[Player, WebSocketServerProtocol]
 ) -> Response:
     await send_prompt(
         "Waiting for opponent to respond to reflect.", websockets[state.other_player]
@@ -378,7 +378,7 @@ async def _select_reflect_response(
 
 
 async def _play_one_turn(
-    state: State, websockets: Dict[Player, WebSocketServerProtocol]
+    state: State, websockets: dict[Player, WebSocketServerProtocol]
 ) -> None:
     """
     Play one turn, prompting both players for choices as needed.
@@ -464,8 +464,8 @@ async def _play_one_turn(
 
 
 async def play_one_game(
-    match_score: Dict[Player, int], websockets: Dict[Player, WebSocketServerProtocol]
-) -> Dict[Player, int]:
+    match_score: dict[Player, int], websockets: dict[Player, WebSocketServerProtocol]
+) -> dict[Player, int]:
     """
     Play one game on the connected websockets.
 

@@ -1,4 +1,4 @@
-from typing import List, Dict, Optional
+from typing import Optional
 
 from server.state import State
 from server.constants import (
@@ -27,10 +27,10 @@ MUST_SMITE_AT = 10
 
 def _all_distances(
     start: Square,
-    obstructions: List[Square],
+    obstructions: list[Square],
     rows: int = ROWS,
     cols: int = COLUMNS,
-) -> Dict[Square, int]:
+) -> dict[Square, int]:
     """
     Return the distance from the start to all squares, with routes:
         - allowed to end on an obstruction
@@ -40,7 +40,7 @@ def _all_distances(
     assert 0 <= start.row < rows and 0 <= start.col < cols
     assert all(0 <= s.row < rows and 0 <= s.col < cols for s in obstructions)
 
-    explored: Dict[Square, int] = {}
+    explored: dict[Square, int] = {}
 
     to_explore = [start]
     to_explore_dists = [0]
@@ -77,7 +77,7 @@ def _manhattan_dist(s1: Square, s2: Square) -> int:
 
 
 def grapple_end_square(
-    start: Square, target: Square, obstructions: List[Square]
+    start: Square, target: Square, obstructions: list[Square]
 ) -> Optional[Square]:
     """
     If the grapple is valid, return the square the enemy is pulled to.
@@ -130,7 +130,7 @@ def grapple_end_square(
         current_square = next_square
 
 
-def _grenade_hits(center: Square, positions: List[Square]) -> List[Square]:
+def _grenade_hits(center: Square, positions: list[Square]) -> list[Square]:
     """
     Return a possibly-empty list of tile positions hit by the grenade.
 
@@ -151,8 +151,8 @@ def midpoint(x: Square, y: Square) -> Square:
 
 
 def _grenade_targets(
-    start: Square, all_positions: List[Square], enemy_positions: List[Square]
-) -> List[Square]:
+    start: Square, all_positions: list[Square], enemy_positions: list[Square]
+) -> list[Square]:
     """
     Return a possibly-empty list of valid squares to target a grenade.
 
@@ -186,7 +186,7 @@ def _grenade_targets(
     ]
 
 
-def valid_targets(start: Square, state: State) -> Dict[Action, List[Square]]:
+def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
     """
     What are the valid actions for the current player from the start square,
     and what squares are those actions allowed to target?
@@ -218,7 +218,7 @@ def valid_targets(start: Square, state: State) -> Dict[Action, List[Square]]:
     #
     # for now we'll allow empty lists when there is no valid target square;
     # we'll drop those keys at the end
-    actions: Dict[Action, List[Square]] = {
+    actions: dict[Action, list[Square]] = {
         OtherAction.MOVE: [s for s, dist in empty_targets.items() if dist == 1],
         Tile.FLOWER: [s for s, dist in empty_targets.items() if dist == 1],
         Tile.BIRD: [s for s, dist in empty_targets.items() if 1 <= dist <= 2],
@@ -252,7 +252,7 @@ def valid_targets(start: Square, state: State) -> Dict[Action, List[Square]]:
 
 def take_action(
     start: Square, action: Action, target: Square, state: State
-) -> List[Square]:
+) -> list[Square]:
     """
     Updates the state with the result of the action.
     Assumes the action is valid.
@@ -325,7 +325,7 @@ def take_action(
 
 def reflect_action(
     start: Square, action: Action, target: Square, state: State
-) -> List[Square]:
+) -> list[Square]:
     """
     Updates the state with the result of the action reflected from target to start.
     Assumes the action is valid.

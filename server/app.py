@@ -2,7 +2,6 @@
 
 import asyncio
 import json
-from typing import Dict
 import os
 import signal
 
@@ -16,7 +15,7 @@ from server.notify import broadcast_game_over
 # For now we support at most one game at a time.
 # this tracks the websocket of each connected player
 # until both players are connected and we can start the game.
-WEBSOCKETS: Dict[Player, WebSocketServerProtocol] = {}
+WEBSOCKETS: dict[Player, WebSocketServerProtocol] = {}
 
 
 async def handler(websocket: WebSocketServerProtocol) -> None:

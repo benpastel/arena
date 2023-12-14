@@ -1,4 +1,3 @@
-from typing import List, Dict
 from random import shuffle
 
 from pydantic import BaseModel
@@ -28,50 +27,50 @@ class State(BaseModel):
 
     # Each player starts with 4 tiles in hand.  They then place 2 on the board.
     # When a player runs out of tiles they lose.
-    tiles_in_hand: Dict[Player, List[Tile]]
+    tiles_in_hand: dict[Player, list[Tile]]
 
     # The tiles in play on the board for each player.
     # See `positions` for the corresponding tile locations.
-    tiles_on_board: Dict[Player, List[Tile]]
+    tiles_on_board: dict[Player, list[Tile]]
 
     # The square of each tile in play on the board for each player.
     # See `tiles_on_board` for the corresponding tile.
-    positions: Dict[Player, List[Square]]
+    positions: dict[Player, list[Square]]
 
     # The two tiles on each exchange square.
     # These correspond by index to exchange_positions.
-    exchange_tiles: List[List[Tile]]
+    exchange_tiles: list[list[Tile]]
 
     # The remaining tile tiles are hidden off-board and never revealed.
-    unused_tiles: List[Tile]
+    unused_tiles: list[Tile]
 
     # The list of tiles that have been revealed when a player lost a life.
     # These tiles stay face-up and are never reshuffled.
-    discard: List[Tile]
+    discard: list[Tile]
 
     # points used to cast tiles
-    coins: Dict[Player, int]
+    coins: dict[Player, int]
 
     # human-readable event log of public information
     # TODO: nested indentation?
     # TODO: tag with player so we can color-code them?
-    public_log: List[str]
+    public_log: list[str]
 
     # current player is the player whose turn it currently is; other_player is the other
     # redundant attributes for easier communication with frontend
     current_player: Player
     other_player: Player
 
-    match_score: Dict[Player, int]
+    match_score: dict[Player, int]
 
     # position of the exchange squares that allow swapping tiles
-    exchange_positions: List[Square]
+    exchange_positions: list[Square]
 
     # Position and value of the bonus square that gives extra + coin
     bonus_position: Square
     bonus_amount: int
 
-    game_score: Dict[Player, int] = {Player.N: 0, Player.S: 0}
+    game_score: dict[Player, int] = {Player.N: 0, Player.S: 0}
 
     def tile_at(self, square: Square) -> Tile:
         """The tile occupying on the board at this square.  Error if there isn't one."""
@@ -91,7 +90,7 @@ class State(BaseModel):
                     return player
         raise ValueError(f"Expected tile at {square}")
 
-    def all_positions(self) -> List[Square]:
+    def all_positions(self) -> list[Square]:
         """All squares with a tile on board, regardless of player"""
         return self.positions[Player.N] + self.positions[Player.S]
 
@@ -236,12 +235,12 @@ class State(BaseModel):
         self.match_score[player] += 1
 
 
-def new_state(match_score: Dict[Player, int]) -> State:
+def new_state(match_score: dict[Player, int]) -> State:
     """
     Return a new state with the tiles randomly dealt.
     """
     # 3 copies of each tile
-    tiles = [tile for tile in Tile for s in range(3) if tile != Tile.HIDDEN]
+    tiles: list[Tile] = [tile for tile in Tile for s in range(3) if tile != Tile.HIDDEN]
 
     # check that we didn't change the count of stuff in the rules and forget to change this method
     assert len(tiles) == 15
@@ -259,14 +258,14 @@ def new_state(match_score: Dict[Player, int]) -> State:
         tiles_on_board={Player.N: tiles[4:6], Player.S: tiles[6:8]},
         positions=start_positions(),
         exchange_tiles=[
-            (tiles[8], tiles[9]),
-            (tiles[10], tiles[11]),
+            [tiles[8], tiles[9]],
+            [tiles[10], tiles[11]],
         ],
         unused_tiles=tiles[12:15],
         discard=[],
-        coins={Player.N: 2, Player.S: 2},
+        coins={Player.N: 2, Player.S: 1},
         public_log=[],
-        # currently S hardcoded to go first
+        # currently S hardcoded to go first, but N has extra coin
         current_player=Player.S,
         other_player=Player.N,
         match_score=match_score,
