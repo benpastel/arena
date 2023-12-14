@@ -258,12 +258,6 @@ def take_action(
     Assumes the action is valid.
 
     Returns a possibly-empty list of casualties (positions of tiles that got killed)
-
-    TODO: this will need to split into:
-        - hits (informational-only)
-        - take action (effect-only)
-
-    or both together but switched via flag
     """
     player = state.current_player
     enemy = state.other_player

@@ -52,13 +52,21 @@ async def _resolve_exchange(
 ) -> None:
     """Allow a player to exchange with a exchange square"""
     player = state.player_at(square)
+    exchange_index = state.exchange_positions.index(square)
+    tile_on_board_index = state.positions[player].index(square)
+
+    # player can now see the exchange position
+    # if they could, other player can no longer see the exchange position or tile
+    # because it they may have changed
+    state.exchange_tiles_revealed[player][exchange_index] = True
+    state.exchange_tiles_revealed[other_player(player)][exchange_index] = False
+    state.tiles_on_board_revealed[player][exchange_index] = False
+
     await broadcast_state_changed(state, websockets)
     await send_prompt(
         "Waiting for opponent to exchange tiles.",
         websockets[other_player(player)],
     )
-    exchange_index = state.exchange_positions.index(square)
-    tile_on_board_index = state.positions[player].index(square)
 
     old_tile = state.tile_at(square)
     exchange_choices = state.exchange_tiles[exchange_index] + [old_tile]
@@ -310,8 +318,10 @@ async def _lose_tile(
             continue
 
     # move the tile from alive to dead
-    state.tiles_on_board[player].remove(tile)
-    state.positions[player].remove(square)
+    position_index = state.positions[player].index(square)
+    state.tiles_on_board[player].pop(position_index)
+    state.positions[player].pop(position_index)
+    state.tiles_on_board_revealed[player].pop(position_index)
     state.discard.append(tile)
 
     # move the replacement tile if applicable
@@ -319,6 +329,7 @@ async def _lose_tile(
         state.tiles_in_hand[player].remove(replacement)
         state.tiles_on_board[player].append(replacement)
         state.positions[player].append(square)
+        state.tiles_on_board_revealed[player].append(False)
         state.log(
             f"{player.format_for_log()} lost {tile} on {square.format_for_log()} and replaced it from hand."
         )
@@ -404,6 +415,7 @@ async def _play_one_turn(
         await _resolve_action(start, action, target, state, websockets)
 
     elif response == Response.CHALLENGE:
+        state.reveal_at(start)
         start_tile = state.tile_at(start)
         msg = f"{state.current_player.format_for_log()} reveals a {start_tile}."
         if action == start_tile:
@@ -442,6 +454,7 @@ async def _play_one_turn(
             # challenge fails
             # reflect succeeds
             # original action fails
+            state.reveal_at(target)
             state.log(
                 reveal_msg
                 + f" Challenge fails!  First the {response} is reflected, then {state.current_player.format_for_log()} will choose a tile to lose."
@@ -452,6 +465,7 @@ async def _play_one_turn(
             )
             await _lose_tile(state.current_player, state, websockets)
         else:
+            state.reveal_at(target)
             # challenge succeeds
             # reflect fails
             # original action succeeds

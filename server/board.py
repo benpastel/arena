@@ -64,7 +64,7 @@ def bonus_amount() -> int:
         return DEFAULT_BONUS_AMOUNT
 
 
-def start_positions() -> dict[Player, list[Square]]:
+def choose_start_positions() -> dict[Player, list[Square]]:
     if not RANDOMIZE_START:
         return DEFAULT_START_POSITIONS
 

@@ -12,7 +12,7 @@ from server.constants import (
 from server.board import (
     bonus_amount,
     bonus_and_exchange_positions,
-    start_positions,
+    choose_start_positions,
 )
 
 
@@ -33,6 +33,10 @@ class State(BaseModel):
     # See `positions` for the corresponding tile locations.
     tiles_on_board: dict[Player, list[Tile]]
 
+    # Players can see their own tiles and any tile that has been revealed.
+    # These correspond to `tiles_on_board`.
+    tiles_on_board_revealed: dict[Player, list[bool]]
+
     # The square of each tile in play on the board for each player.
     # See `tiles_on_board` for the corresponding tile.
     positions: dict[Player, list[Square]]
@@ -40,6 +44,7 @@ class State(BaseModel):
     # The two tiles on each exchange square.
     # These correspond by index to exchange_positions.
     exchange_tiles: list[list[Tile]]
+    exchange_tiles_revealed: dict[Player, list[bool]]
 
     # The remaining tile tiles are hidden off-board and never revealed.
     unused_tiles: list[Tile]
@@ -78,6 +83,15 @@ class State(BaseModel):
             for s, other_square in enumerate(self.positions[player]):
                 if other_square == square:
                     return self.tiles_on_board[player][s]
+        raise ValueError(f"Expected tile at {square}")
+
+    def reveal_at(self, square: Square) -> None:
+        """Reveal the tile at square.  Error if there isn't one."""
+        for player in Player:
+            for s, other_square in enumerate(self.positions[player]):
+                if other_square == square:
+                    self.tiles_on_board_revealed[player][s] = True
+                    return
         raise ValueError(f"Expected tile at {square}")
 
     def player_at(self, square: Square) -> Player:
@@ -124,17 +138,25 @@ class State(BaseModel):
 
         # we know the number of tiles in the opponent's hand but not their identity
         opponent_hand = [Tile.HIDDEN for tile in self.tiles_in_hand[opponent]]
-        # we know the number and location of tiles on the opponent's board but not their
-        # identity
-        opponent_board = [Tile.HIDDEN for tile in self.tiles_on_board[opponent]]
 
-        # we can see exchange tiles if we are standing on them
-        exchange_tiles = []
-        for b, position in enumerate(self.exchange_positions):
-            if position in self.positions[player]:
-                exchange_tiles.append(self.exchange_tiles[b])
-            else:
-                exchange_tiles.append([Tile.HIDDEN, Tile.HIDDEN])
+        # we know the number and location of tiles on the opponent's board but not their
+        # identity; unless they are revealed
+        opponent_board = [
+            tile if revealed else Tile.HIDDEN
+            for tile, revealed in zip(
+                self.tiles_on_board[opponent],
+                self.tiles_on_board_revealed[opponent],
+                strict=True,
+            )
+        ]
+
+        # we can see exchange tiles if they've been revealed to us
+        exchange_tiles = [
+            tiles if revealed else [Tile.HIDDEN for _ in tiles]
+            for tiles, revealed in zip(
+                self.exchange_tiles, self.exchange_tiles_revealed[player], strict=True
+            )
+        ]
 
         return State(
             tiles_in_hand={
@@ -151,6 +173,8 @@ class State(BaseModel):
             # we can't see the unused tiles
             unused_tiles=[Tile.HIDDEN, Tile.HIDDEN, Tile.HIDDEN],
             # we can see everything else
+            tiles_on_board_revealed=self.tiles_on_board_revealed,
+            exchange_tiles_revealed=self.exchange_tiles_revealed,
             discard=self.discard,
             public_log=self.public_log,
             current_player=self.current_player,
@@ -249,6 +273,7 @@ def new_state(match_score: dict[Player, int]) -> State:
     shuffle(tiles)
 
     bonus_position, exchange_positions = bonus_and_exchange_positions()
+    start_positions = choose_start_positions()
 
     return State(
         tiles_in_hand={
@@ -256,11 +281,13 @@ def new_state(match_score: dict[Player, int]) -> State:
             Player.S: tiles[2:4],
         },
         tiles_on_board={Player.N: tiles[4:6], Player.S: tiles[6:8]},
-        positions=start_positions(),
+        tiles_on_board_revealed={Player.N: [False, False], Player.S: [False, False]},
+        positions=start_positions,
         exchange_tiles=[
             [tiles[8], tiles[9]],
             [tiles[10], tiles[11]],
         ],
+        exchange_tiles_revealed={Player.N: [False, False], Player.S: [False, False]},
         unused_tiles=tiles[12:15],
         discard=[],
         coins={Player.N: 2, Player.S: 1},
