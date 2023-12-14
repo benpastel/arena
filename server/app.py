@@ -12,13 +12,6 @@ from server.constants import Player
 from server.game import play_one_game
 from server.notify import broadcast_game_over
 
-# For now we don't use SSL because it's local-network only
-# import ssl
-
-# ssl_context = ssl.create_default_context()
-# ssl_context.check_hostname = False
-# ssl_context.verify_mode = ssl.CERT_NONE
-
 
 # For now we support at most one game at a time.
 # this tracks the websocket of each connected player

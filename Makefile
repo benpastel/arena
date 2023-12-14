@@ -10,11 +10,6 @@ test: lint
 	pytest . -vv
 
 
-.PHONY: run
-run: lint
-	cd .. && python3 -m arena.game
-
-
 .PHONY: run-client
 run-client:
 	cd docs && python3 -m http.server 8000
