@@ -60,7 +60,7 @@ async def _resolve_exchange(
     # because it they may have changed
     state.exchange_tiles_revealed[player][exchange_index] = True
     state.exchange_tiles_revealed[other_player(player)][exchange_index] = False
-    state.tiles_on_board_revealed[player][exchange_index] = False
+    state.tiles_on_board_revealed[player][tile_on_board_index] = False
 
     await broadcast_state_changed(state, websockets)
     await send_prompt(
