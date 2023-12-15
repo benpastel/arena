@@ -37,7 +37,7 @@ const TOOLTIPS = {
   "↕": "MOVE<br>move 1<br>gain $1",
   "⚡": "SMITE<br>pay $7<br>kill any enemy",
   "🀥": "FLOWER<br>move 1<br>gain $3",
-  "🀐": "BIRD<br>move 2<br>gain $2",
+  "🀐": "BIRD<br>move 2 manhattan<br>gain $2<br>reveal 1 unused tile",
   "🀛": "GRENADES<br>pay $3<br>kill 3x3 around empty square:<br>"
     + "<br>"
     + ". . X . .<br>"

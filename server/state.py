@@ -46,8 +46,9 @@ class State(BaseModel):
     exchange_tiles: list[list[Tile]]
     exchange_tiles_revealed: dict[Player, list[bool]]
 
-    # The remaining tile tiles are hidden off-board and never revealed.
+    # The remaining tile tiles are face-down off-board; can be revealed by bird.
     unused_tiles: list[Tile]
+    unused_revealed: dict[Player, list[bool]]
 
     # The list of tiles that have been revealed when a player lost a life.
     # These tiles stay face-up and are never reshuffled.
@@ -93,6 +94,13 @@ class State(BaseModel):
                     self.tiles_on_board_revealed[player][s] = True
                     return
         raise ValueError(f"Expected tile at {square}")
+
+    def reveal_unused(self) -> None:
+        """Reveal 1 unused tile to current player, or do nothing if they are all revealed."""
+        reveal_list = self.unused_revealed[self.current_player]
+        if not all(reveal_list):
+            next_idx = reveal_list.index(False)
+            reveal_list[next_idx] = True
 
     def player_at(self, square: Square) -> Player:
         """
@@ -158,6 +166,13 @@ class State(BaseModel):
             )
         ]
 
+        unused_tiles = [
+            tile if revealed else Tile.HIDDEN
+            for tile, revealed in zip(
+                self.unused_tiles, self.unused_revealed[player], strict=True
+            )
+        ]
+
         return State(
             tiles_in_hand={
                 player: self.tiles_in_hand[player],
@@ -171,8 +186,9 @@ class State(BaseModel):
             # all tile positions are public knowledge
             positions=self.positions,
             # we can't see the unused tiles
-            unused_tiles=[Tile.HIDDEN, Tile.HIDDEN, Tile.HIDDEN],
+            unused_tiles=unused_tiles,
             # we can see everything else
+            unused_revealed=self.unused_revealed,
             tiles_on_board_revealed=self.tiles_on_board_revealed,
             exchange_tiles_revealed=self.exchange_tiles_revealed,
             discard=self.discard,
@@ -289,6 +305,10 @@ def new_state(match_score: dict[Player, int]) -> State:
         ],
         exchange_tiles_revealed={Player.N: [False, False], Player.S: [False, False]},
         unused_tiles=tiles[12:15],
+        unused_revealed={
+            Player.N: [False, False, False],
+            Player.S: [False, False, False],
+        },
         discard=[],
         coins={Player.N: 2, Player.S: 1},
         public_log=[],

@@ -221,7 +221,11 @@ def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
     actions: dict[Action, list[Square]] = {
         OtherAction.MOVE: [s for s, dist in empty_targets.items() if dist == 1],
         Tile.FLOWER: [s for s, dist in empty_targets.items() if dist == 1],
-        Tile.BIRD: [s for s, dist in empty_targets.items() if 1 <= dist <= 2],
+        Tile.BIRD: [
+            s
+            for s, dist in empty_targets.items()
+            if 1 <= _manhattan_dist(start, s) <= 2
+        ],
     }
 
     # see `grapple_end_square` for the definition of valid grapple targets
@@ -269,6 +273,10 @@ def take_action(
 
         # gain coins
         state.coins[player] += COIN_GAIN[action]
+
+        if action == Tile.BIRD:
+            # reveal 1 unused tile
+            state.reveal_unused()
 
         # kill nobody
         return []

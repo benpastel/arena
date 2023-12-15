@@ -60,7 +60,7 @@ class Tile(str, Enum):
     # pull yourself to any enemy at a Queen move & steal $2
     HOOK = "🀍"
 
-    # move 1-2 & gain $2
+    # move 1-2 manhattan, gain $2, reveal 1 unused
     BIRD = "🀐"
 
     # $3 to kill in a 3x3 square
