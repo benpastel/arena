@@ -200,12 +200,36 @@ function renderHand(player_view) {
   }
 }
 
-function renderScore(player_view) {
+function renderOther(player_view) {
   for (const player of PLAYERS) {
-    const score = player_view.match_score[player];
-    const element = document.querySelector(`.score .${player}`);
-    element.innerHTML = score;
+    const unusedPanel = document.querySelector('.unused');
+    const discardPanel = document.querySelector('.discard');
+    const unusedElements = unusedPanel.querySelectorAll('.hand-tile');
+    const discardElements = discardPanel.querySelectorAll('.hand-tile');
+
+    // redraw from scratch in case visibility changed
+    for (const element of unusedElements) {
+      unusedPanel.removeChild(element);
+    }
+    for (const element of discardElements) {
+      discardPanel.removeChild(element);
+    }
+    for (const tile of player_view.unused_tiles) {
+      const element = document.createElement("span");
+      element.innerHTML = tile;
+      element.dataset.tileName = tile;
+      element.classList.add('hand-tile');
+      unusedPanel.append(element);
+    }
+    for (const tile of player_view.discard) {
+      const element = document.createElement("span");
+      element.innerHTML = tile;
+      element.dataset.tileName = tile;
+      element.classList.add('hand-tile');
+      discardPanel.append(element);
+    }
   }
 }
 
-export {createBoard, renderBoard, renderLog, renderHand, createActionPanel, findCell, renderScore};
+
+export {createBoard, renderBoard, renderLog, renderHand, createActionPanel, findCell, renderOther};

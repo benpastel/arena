@@ -12,7 +12,7 @@ import {
   renderLog,
   renderHand,
   createActionPanel,
-  renderScore,
+  renderOther,
 } from "./renderState.js";
 
 import {
@@ -216,7 +216,7 @@ function receiveMoves(board, actionPanel, websocket) {
       renderBoard(board, player_view);
       renderLog(log, player_view);
       renderHand(player_view);
-      renderScore(player_view);
+      renderOther(player_view);
     }
   });
 }
