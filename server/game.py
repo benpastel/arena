@@ -65,6 +65,7 @@ async def _move_x2(
     )
     assert isinstance(choice, Tile)
     state.x2_tile = choice
+    state.log(f"{player.format_for_log()} moved ×2 to {choice}")
 
     await broadcast_state_changed(state, websockets)
 
