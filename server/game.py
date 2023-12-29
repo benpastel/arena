@@ -35,7 +35,7 @@ from server.notify import (
 )
 
 
-def _resolve_bonus(
+async def _resolve_bonus(
     square: Square,
     state: State,
 ) -> None:
@@ -43,6 +43,30 @@ def _resolve_bonus(
     player = state.player_at(square)
     state.log(f"{player.format_for_log()}: +${state.bonus_amount} bonus")
     state.coins[player] += state.bonus_amount
+
+
+async def _move_x2(
+    square: Square,
+    state: State,
+    websockets: dict[Player, WebSocketServerProtocol],
+) -> None:
+    """Allow the player to move the x2 highlight."""
+    player = state.player_at(square)
+    await send_prompt(
+        "Waiting for opponent to move the ×2.",
+        websockets[other_player(player)],
+    )
+    choices: list[Action] = [t for t in Tile if t != state.x2_tile and t != Tile.HIDDEN]
+    choice = await choose_action_or_square(
+        choices,
+        [],
+        "Move the ×2 to a different action.",
+        websockets[player],
+    )
+    assert isinstance(choice, Tile)
+    state.x2_tile = choice
+
+    await broadcast_state_changed(state, websockets)
 
 
 async def _resolve_exchange(
@@ -113,7 +137,7 @@ async def _resolve_action(
     # we may have moved onto a special square
     if action in (OtherAction.MOVE, Tile.FLOWER, Tile.BIRD):
         if target == state.bonus_position:
-            _resolve_bonus(target, state)
+            await _move_x2(target, state, websockets)
 
         if target in state.exchange_positions:
             await _resolve_exchange(target, state, websockets)
@@ -126,7 +150,7 @@ async def _resolve_action(
             end_square = grapple_end_square(start, target, obstructions=[])
 
         if end_square == state.bonus_position:
-            _resolve_bonus(end_square, state)
+            await _move_x2(end_square, state, websockets)
 
         if end_square in state.exchange_positions:
             await _resolve_exchange(end_square, state, websockets)

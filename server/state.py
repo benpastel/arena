@@ -1,4 +1,5 @@
 from random import shuffle
+import random
 
 from pydantic import BaseModel
 
@@ -75,6 +76,7 @@ class State(BaseModel):
     # Position and value of the bonus square that gives extra + coin
     bonus_position: Square
     bonus_amount: int
+    x2_tile: Tile
 
     game_score: dict[Player, int] = {Player.N: 0, Player.S: 0}
 
@@ -200,6 +202,7 @@ class State(BaseModel):
             game_score=self.game_score,
             bonus_position=self.bonus_position,
             bonus_amount=self.bonus_amount,
+            x2_tile=self.x2_tile,
             exchange_positions=self.exchange_positions,
         )
 
@@ -290,6 +293,7 @@ def new_state(match_score: dict[Player, int]) -> State:
 
     bonus_position, exchange_positions = bonus_and_exchange_positions()
     start_positions = choose_start_positions()
+    x2_tile = random.choice([t for t in Tile])
 
     return State(
         tiles_in_hand={
@@ -319,4 +323,5 @@ def new_state(match_score: dict[Player, int]) -> State:
         exchange_positions=exchange_positions,
         bonus_position=bonus_position,
         bonus_amount=bonus_amount(),
+        x2_tile=x2_tile,
     )

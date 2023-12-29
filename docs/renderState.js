@@ -128,7 +128,7 @@ function renderBoard(board, player_view) {
   // create the bonus square
   const [bonusRow, bonusCol] = player_view.bonus_position;
   const bonusCell = findCell(board, bonusRow, bonusCol);
-  addSpecialBottomRow(bonusCell, [`+${player_view.bonus_amount}`]);
+  addSpecialBottomRow(bonusCell, ['×2']);
 
   // create the exchange tile squares
   for (let p = 0; p < player_view.exchange_positions.length; p++) {
@@ -227,6 +227,16 @@ function renderOther(player_view) {
       element.dataset.tileName = tile;
       element.classList.add('hand-tile');
       discardPanel.append(element);
+    }
+  }
+  // mark the x2_tile
+  console.log(`marking {player_view.x2_tile}`);
+  const tileButtons = document.querySelectorAll('.tile-button');
+  for (const element of tileButtons) {
+    if (player_view.x2_tile === element.dataset.name) {
+      element.classList.add('x2');
+    } else {
+      element.classList.remove('x2');
     }
   }
 }
