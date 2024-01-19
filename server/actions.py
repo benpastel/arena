@@ -307,12 +307,13 @@ def take_action(
         # pay cost
         state.coins[player] -= GRENADES_COST
 
-        # see `_grenate_hits` for definition of who dies
+        # see `_grenade_hits` for definition of who dies
         return _grenade_hits(target, state.all_positions())
 
     if action == Tile.KNIVES:
         # cost depends on distance to target
-        dist = max(abs(start.row - target.row), abs(start.col - target.col))
+        dist = _manhattan_dist(start, target)
+
         if dist == 2:
             state.coins[player] -= KNIVES_RANGE_2_COST
         else:
