@@ -218,13 +218,15 @@ def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
     #
     # for now we'll allow empty lists when there is no valid target square;
     # we'll drop those keys at the end
+    flower_range = 2 if state.x2_tile == Tile.FLOWER else 1
+    bird_range = 4 if state.x2_tile == Tile.BIRD else 2
     actions: dict[Action, list[Square]] = {
         OtherAction.MOVE: [s for s, dist in empty_targets.items() if dist == 1],
-        Tile.FLOWER: [s for s, dist in empty_targets.items() if dist == 1],
+        Tile.FLOWER: [s for s, dist in empty_targets.items() if dist <= flower_range],
         Tile.BIRD: [
             s
             for s, dist in empty_targets.items()
-            if 1 <= _manhattan_dist(start, s) <= 2
+            if 1 <= _manhattan_dist(start, s) <= bird_range
         ],
     }
 
@@ -265,6 +267,7 @@ def take_action(
     """
     player = state.current_player
     enemy = state.other_player
+    repeats = 2 if state.x2_tile == action else 1
 
     if action in (OtherAction.MOVE, Tile.FLOWER, Tile.BIRD):
         # move to the target square
@@ -272,11 +275,12 @@ def take_action(
         state.positions[player][start_index] = target
 
         # gain coins
-        state.coins[player] += COIN_GAIN[action]
+        state.coins[player] += COIN_GAIN[action] * repeats
 
         if action == Tile.BIRD:
-            # reveal 1 unused tile
-            state.reveal_unused()
+            for repeat in range(repeats):
+                # reveal 1 unused tile
+                state.reveal_unused()
 
         # kill nobody
         return []
@@ -289,7 +293,7 @@ def take_action(
         state.positions[enemy][target_index] = end_square
 
         # steal
-        steal_amount = min(GRAPPLE_STEAL_AMOUNT, state.coins[enemy])
+        steal_amount = min(GRAPPLE_STEAL_AMOUNT, state.coins[enemy] * repeats)
         state.coins[player] += steal_amount
         state.coins[enemy] -= steal_amount
 
@@ -336,6 +340,7 @@ def reflect_action(
     """
     player = state.current_player
     enemy = state.other_player
+    repeats = 2 if state.x2_tile == action else 1
 
     if action == Tile.KNIVES:
         # kill start @ no cost
@@ -349,7 +354,7 @@ def reflect_action(
         state.positions[player][start_index] = end_square
 
         # steal
-        steal_amount = min(GRAPPLE_STEAL_AMOUNT, state.coins[player])
+        steal_amount = min(GRAPPLE_STEAL_AMOUNT, state.coins[player] * repeats)
         state.coins[enemy] += steal_amount
         state.coins[player] -= steal_amount
 

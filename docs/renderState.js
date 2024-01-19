@@ -11,6 +11,7 @@ import {
   SOUTH_PLAYER,
   HIDDEN_TILE,
   TOOLTIPS,
+  X2_TOOLTIPS,
 } from "./constants.js";
 
 
@@ -38,6 +39,10 @@ function addTooltip(element, text) {
   textElement.classList = 'tooltiptext';
   textElement.innerHTML = text;
   element.append(textElement)
+}
+function setTooltipText(element, text) {
+  const textElement = element.querySelector(".tooltiptext");
+  textElement.innerHTML = text;
 }
 
 function createActionPanel(action_panel) {
@@ -235,8 +240,10 @@ function renderOther(player_view) {
   for (const element of tileButtons) {
     if (player_view.x2_tile === element.dataset.name) {
       element.classList.add('x2');
+      setTooltipText(element, X2_TOOLTIPS[element.dataset.name]);
     } else {
       element.classList.remove('x2');
+      setTooltipText(element, TOOLTIPS[element.dataset.name]);
     }
   }
 }

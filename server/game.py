@@ -122,18 +122,29 @@ async def _resolve_action(
     websockets: dict[Player, WebSocketServerProtocol],
     reflect: bool = False,
 ) -> None:
+    if state.x2_tile == action:
+        repeats = 2
+        x2_msg = "2X "
+    else:
+        repeats = 1
+        x2_msg = ""
+
     # `hits` is a possibly-empty list of tiles hit by the action
     if reflect:
         hits = reflect_action(start, action, target, state)
-        state.log(f"{state.other_player.format_for_log()} reflects {action}")
+        state.log(f"{state.other_player.format_for_log()} reflects {x2_msg}{action}")
     else:
         hits = take_action(start, action, target, state)
-        state.log(f"{state.current_player.format_for_log()} uses {action}")
+        state.log(f"{state.current_player.format_for_log()} uses {x2_msg}{action}")
 
-    for hit in hits:
-        await _lose_tile(hit, state, websockets)
+    for repeat in range(repeats):
+        if repeats > 1 and hits:
+            state.log(f"{repeat + 1} / {repeats} - ")
 
-    await clear_selection(websockets)
+        for hit in hits:
+            await _lose_tile(hit, state, websockets)
+
+        await clear_selection(websockets)
 
     # we may have moved onto a special square
     if action in (OtherAction.MOVE, Tile.FLOWER, Tile.BIRD):
