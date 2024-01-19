@@ -87,11 +87,11 @@ async def broadcast_game_over(
             us = game_score[player]
             them = game_score[other_player(player)]
             if us > them:
-                msg = f"🎉🎉🎉 You won {us} to {them}. Dang, nice job! Don't forget to gloat."
+                msg = f"🎉🎉🎉 You won {us} to {them}. Nice! Try to win again!"
             elif us == them:
                 msg = f"Tie! {us} - {them}. Wow, it finally happened! Cool!"
             else:
-                msg = f"You LOSE {us} to {them}. LOSER! LOSER! LOSER!"
+                msg = f"You lose {us} to {them}... but this game is mostly luck, so try again!"
             event = {
                 "type": OutEventType.MATCH_CHANGE.value,
                 "message": msg,

@@ -112,6 +112,16 @@ currently available actions are highlighted
   vertical-align: middle;
   /* TODO the emoji aren't quite vertically centered in the box */
 }
+/* One of the buttons has x2 written above in purple */
+.x2:before {
+  position: absolute;
+  content: "x2";
+  color: purple;
+  line-height: 0.1vmin;
+  font-size: 2vmin;
+  font-weight: normal;
+  text-align: center;
+}
 .action-separator {
   border-left: 1px solid;
   height: 100%;
@@ -149,7 +159,7 @@ currently available actions are highlighted
   position: absolute;
   z-index: 1;
 
-  width: 20vmin;
+  width: 25vmin;
   bottom: 100%;
   left: 50%;
   margin-left: -10vmin;

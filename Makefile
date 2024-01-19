@@ -2,7 +2,7 @@
 lint:
 	black .
 	pyflakes .
-	mypy -p server
+	python3.11 -m mypy -p server
 
 
 .PHONY: test
@@ -12,9 +12,9 @@ test: lint
 
 .PHONY: run-client
 run-client:
-	cd docs && python3 -m http.server 8000
+	cd docs && python3.11 -m http.server 8000
 
 
 .PHONY: run-server
 run-server: lint
-	python3 -m server.app
+	python3.11 -m server.app

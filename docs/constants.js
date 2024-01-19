@@ -36,32 +36,80 @@ const RESPONSES = {
 const TOOLTIPS = {
   "↕": "MOVE<br>move 1<br>gain $1",
   "⚡": "SMITE<br>pay $7<br>kill any enemy",
-  "🀥": "FLOWER<br>move 1<br>gain $3",
-  "🀐": "BIRD<br>move 2 manhattan<br>gain $2<br>reveal 1 unused tile",
-  "🀛": "GRENADES<br>pay $3<br>kill 3x3 around empty square:<br>"
+  "🀥": "FLOWER<br>gain $3<br>"
+    + "move to an X:<br>"
+    + "<br>"
+    + "X X X<br>"
+    + "X 🀥 X<br>"
+    + "X X X<br>",
+  "🀐": "BIRD<br>gain $2<br>"
+    + "reveal 1 unused tile<br>"
+    + "move to an X:<br>"
+    + "<br>"
+    + ". . X . .<br>"
+    + ". X X X .<br>"
+    + "X X 🀛 X X<br>"
+    + ". X X X .<br>"
+    + ". . X . .",
+  "🀛": "GRENADES<br>pay $3<br>"
+    + "roll a grenade to the X if unobstructed and explode a 3x3 square:<br>"
     + "<br>"
     + ". . X . .<br>"
     + ". . . . .<br>"
     + "X . 🀛 . X<br>"
     + ". . . . .<br>"
     + ". . X . .",
-  "🀒": "KNIVES<br>pay $1 to kill:<br>"
+  "🀒": "KNIVES<br>pay the amount shown to kill:<br>"
     + "<br>"
-    + ". X .<br>"
-    + "X 🀒 X<br>"
-    + ". X .<br>"
-    + "<br>"
-    + "or $5 to kill:<br>"
-    + "<br>"
-    + ". . X . .<br>"
-    + ". X . X .<br>"
-    + "X . 🀒 . X<br>"
-    + ". X . X .<br>"
-    + ". . X . .<br>"
+    + ". . 5 . .<br>"
+    + ". 5 1 5 .<br>"
+    + "5 1 🀒 1 5<br>"
+    + ". 5 1 5 .<br>"
+    + ". . 5 . .<br>"
     + "reflected by KNIVES",
   "🀍": "HOOK<br>steal $2<br>in straight or diagonal line<br>reflected by HOOK",
   "👍": "ACCEPT",
-  "🚩": "CHALLENGE",
+  "🚩": "CHALLENGE"
+}
+const X2_TOOLTIPS = {
+  "🀥": "2X FLOWER<br>gain $6<br>"
+    + "move to an X:<br>"
+    + "<br>"
+    + "X X X X X<br>"
+    + "X X X X X<br>"
+    + "X X 🀥 X X<br>"
+    + "X X X X X<br>"
+    + "X X X X X<br>",
+  "🀐": "2X BIRD<br>gain $4<br>"
+    + "reveal 2 unused tiles<br>"
+    + "move to an X:<br>"
+    + "<br>"
+    + ". . . . X . . . .<br>"
+    + ". . . X X X . . .<br>"
+    + ". . X X X X X . .<br>"
+    + ". X X X X X X X .<br>"
+    + "X X X X 🀛 X X X X<br>"
+    + ". X X X X X X X .<br>"
+    + ". . X X X X X . .<br>"
+    + ". . . X X X . . .<br>"
+    + ". . . . X . . . .",
+  "🀛": "2X GRENADE <br>pay $3<br>"
+    + "roll a grenade to the X if unobstructed and explode a 3x3 square twice:<br>"
+    + "<br>"
+    + ". . X . .<br>"
+    + ". . . . .<br>"
+    + "X . 🀛 . X<br>"
+    + ". . . . .<br>"
+    + ". . X . .",
+  "🀒": "2X KNIVES<br>pay the amount shown to kill twice:<br>"
+    + "<br>"
+    + ". . 5 . .<br>"
+    + ". 5 1 5 .<br>"
+    + "5 1 🀒 1 5<br>"
+    + ". 5 1 5 .<br>"
+    + ". . 5 . .<br>"
+    + "reflected twice by KNIVES",
+  "🀍": "2X HOOK<br>steal $4<br>in straight or diagonal line<br>reflected twice by HOOK"
 }
 
 export {
@@ -79,5 +127,6 @@ export {
   RESPONSES,
   HIDDEN_TILE,
   TOOLTIPS,
+  X2_TOOLTIPS,
 };
 
