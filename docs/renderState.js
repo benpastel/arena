@@ -127,7 +127,7 @@ function renderBoard(board, player_view) {
   // set board empty
   for (const cell of board.querySelectorAll(".cell")) {
     cell.innerHTML = "";
-    cell.classList.remove(NORTH_PLAYER, SOUTH_PLAYER, 'board-tile');
+    cell.classList.remove(NORTH_PLAYER, SOUTH_PLAYER, 'board-tile', 'special');
   }
 
   // create the bonus square
