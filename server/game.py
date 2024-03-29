@@ -272,7 +272,13 @@ async def _lose_tile(
     # in some cases the player gets a choice
     if isinstance(player_or_square, Square):
         # a specific square was lost to an attack, so they get no choice
-        player = state.player_at(player_or_square)
+        try:
+            player = state.player_at(player_or_square)
+        except ValueError:
+            # if a double-attack killed the square and nothing replaced it,
+            # it's possible the square is empty
+            # in which case nothing happens
+            return
         possible_squares = [player_or_square]
     else:
         # they lost a challenge, so they get a choice if they have multiple tiles

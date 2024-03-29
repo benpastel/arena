@@ -106,7 +106,7 @@ class State(BaseModel):
 
     def player_at(self, square: Square) -> Player:
         """
-        The player owning a tile occupying that square. Error if there isn't one.
+        The player owning a tile occupying that square. ValueError if there isn't one.
         """
         for player in Player:
             for s, other_square in enumerate(self.positions[player]):
