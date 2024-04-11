@@ -209,9 +209,10 @@ def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
     # there must be enemies or the game would have ended
     assert len(enemy_targets) > 0
 
-    if coins >= MUST_SMITE_AT:
-        # smiting is the only valid action
-        return {OtherAction.SMITE: list(enemy_targets.keys())}
+    # TODO: try removing
+    # if coins >= MUST_SMITE_AT:
+    #     # smiting is the only valid action
+    #     return {OtherAction.SMITE: list(enemy_targets.keys())}
 
     # move, FLOWER, and BIRD cost no coins
     # and move to any empty square at some distance
@@ -355,7 +356,9 @@ def reflect_action(
         state.positions[player][start_index] = end_square
 
         # steal
-        steal_amount = min(GRAPPLE_STEAL_AMOUNT, state.coins[player] * repeats)
+        # TODO
+        # steal_amount = min(GRAPPLE_STEAL_AMOUNT, state.coins[player] * repeats)
+        steal_amount = GRAPPLE_STEAL_AMOUNT
         state.coins[enemy] += steal_amount
         state.coins[player] -= steal_amount
 
