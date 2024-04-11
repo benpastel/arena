@@ -358,7 +358,7 @@ def reflect_action(
         # steal
         # TODO
         # steal_amount = min(GRAPPLE_STEAL_AMOUNT, state.coins[player] * repeats)
-        steal_amount = GRAPPLE_STEAL_AMOUNT
+        steal_amount = GRAPPLE_STEAL_AMOUNT * repeats
         state.coins[enemy] += steal_amount
         state.coins[player] -= steal_amount
 

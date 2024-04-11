@@ -20,6 +20,7 @@ rows C |E| |B| |E|
 
 Where S is a tile in play, B is the bonus, E and is a Exchange.
 """
+
 import random
 
 from server.constants import Square, Player, COLUMNS, ROWS
