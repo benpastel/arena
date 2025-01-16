@@ -54,13 +54,15 @@ class Tile(str, Enum):
     if challenged and you aren't that tile.
     """
 
+    # ORIGINAL TILES
+
     # move 1 & gain $3
     FLOWER = "🀥"
 
-    # pull yourself to any enemy at a Queen move & steal $2
+    # pull enemy to yourself at a Queen move & steal $2
     HOOK = "🀍"
 
-    # move 1-2 manhattan, gain $2, reveal 1 unused
+    # move 1-2, gain $2, reveal 1 unused
     BIRD = "🀐"
 
     # $3 to kill in a 3x3 square
@@ -68,9 +70,33 @@ class Tile(str, Enum):
     GRENADES = "🀛"
 
     # spend:
-    #   - $3 to kill @ manhattan distance range 1
-    #   - $5 to kill @ manhattan distance range 2
+    #   - $3 to kill @ distance range 1
+    #   - $5 to kill @ distance range 2
     KNIVES = "🀒"
+
+    # EXPANSION TILES
+
+    # $3 to shoot a fireball diagonally
+    # explodes on impact and destroys a 3x3 square
+    FIREBALL = "🀙"
+
+    # move knight-like, gain $2, knockback adjacent enemies
+    # knockback kills if the enemy can't move
+    KNIGHT = "🀌"
+
+    # move 1 forward, gain $5
+    HARVESTER = "🀨"
+
+    # spend:
+    #   - $1 to kill anything behind you
+    #   - $3 to kill horizontally
+    # TODO: think harder - if someone stays on the top row, how can you defend / dislodge them?
+    BACKSTABBER = "🀗"
+
+    # TODO: something with switching identities?
+    TRICKSTER = "🀩"
+
+    # SPECIAL TILES
 
     # Represents a tile with value unknown to a player
     # there is a private state known only to the game engine with no hidden tiles;
@@ -96,6 +122,21 @@ class OtherAction(str, Enum):
     def __str__(self) -> str:
         return f"{self.value} ({self.name.lower()})"
 
+ORIGINAL_TILES = [
+    Tile.FLOWER,
+    Tile.HOOK,
+    Tile.BIRD,
+    Tile.GRENADES,
+    Tile.KNIVES,
+]
+
+EXPANSION_TILES = [
+    Tile.FIREBALL,
+    Tile.KNIGHT,
+    Tile.HARVESTER,
+    Tile.BACKSTABBER,
+    Tile.TRICKSTER,
+]
 
 # An action is: use a tile power or a different action
 Action = (
@@ -104,6 +145,11 @@ Action = (
     | Literal[Tile.BIRD]
     | Literal[Tile.GRENADES]
     | Literal[Tile.KNIVES]
+    | Literal[Tile.FIREBALL]
+    | Literal[Tile.KNIGHT]
+    | Literal[Tile.HARVESTER]
+    | Literal[Tile.BACKSTABBER]
+    | Literal[Tile.TRICKSTER]
     | OtherAction
 )
 
