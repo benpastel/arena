@@ -106,6 +106,7 @@ class State(BaseModel):
             + self.tiles_on_board[other_player(self.current_player)]
             + self.exchange_tiles[0]
             + self.exchange_tiles[1]
+            + self.discard
         ]
         assert len(viewed_tiles) == 15
         visible_tiles = [tile for tile in viewed_tiles if tile != Tile.HIDDEN]
