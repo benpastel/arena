@@ -9,6 +9,7 @@ from server.constants import (
     GameResult,
     Tile,
     other_player,
+    ORIGINAL_TILES,
 )
 from server.board import (
     bonus_amount,
@@ -25,6 +26,9 @@ class State(BaseModel):
         - a private state known only to the server that includes all the tiles
         - each player's view on the state where some of the tiles are hidden
     """
+
+    # the set of 5 tiles in use for this game
+    tiles_in_game: list[Tile]
 
     # Each player starts with 4 tiles in hand.  They then place 2 on the board.
     # When a player runs out of tiles they lose.
@@ -176,6 +180,7 @@ class State(BaseModel):
         ]
 
         return State(
+            tiles_in_game=self.tiles_in_game,
             tiles_in_hand={
                 player: self.tiles_in_hand[player],
                 opponent: opponent_hand,
@@ -212,7 +217,7 @@ class State(BaseModel):
         """
 
         # check there are exactly 3 of each tile
-        tile_counts = {tile: 0 for tile in Tile}
+        tile_counts = {tile: 0 for tile in self.tiles_in_game}
         for tile_list in self.tiles_in_hand.values():
             assert 0 <= len(tile_list) <= 2
             for tile in tile_list:
@@ -234,11 +239,8 @@ class State(BaseModel):
         for tile in self.unused_tiles:
             tile_counts[tile] += 1
 
-        for tile in Tile:
-            if tile == Tile.HIDDEN:
-                assert tile_counts[tile] == 0
-            else:
-                assert tile_counts[tile] == 3
+        for tile in self.tiles_in_game:
+            assert tile_counts[tile] == 3
 
         # check 0-2 tiles on board and in hand per player
         for player in Player:
@@ -279,12 +281,20 @@ class State(BaseModel):
         self.match_score[player] += 1
 
 
-def new_state(match_score: dict[Player, int]) -> State:
+# Eventually start tiles will be randomized and/or configurable from the lobby, but for now
+# they are hardcoded here.
+TILES_IN_GAME = ORIGINAL_TILES
+
+
+def new_state(
+    match_score: dict[Player, int],
+    tiles_in_game: list[Tile] = TILES_IN_GAME,
+) -> State:
     """
     Return a new state with the tiles randomly dealt.
     """
     # 3 copies of each tile
-    tiles: list[Tile] = [tile for tile in Tile for s in range(3) if tile != Tile.HIDDEN]
+    tiles: list[Tile] = [tile for tile in tiles_in_game for s in range(3)]
 
     # check that we didn't change the count of stuff in the rules and forget to change this method
     assert len(tiles) == 15
@@ -297,6 +307,7 @@ def new_state(match_score: dict[Player, int]) -> State:
     x2_tile = random.choice([t for t in Tile])
 
     return State(
+        tiles_in_game=tiles_in_game,
         tiles_in_hand={
             Player.N: tiles[0:2],
             Player.S: tiles[2:4],

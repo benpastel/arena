@@ -122,6 +122,7 @@ class OtherAction(str, Enum):
     def __str__(self) -> str:
         return f"{self.value} ({self.name.lower()})"
 
+
 ORIGINAL_TILES = [
     Tile.FLOWER,
     Tile.HOOK,
