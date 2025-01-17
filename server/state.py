@@ -84,7 +84,7 @@ class State(BaseModel):
 
     game_score: dict[Player, int] = {Player.N: 0, Player.S: 0}
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def hidden_tiles(self) -> list[Tile]:
         """
@@ -104,8 +104,8 @@ class State(BaseModel):
             + self.tiles_in_hand[other_player(self.current_player)]
             + self.tiles_on_board[self.current_player]
             + self.tiles_on_board[other_player(self.current_player)]
-            + self.exchange_tiles[self.current_player]
-            + self.exchange_tiles[other_player(self.current_player)]
+            + self.exchange_tiles[0]
+            + self.exchange_tiles[1]
         ]
         assert len(viewed_tiles) == 15
         visible_tiles = [tile for tile in viewed_tiles if tile != Tile.HIDDEN]

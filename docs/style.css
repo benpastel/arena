@@ -11,7 +11,7 @@ body {
 .container {
   display: grid;
   grid-template-columns: 1fr 82vmin 1fr;
-  grid-template-rows: 22vmin 20vmin 20vmin 20vmin 2fr;
+  grid-template-rows: 50vmin 12vmin 20vmin 2fr;
   cursor: default;
 
   font-family: 'Courier New';
@@ -29,7 +29,7 @@ body {
 /* the player-info box displays coins and tiles in hand */
 .player-info {
   grid-column: 1 / 2;
-  grid-row: 1 / 5;
+  grid-row: 1 / 2;
 
   display: flex;
   justify-content: center;
@@ -50,7 +50,7 @@ body {
 /* the other box displays unused & discard tiles */
 .other {
   grid-column: 1 / 2;
-  grid-row: 4 / 5;
+  grid-row: 3 / 4;
 
   font-size: 5vh;
 
@@ -71,7 +71,7 @@ explaining what happened in previous turns
 */
 .log {
   grid-column: 3 / 4;
-  grid-row: 1 / 5;
+  grid-row: 1 / 3;
   overflow-y:auto;
 
   font-size: 2vmin;
@@ -84,9 +84,9 @@ explaining what happened in previous turns
 The hidden tiles are a list of tiles that are currently not visible to the player
 */
 .hidden-tiles {
-  grid-column: 3 / 4;
-  grid-row: 3 / 5;
-  font-size: 3vh;
+  grid-column: 1 / 2;
+  grid-row: 2 / 3;
+  font-size: 4.5vh;
   color: grey;
   font-weight: light;
   border-bottom-width: 0;
@@ -98,7 +98,7 @@ explaining what the player should do next
 */
 .prompt {
   grid-column: 3 / 4;
-  grid-row: 4 / 5;
+  grid-row: 3 / 4;
   font-size: 3vh;
   font-style: italic;
   overflow-y: auto;
@@ -114,7 +114,7 @@ currently available actions are highlighted
 */
 .actions {
   grid-column: 1 / 4;
-  grid-row: 5 / 5;
+  grid-row: 4 / 4;
 
   display: flex;
   flex-direction: row;

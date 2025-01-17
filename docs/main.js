@@ -13,6 +13,7 @@ import {
   renderHand,
   createActionPanel,
   renderOther,
+  renderHiddenTiles,
 } from "./renderState.js";
 
 import {
@@ -215,6 +216,7 @@ function receiveMoves(board, actionPanel, websocket) {
 
       renderBoard(board, player_view);
       renderLog(log, player_view);
+      renderHiddenTiles(player_view);
       renderHand(player_view);
       renderOther(player_view);
     }

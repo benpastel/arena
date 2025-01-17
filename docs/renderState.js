@@ -33,17 +33,19 @@ function createBoard(board) {
   return board;
 }
 
-function addTooltip(element, text) {
-  element.classList.add('tooltip');
-  const textElement = document.createElement("span");
-  textElement.classList = 'tooltiptext';
-  textElement.innerHTML = text;
-  element.append(textElement)
+function setTooltip(element, text) {
+  if (!element.classList.contains('tooltip')) {
+    element.classList.add('tooltip');
+    const textElement = document.createElement("span");
+    textElement.classList.add('tooltiptext');
+    textElement.innerHTML = text;
+    element.append(textElement);
+  } else {
+    const textElement = element.querySelector(".tooltiptext");
+    textElement.innerHTML = text;
+  }
 }
-function setTooltipText(element, text) {
-  const textElement = element.querySelector(".tooltiptext");
-  textElement.innerHTML = text;
-}
+
 
 function createActionPanel(action_panel) {
 
@@ -53,7 +55,7 @@ function createActionPanel(action_panel) {
     element.dataset.name = name;
     element.classList = "outlined-button";
     action_panel.append(element);
-    addTooltip(element, TOOLTIPS[name]);
+    setTooltip(element, TOOLTIPS[name]);
   }
   const sep1 = document.createElement('div');
   sep1.classList = "action-separator";
@@ -64,7 +66,7 @@ function createActionPanel(action_panel) {
     element.dataset.name = name;
     element.classList = "tile-button";
     action_panel.append(element);
-    addTooltip(element, TOOLTIPS[name]);
+    setTooltip(element, TOOLTIPS[name]);
   }
   const sep2 = document.createElement('div');
   sep2.classList = "action-separator";
@@ -75,7 +77,7 @@ function createActionPanel(action_panel) {
     element.dataset.name = name;
     element.classList = "outlined-button";
     action_panel.append(element);
-    addTooltip(element, TOOLTIPS[name]);
+    setTooltip(element, TOOLTIPS[name]);
   }
   return action_panel;
 }
@@ -205,12 +207,26 @@ function renderHand(player_view) {
   }
 }
 
+function renderHiddenTiles(player_view) {
+  const panel = document.querySelector('.hidden-tiles');
+  setTooltip(panel, 'The tiles currently hidden from you.');
+
+  const contents = document.querySelector('.hidden-tiles-contents');
+  contents.innerHTML = '';
+  for (const tile of player_view.hidden_tiles) {
+    contents.innerHTML += tile;
+  }
+}
+
 function renderOther(player_view) {
   for (const player of PLAYERS) {
     const unusedPanel = document.querySelector('.unused');
     const discardPanel = document.querySelector('.discard');
     const unusedElements = unusedPanel.querySelectorAll('.hand-tile');
     const discardElements = discardPanel.querySelectorAll('.hand-tile');
+
+    setTooltip(unusedPanel, 'Tiles unused this game.');
+    setTooltip(discardPanel, 'Tiles discarded from play.');
 
     // redraw from scratch in case visibility changed
     for (const element of unusedElements) {
@@ -240,13 +256,13 @@ function renderOther(player_view) {
   for (const element of tileButtons) {
     if (player_view.x2_tile === element.dataset.name) {
       element.classList.add('x2');
-      setTooltipText(element, X2_TOOLTIPS[element.dataset.name]);
+      setTooltip(element, X2_TOOLTIPS[element.dataset.name]);
     } else {
       element.classList.remove('x2');
-      setTooltipText(element, TOOLTIPS[element.dataset.name]);
+      setTooltip(element, TOOLTIPS[element.dataset.name]);
     }
   }
 }
 
 
-export {createBoard, renderBoard, renderLog, renderHand, createActionPanel, findCell, renderOther};
+export {createBoard, renderBoard, renderLog, renderHand, createActionPanel, findCell, renderOther, renderHiddenTiles};
