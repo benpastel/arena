@@ -1,7 +1,7 @@
 from random import shuffle
 import random
 
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field
 
 from server.constants import (
     Player,
@@ -83,6 +83,39 @@ class State(BaseModel):
     x2_tile: Tile
 
     game_score: dict[Player, int] = {Player.N: 0, Player.S: 0}
+
+    @computed_field
+    @property
+    def hidden_tiles(self) -> list[Tile]:
+        """
+        A sorted list of all tiles that are hidden from the player.
+
+        Calculated by process of elimination, so that each player's state view can compute the list
+        without knowing the other player's tiles.
+        """
+
+        # we can assume that any unknown tiles are already replaced by Tile.HIDDEN
+        # so start by finding all non-hidden tiles, and then remove those from the full list
+
+        viewed_tiles = [
+            tile
+            for tile in self.unused_tiles
+            + self.tiles_in_hand[self.current_player]
+            + self.tiles_in_hand[other_player(self.current_player)]
+            + self.tiles_on_board[self.current_player]
+            + self.tiles_on_board[other_player(self.current_player)]
+            + self.exchange_tiles[self.current_player]
+            + self.exchange_tiles[other_player(self.current_player)]
+        ]
+        assert len(viewed_tiles) == 15
+        visible_tiles = [tile for tile in viewed_tiles if tile != Tile.HIDDEN]
+
+        # make sure to remove the correct number of copies of each visible tile
+        tiles = [tile for tile in self.tiles_in_game for _ in range(3)]
+        for tile in visible_tiles:
+            tiles.remove(tile)
+
+        return sorted(tiles)
 
     def tile_at(self, square: Square) -> Tile:
         """The tile occupying on the board at this square.  Error if there isn't one."""
