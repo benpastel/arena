@@ -15,13 +15,16 @@ const CHOSEN_START = "chosen-start"; // the square of the tile selected mid-turn
 const CHOSEN_ACTION = "chosen-action"; // an action is selected mid-turn
 const CHOSEN_TARGET = "chosen-target"; // a square is selected mid-turn as the target
 
+// TODO: this list should include all tiles, and the tiles chosen for the game should be read
+// from the state.  For now I'm just hardcoding the active tiles.
 // must match python enums
 const TILES = {
-  "🀥": "🀥", // flower
+  // "🀥": "🀥", // flower
   "🀐": "🀐", // bird
   "🀛": "🀛", // grenades
   "🀒": "🀒", // knives
   "🀍": "🀍", // hook
+  "🀨": "🀨", // harvester
 };
 const HIDDEN_TILE = "🀫";
 const OTHER_ACTIONS = {
@@ -68,6 +71,7 @@ const TOOLTIPS = {
     + ". . 5 . .<br>"
     + "reflected by KNIVES",
   "🀍": "HOOK<br>steal $2<br>in straight or diagonal line<br>reflected by HOOK",
+  "🀨": "HARVESTER<br>gain $5<br>move forward 1",
   "👍": "ACCEPT",
   "🚩": "CHALLENGE"
 }
@@ -109,7 +113,8 @@ const X2_TOOLTIPS = {
     + ". 5 1 5 .<br>"
     + ". . 5 . .<br>"
     + "reflected twice by KNIVES",
-  "🀍": "2X HOOK<br>steal $4<br>in straight or diagonal line<br>reflected twice by HOOK"
+  "🀍": "2X HOOK<br>steal $4<br>in straight or diagonal line<br>reflected twice by HOOK",
+  "🀨": "2X HARVESTER<br>NOT IMPLEMENTED"
 }
 
 export {
