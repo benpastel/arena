@@ -324,6 +324,9 @@ TILES_IN_GAME = [
     Tile.HARVESTER,
 ]
 
+# currently set to 0 while balancing the Harvester;
+# consider making S start with 1 more than N?
+START_COINS = {Player.N: 0, Player.S: 0}
 
 def new_state(
     match_score: dict[Player, int],
@@ -365,7 +368,7 @@ def new_state(
             Player.S: [False, False, False],
         },
         discard=[],
-        coins={Player.N: 2, Player.S: 1},
+        coins=START_COINS,
         public_log=[],
         # currently S hardcoded to go first, but N has extra coin
         current_player=Player.S,
