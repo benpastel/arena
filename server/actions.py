@@ -8,6 +8,7 @@ from server.constants import (
     Tile,
     ROWS,
     COLUMNS,
+    Player,
 )
 
 
@@ -16,13 +17,13 @@ COIN_GAIN = {
     OtherAction.MOVE: 1,
     Tile.BIRD: 2,
     Tile.FLOWER: 3,
+    Tile.HARVESTER: 5,
 }
 SMITE_COST = 7
 GRENADES_COST = 3
 KNIVES_RANGE_1_COST = 1
 KNIVES_RANGE_2_COST = 5
 GRAPPLE_STEAL_AMOUNT = 2
-MUST_SMITE_AT = 10
 
 
 def _all_distances(
@@ -143,8 +144,7 @@ def _grenade_hits(center: Square, positions: list[Square]) -> list[Square]:
     ]
 
 
-def midpoint(x: Square, y: Square) -> Square:
-    # TODO comment this sober
+def _midpoint(x: Square, y: Square) -> Square:
     new_row = (x.row + y.row) // 2
     new_col = (x.col + y.col) // 2
     return Square(new_row, new_col)
@@ -175,7 +175,7 @@ def _grenade_targets(
         ]
         if t.on_board()
         and not t in all_positions
-        and not midpoint(start, t) in all_positions
+        and not _midpoint(start, t) in all_positions
     ]
 
     # filter to ones that hit at least one enemy
@@ -209,11 +209,6 @@ def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
     # there must be enemies or the game would have ended
     assert len(enemy_targets) > 0
 
-    # TODO: try removing
-    # if coins >= MUST_SMITE_AT:
-    #     # smiting is the only valid action
-    #     return {OtherAction.SMITE: list(enemy_targets.keys())}
-
     # move, FLOWER, and BIRD cost no coins
     # and move to any empty square at some distance
     #
@@ -230,6 +225,15 @@ def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
             if 1 <= _manhattan_dist(start, s) <= bird_range
         ],
     }
+
+    # harvester costs no coins, and moves forward one square to an empty square.
+    # forward is increasing rows for Player.N, and decreasing rows for Player.S
+    forward = (
+        Square(start.row + 1, start.col)
+        if state.current_player == Player.N
+        else Square(start.row - 1, start.col)
+    )
+    actions[Tile.HARVESTER] = [forward] if forward in empty_targets else []
 
     # see `grapple_end_square` for the definition of valid grapple targets
     actions[Tile.HOOK] = [
@@ -254,7 +258,10 @@ def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
         actions[Tile.GRENADES] = _grenade_targets(start, obstructions, enemy_positions)
 
     # drop actions with no valid targets
-    return {a: targets for a, targets in actions.items() if len(targets) > 0}
+    ok_actions = {a: targets for a, targets in actions.items() if len(targets) > 0}
+
+    # drop actions for tiles that are not in this game
+    return {a: targets for a, targets in ok_actions.items() if a in state.tiles_in_game}
 
 
 def take_action(
@@ -270,7 +277,7 @@ def take_action(
     enemy = state.other_player
     repeats = 2 if state.x2_tile == action else 1
 
-    if action in (OtherAction.MOVE, Tile.FLOWER, Tile.BIRD):
+    if action in (OtherAction.MOVE, Tile.FLOWER, Tile.BIRD, Tile.HARVESTER):
         # move to the target square
         start_index = state.positions[player].index(start)
         state.positions[player][start_index] = target

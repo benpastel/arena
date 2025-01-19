@@ -9,7 +9,6 @@ from server.constants import (
     GameResult,
     Tile,
     other_player,
-    ORIGINAL_TILES,
 )
 from server.board import (
     bonus_amount,
@@ -317,7 +316,13 @@ class State(BaseModel):
 
 # Eventually start tiles will be randomized and/or configurable from the lobby, but for now
 # they are hardcoded here.
-TILES_IN_GAME = ORIGINAL_TILES
+TILES_IN_GAME = [
+    Tile.BIRD,
+    Tile.GRENADES,
+    Tile.HOOK,
+    Tile.KNIVES,
+    Tile.HARVESTER,
+]
 
 
 def new_state(
