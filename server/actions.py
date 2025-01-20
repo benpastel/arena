@@ -196,7 +196,7 @@ def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
     it's not currently a valid action.
     """
 
-    # all other tiles are obstructions that block line of site
+    # all other tiles are obstructions that block line of sight
     obstructions = [s for s in state.all_positions() if s != start]
     distances = _all_distances(start, obstructions)
 
@@ -272,7 +272,11 @@ def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
     ok_actions = {a: targets for a, targets in actions.items() if len(targets) > 0}
 
     # drop actions for tiles that are not in this game
-    return {a: targets for a, targets in ok_actions.items() if a in state.tiles_in_game}
+    return {
+        a: targets
+        for a, targets in ok_actions.items()
+        if a in state.tiles_in_game or a in OtherAction
+    }
 
 
 def take_action(
