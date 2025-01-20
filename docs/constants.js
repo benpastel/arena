@@ -22,9 +22,10 @@ const TILES = {
   // "🀥": "🀥", // flower
   "🀐": "🀐", // bird
   "🀛": "🀛", // grenades
-  "🀒": "🀒", // knives
+  // "🀒": "🀒", // knives
   "🀍": "🀍", // hook
   "🀨": "🀨", // harvester
+  "🀗": "🀗", // backstabber
 };
 const HIDDEN_TILE = "🀫";
 const OTHER_ACTIONS = {
@@ -71,7 +72,8 @@ const TOOLTIPS = {
     + ". . 5 . .<br>"
     + "reflected by KNIVES",
   "🀍": "HOOK<br>steal $2<br>in straight or diagonal line<br>reflected by HOOK",
-  "🀨": "HARVESTER<br>gain $5<br>move forward 1",
+  "🀨": "HARVESTER<br>gain $4<br>move forward 1",
+  "🀗": "BACKSTABBER<br>pay $3<br>kill anything behind you",
   "👍": "ACCEPT",
   "🚩": "CHALLENGE"
 }
@@ -114,7 +116,8 @@ const X2_TOOLTIPS = {
     + ". . 5 . .<br>"
     + "reflected twice by KNIVES",
   "🀍": "2X HOOK<br>steal $4<br>in straight or diagonal line<br>reflected twice by HOOK",
-  "🀨": "2X HARVESTER<br>NOT IMPLEMENTED"
+  "🀨": "2X HARVESTER<br>NOT IMPLEMENTED",
+  "🀗": "2X BACKSTABBER<br>NOT IMPLEMENTED",
 }
 
 export {

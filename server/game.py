@@ -1,4 +1,4 @@
-from typing import Optional, cast, Literal
+from typing import Optional, cast
 from random import shuffle
 
 from websockets.server import WebSocketServerProtocol
@@ -392,10 +392,10 @@ async def _select_response(
     target: Square,
     state: State,
     websockets: dict[Player, WebSocketServerProtocol],
-) -> Response | Literal[Tile.HOOK, Tile.KNIVES]:
+) -> Response | Tile:
     assert action in Tile
 
-    possible_responses: list[Response | Literal[Tile.HOOK, Tile.KNIVES]] = [
+    possible_responses: list[Response | Tile] = [
         Response.ACCEPT,
         Response.CHALLENGE,
     ]
@@ -405,6 +405,9 @@ async def _select_response(
     elif action == Tile.KNIVES:
         # Tile.KNIVES reflects Tile.KNIVES
         possible_responses.append(Tile.KNIVES)
+    elif action == Tile.BACKSTABBER:
+        # Tile.BACKSTABBER reflects Tile.BACKSTABBER
+        possible_responses.append(Tile.BACKSTABBER)
 
     await send_prompt(
         "Waiting for opponent to respond.", websockets[state.current_player]
@@ -477,9 +480,8 @@ async def _play_one_turn(
             await clear_selection(websockets)
             await _lose_tile(state.current_player, state, websockets)
     else:
-        assert response in (Tile.HOOK, Tile.KNIVES)
         assert action == response
-        # the response was to reflect hook with hook or knives with knives
+        # the response was to reflect
         # which the original player may challenge
         reflect_response = await _select_reflect_response(response, state, websockets)
         target_tile = state.tile_at(target)

@@ -1,5 +1,5 @@
 import json
-from typing import cast, Literal
+from typing import cast
 from weakref import WeakKeyDictionary
 from contextlib import asynccontextmanager
 
@@ -193,10 +193,10 @@ async def choose_square_or_hand(
 
 
 async def choose_response(
-    possible_responses: list[Response | Literal[Tile.HOOK, Tile.KNIVES]],
+    possible_responses: list[Response | Tile],
     prompt: str,
     websocket: WebSocketServerProtocol,
-) -> Response | Literal[Tile.HOOK, Tile.KNIVES]:
+) -> Response | Tile:
     async with _highlighted(
         websocket, actions=cast(list[Action | Response], possible_responses)
     ):
@@ -206,7 +206,7 @@ async def choose_response(
                 prompt,
                 websocket,
             )
-            # try parsing as a response
+            # try parsing as a Response
             try:
                 response = Response(data["button"])
                 if response in possible_responses:
@@ -214,19 +214,13 @@ async def choose_response(
             except:
                 pass
 
-            # try parsing as a HOOK
-            if (
-                data.get("button") == Tile.HOOK.value
-                and Tile.HOOK in possible_responses
-            ):
-                return Tile.HOOK
-
-            # try parsing as a KNIVES
-            if (
-                data.get("button") == Tile.KNIVES.value
-                and Tile.KNIVES in possible_responses
-            ):
-                return Tile.KNIVES
+            # try parsing as a Tile
+            try:
+                tile = Tile(data["button"])
+                if tile in possible_responses:
+                    return tile
+            except:
+                pass
 
             # it's not valid; get a new choice
             print(f"Ignoring invalid choice {data=}, {possible_responses=}")

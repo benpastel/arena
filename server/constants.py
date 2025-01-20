@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Literal, NamedTuple
+from typing import NamedTuple
 
 
 # There are two players:
@@ -80,17 +80,14 @@ class Tile(str, Enum):
     # explodes on impact and destroys a 3x3 square
     FIREBALL = "🀙"
 
-    # move knight-like, gain $2, knockback adjacent enemies
+    # move knight-like, gain $1, knockback adjacent enemies
     # knockback kills if the enemy can't move
     KNIGHT = "🀌"
 
     # move 1 forward, gain $5
     HARVESTER = "🀨"
 
-    # spend:
-    #   - $1 to kill anything behind you
-    #   - $3 to kill horizontally
-    # TODO: think harder - if someone stays on the top row, how can you defend / dislodge them?
+    # spend $3 to kill anything behind you
     BACKSTABBER = "🀗"
 
     # TODO: something with switching identities?
@@ -140,19 +137,7 @@ EXPANSION_TILES = [
 ]
 
 # An action is: use a tile power or a different action
-Action = (
-    Literal[Tile.FLOWER]
-    | Literal[Tile.HOOK]
-    | Literal[Tile.BIRD]
-    | Literal[Tile.GRENADES]
-    | Literal[Tile.KNIVES]
-    | Literal[Tile.FIREBALL]
-    | Literal[Tile.KNIGHT]
-    | Literal[Tile.HARVESTER]
-    | Literal[Tile.BACKSTABBER]
-    | Literal[Tile.TRICKSTER]
-    | OtherAction
-)
+Action = Tile | OtherAction
 
 
 class GameResult(str, Enum):

@@ -17,13 +17,14 @@ COIN_GAIN = {
     OtherAction.MOVE: 1,
     Tile.BIRD: 2,
     Tile.FLOWER: 3,
-    Tile.HARVESTER: 5,
+    Tile.HARVESTER: 4,
 }
 SMITE_COST = 7
 GRENADES_COST = 3
 KNIVES_RANGE_1_COST = 1
 KNIVES_RANGE_2_COST = 5
 GRAPPLE_STEAL_AMOUNT = 2
+BACKSTAB_COST = 3
 
 
 def _all_distances(
@@ -257,6 +258,16 @@ def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
         # see `_grenade_targets` for the definition of valid grenade targets
         actions[Tile.GRENADES] = _grenade_targets(start, obstructions, enemy_positions)
 
+    if coins >= BACKSTAB_COST:
+        # backstabber kills any enemy behind the start square
+        # "behind" for Player.N is lower rows, and for Player.S is higher rows
+        actions[Tile.BACKSTABBER] = [
+            s
+            for s in enemy_targets
+            if (state.current_player == Player.N and s.row < start.row)
+            or (state.current_player == Player.S and s.row > start.row)
+        ]
+
     # drop actions with no valid targets
     ok_actions = {a: targets for a, targets in actions.items() if len(targets) > 0}
 
@@ -335,6 +346,13 @@ def take_action(
         # kill target
         return [target]
 
+    if action == Tile.BACKSTABBER:
+        # pay cost
+        state.coins[player] -= BACKSTAB_COST
+
+        # kill target
+        return [target]
+
     assert False, f"unknown {action=}"
 
 
@@ -351,7 +369,7 @@ def reflect_action(
     enemy = state.other_player
     repeats = 2 if state.x2_tile == action else 1
 
-    if action == Tile.KNIVES:
+    if action == Tile.KNIVES or action == Tile.BACKSTABBER:
         # kill start @ no cost
         return [start]
 
@@ -363,9 +381,7 @@ def reflect_action(
         state.positions[player][start_index] = end_square
 
         # steal
-        # TODO
-        # steal_amount = min(GRAPPLE_STEAL_AMOUNT, state.coins[player] * repeats)
-        steal_amount = GRAPPLE_STEAL_AMOUNT * repeats
+        steal_amount = min(GRAPPLE_STEAL_AMOUNT * repeats, state.coins[player])
         state.coins[enemy] += steal_amount
         state.coins[player] -= steal_amount
 
