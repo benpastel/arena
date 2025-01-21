@@ -43,6 +43,7 @@ def test_fireball_targets():
     #   E . X . .
     #   E . . . .
     #   . . . . A
+    #   . . . . .
     #
     # - caster X at (1,2)
     # - A for ally
@@ -57,9 +58,9 @@ def test_fireball_targets():
         Square(2, 0),
     ]
     allies = [
-        Square(1, 0),
-        Square(2, 0),
-        Square(4, 4),
+        Square(0, 1),
+        Square(0, 2),
+        Square(3, 4),
     ]
     obstructions = enemies + allies
 
@@ -67,5 +68,5 @@ def test_fireball_targets():
 
     assert targets == [
         Square(0, 1),
-        Square(0, 4),
+        Square(3, 0),
     ]
