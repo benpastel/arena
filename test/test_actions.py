@@ -66,7 +66,9 @@ def test_fireball_targets():
 
     targets = _fireball_targets(start, obstructions, enemies)
 
-    assert targets == [
-        Square(0, 1),
-        Square(3, 0),
-    ]
+    assert sorted(targets) == sorted(
+        [
+            Square(0, 1),
+            Square(3, 0),
+        ]
+    )
