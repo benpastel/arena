@@ -318,15 +318,15 @@ class State(BaseModel):
 # they are hardcoded here.
 TILES_IN_GAME = [
     Tile.BIRD,
-    Tile.GRENADES,
+    Tile.FIREBALL,
     Tile.HOOK,
     Tile.BACKSTABBER,
     Tile.HARVESTER,
 ]
 
-# currently set to 0 while balancing the Harvester;
-# consider making S start with 1 more than N?
-START_COINS = {Player.N: 0, Player.S: 0}
+# temporarily set equal while balancing the expansion
+# consider making N start with 1 more than S?
+START_COINS = {Player.N: 2, Player.S: 2}
 
 
 def new_state(

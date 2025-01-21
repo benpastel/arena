@@ -21,6 +21,7 @@ COIN_GAIN = {
 }
 SMITE_COST = 7
 GRENADES_COST = 3
+FIREBALL_COST = 3
 KNIVES_RANGE_1_COST = 1
 KNIVES_RANGE_2_COST = 5
 GRAPPLE_STEAL_AMOUNT = 2
@@ -132,11 +133,9 @@ def grapple_end_square(
         current_square = next_square
 
 
-def _grenade_hits(center: Square, positions: list[Square]) -> list[Square]:
+def _explosion_hits(center: Square, positions: list[Square]) -> list[Square]:
     """
-    Return a possibly-empty list of tile positions hit by the grenade.
-
-    Grenades hit a 3x3 area centered on `center`.
+    Return a possibly-empty list of tile positions hit by a 3x3 explosion centered on `center`.
     """
     return [
         hit
@@ -183,7 +182,41 @@ def _grenade_targets(
     return [
         target
         for target in potential_targets
-        if any(hit in enemy_positions for hit in _grenade_hits(target, all_positions))
+        if any(hit in enemy_positions for hit in _explosion_hits(target, all_positions))
+    ]
+
+
+def _fireball_targets(
+    start: Square, obstructions: list[Square], enemy_positions: list[Square]
+) -> list[Square]:
+    """
+    Return a possibly-empty list of valid squares to target a fireball.
+
+    Fireballs travel diagonally in a straight line until they hit a tile, or right before the
+    edge of the board.  They explode on impact and destroy a 3x3 area centered on the impact.
+
+    For now we restrict to squares that hit at least one enemy to reduce misclicks.
+    """
+    assert len(enemy_positions) > 0
+    assert all(e in obstructions for e in enemy_positions)
+    assert start not in obstructions
+
+    # start by finding the impact square in each diagonal direction
+    impact_squares = []
+    for row_step, col_step in [(1, 1), (1, -1), (-1, 1), (-1, -1)]:
+        t = start
+        next_t = Square(t.row + row_step, t.col + col_step)
+        # stop if this square is an obstruction, or the next square is off the board
+        while not t in obstructions and next_t.on_board():
+            t = next_t
+            next_t = Square(t.row + row_step, t.col + col_step)
+        impact_squares.append(t)
+
+    # filter to squares that hit at least one enemy
+    return [
+        t
+        for t in impact_squares
+        if any(hit in enemy_positions for hit in _explosion_hits(t, obstructions))
     ]
 
 
@@ -268,6 +301,9 @@ def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
             or (state.current_player == Player.S and s.row > start.row)
         ]
 
+    if coins >= FIREBALL_COST:
+        actions[Tile.FIREBALL] = _fireball_targets(start, obstructions, enemy_positions)
+
     # drop actions with no valid targets
     ok_actions = {a: targets for a, targets in actions.items() if len(targets) > 0}
 
@@ -334,8 +370,15 @@ def take_action(
         # pay cost
         state.coins[player] -= GRENADES_COST
 
-        # see `_grenade_hits` for definition of who dies
-        return _grenade_hits(target, state.all_positions())
+        # see `_explosion_hits` for definition of who dies
+        return _explosion_hits(target, state.all_positions())
+
+    if action == Tile.FIREBALL:
+        # pay cost
+        state.coins[player] -= FIREBALL_COST
+
+        # see `_explosion_hits` for definition of who dies
+        return _explosion_hits(target, state.all_positions())
 
     if action == Tile.KNIVES:
         # cost depends on distance to target
