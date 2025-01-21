@@ -395,6 +395,12 @@ async def _select_response(
 ) -> Response | Tile:
     assert action in Tile
 
+    try:
+        player_at_target = state.player_at(target)
+    except ValueError:
+        # the target is empty
+        player_at_target = None
+
     possible_responses: list[Response | Tile] = [
         Response.ACCEPT,
         Response.CHALLENGE,
@@ -408,6 +414,9 @@ async def _select_response(
     elif action == Tile.BACKSTABBER:
         # Tile.BACKSTABBER reflects Tile.BACKSTABBER
         possible_responses.append(Tile.BACKSTABBER)
+    elif action == Tile.FIREBALL and player_at_target == state.other_player:
+        # Tile.FIREBALL reflects Tile.FIREBALL, but only if the direct target is an enemy
+        possible_responses.append(Tile.FIREBALL)
 
     await send_prompt(
         "Waiting for opponent to respond.", websockets[state.current_player]

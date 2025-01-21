@@ -435,4 +435,8 @@ def reflect_action(
         # kill noboby
         return []
 
+    if action == Tile.FIREBALL:
+        # explode at start
+        return _explosion_hits(start, state.all_positions())
+
     assert False, f"unknown {action=}"

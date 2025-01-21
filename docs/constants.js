@@ -21,11 +21,12 @@ const CHOSEN_TARGET = "chosen-target"; // a square is selected mid-turn as the t
 const TILES = {
   // "🀥": "🀥", // flower
   "🀐": "🀐", // bird
-  "🀛": "🀛", // grenades
+  // "🀛": "🀛", // grenades
   // "🀒": "🀒", // knives
   "🀍": "🀍", // hook
   "🀨": "🀨", // harvester
   "🀗": "🀗", // backstabber
+  "🀙": "🀙", // fireball
 };
 const HIDDEN_TILE = "🀫";
 const OTHER_ACTIONS = {
@@ -74,6 +75,7 @@ const TOOLTIPS = {
   "🀍": "HOOK<br>steal $2<br>in straight or diagonal line<br>reflected by HOOK",
   "🀨": "HARVESTER<br>gain $4<br>move forward 1",
   "🀗": "BACKSTABBER<br>pay $3<br>kill anything behind you",
+  "🀙": "FIREBALL<br>pay $3<br>explode at target<br>direct hits reflected by FIREBALL",
   "👍": "ACCEPT",
   "🚩": "CHALLENGE"
 }
@@ -118,6 +120,7 @@ const X2_TOOLTIPS = {
   "🀍": "2X HOOK<br>steal $4<br>in straight or diagonal line<br>reflected twice by HOOK",
   "🀨": "2X HARVESTER<br>NOT IMPLEMENTED",
   "🀗": "2X BACKSTABBER<br>NOT IMPLEMENTED",
+  "🀙": "2X FIREBALL<br>NOT IMPLEMENTED",
 }
 
 export {
