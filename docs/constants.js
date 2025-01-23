@@ -20,13 +20,14 @@ const CHOSEN_TARGET = "chosen-target"; // a square is selected mid-turn as the t
 // must match python enums
 const TILES = {
   // "🀥": "🀥", // flower
-  "🀐": "🀐", // bird
+  // "🀐": "🀐", // bird
   // "🀛": "🀛", // grenades
   // "🀒": "🀒", // knives
   "🀍": "🀍", // hook
   "🀨": "🀨", // harvester
   "🀗": "🀗", // backstabber
   "🀙": "🀙", // fireball
+  "🀩": "🀩", // trickster
 };
 const HIDDEN_TILE = "🀫";
 const OTHER_ACTIONS = {
@@ -76,6 +77,7 @@ const TOOLTIPS = {
   "🀨": "HARVESTER<br>gain $4<br>move forward 1",
   "🀗": "BACKSTABBER<br>pay $3<br>kill anything behind you",
   "🀙": "FIREBALL<br>pay $3<br>explode at target<br>direct hits reflected by FIREBALL",
+  "🀩": "TRICKSTER<br>gain $1<br>move knight-like<br>if you land on an enemy, switch identities<br>and bump them to a random adjacent unoccupied square",
   "👍": "ACCEPT",
   "🚩": "CHALLENGE"
 }
@@ -121,6 +123,7 @@ const X2_TOOLTIPS = {
   "🀨": "2X HARVESTER<br>NOT IMPLEMENTED",
   "🀗": "2X BACKSTABBER<br>NOT IMPLEMENTED",
   "🀙": "2X FIREBALL<br>NOT IMPLEMENTED",
+  "🀩": "2X TRICKSTER<br>NOT IMPLEMENTED",
 }
 
 export {

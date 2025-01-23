@@ -147,7 +147,13 @@ async def _resolve_action(
         await clear_selection(websockets)
 
     # we may have moved onto a special square
-    if action in (OtherAction.MOVE, Tile.FLOWER, Tile.BIRD):
+    if action in (
+        OtherAction.MOVE,
+        Tile.FLOWER,
+        Tile.BIRD,
+        Tile.TRICKSTER,
+        Tile.HARVESTER,
+    ):
         if target == state.bonus_position:
             await _move_x2(target, state, websockets)
 
@@ -395,11 +401,7 @@ async def _select_response(
 ) -> Response | Tile:
     assert action in Tile
 
-    try:
-        player_at_target = state.player_at(target)
-    except ValueError:
-        # the target is empty
-        player_at_target = None
+    player_at_target = state.maybe_player_at(target)
 
     possible_responses: list[Response | Tile] = [
         Response.ACCEPT,

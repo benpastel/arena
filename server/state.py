@@ -145,11 +145,17 @@ class State(BaseModel):
         """
         The player owning a tile occupying that square. ValueError if there isn't one.
         """
+        maybe_player = self.maybe_player_at(square)
+        if maybe_player is None:
+            raise ValueError(f"Expected tile at {square}")
+        return maybe_player
+
+    def maybe_player_at(self, square: Square) -> Player | None:
         for player in Player:
             for s, other_square in enumerate(self.positions[player]):
                 if other_square == square:
                     return player
-        raise ValueError(f"Expected tile at {square}")
+        return None
 
     def all_positions(self) -> list[Square]:
         """All squares with a tile on board, regardless of player"""
@@ -161,8 +167,6 @@ class State(BaseModel):
     def game_result(self) -> GameResult:
         """
         See if anyone has won the game.
-
-        TODO: also draw after x turns
         """
         north_dead = len(self.tiles_on_board[Player.N]) == 0
         south_dead = len(self.tiles_on_board[Player.S]) == 0
@@ -313,11 +317,34 @@ class State(BaseModel):
         self.game_score[player] += 1
         self.match_score[player] += 1
 
+    def swap_identity(self, start: Square, target: Square) -> None:
+        """
+        Swap the identities of two tiles at the given positions and make both visible.
+        """
+        # The squares should belong to different players
+        start_player = self.player_at(start)
+        target_player = self.player_at(target)
+        assert start_player != target_player
+
+        # Get indices of both tiles
+        start_idx = self.positions[start_player].index(start)
+        target_idx = self.positions[target_player].index(target)
+
+        # Swap the identities
+        start_identity = self.tiles_on_board[start_player][start_idx]
+        target_identity = self.tiles_on_board[target_player][target_idx]
+        self.tiles_on_board[start_player][start_idx] = target_identity
+        self.tiles_on_board[target_player][target_idx] = start_identity
+
+        # Make both tiles visible to both players
+        self.tiles_on_board_revealed[start_player][start_idx] = True
+        self.tiles_on_board_revealed[target_player][target_idx] = True
+
 
 # Eventually start tiles will be randomized and/or configurable from the lobby, but for now
 # they are hardcoded here.
 TILES_IN_GAME = [
-    Tile.BIRD,
+    Tile.TRICKSTER,
     Tile.FIREBALL,
     Tile.HOOK,
     Tile.BACKSTABBER,

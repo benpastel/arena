@@ -1,4 +1,5 @@
 from typing import Optional
+import random
 
 from server.state import State
 from server.constants import (
@@ -18,6 +19,8 @@ COIN_GAIN = {
     Tile.BIRD: 2,
     Tile.FLOWER: 3,
     Tile.HARVESTER: 4,
+    Tile.TRICKSTER: 1,
+    Tile.RAM: 1,
 }
 SMITE_COST = 7
 GRENADES_COST = 3
@@ -220,6 +223,27 @@ def _fireball_targets(
     ]
 
 
+def _knight_targets(start: Square, state: State) -> list[Square]:
+    """
+    Return a list of squares that are valid targets for a knight-like move.
+    """
+    targets = []
+    for row_step, col_step in [
+        (1, 2),
+        (1, -2),
+        (-1, 2),
+        (-1, -2),
+        (2, 1),
+        (2, -1),
+        (-2, 1),
+        (-2, -1),
+    ]:
+        square = Square(start.row + row_step, start.col + col_step)
+        if square.on_board():
+            targets.append(square)
+    return targets
+
+
 def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
     """
     What are the valid actions for the current player from the start square,
@@ -268,6 +292,14 @@ def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
         else Square(start.row - 1, start.col)
     )
     actions[Tile.HARVESTER] = [forward] if forward in empty_targets else []
+
+    # trickster moves knight-like, whether or not there is a enemy on the target square
+    # they just can't move onto an ally
+    actions[Tile.TRICKSTER] = [
+        s
+        for s in _knight_targets(start, state)
+        if s not in state.positions[state.current_player]
+    ]
 
     # see `grapple_end_square` for the definition of valid grapple targets
     actions[Tile.HOOK] = [
@@ -342,6 +374,31 @@ def take_action(
                 state.reveal_unused()
 
         # kill nobody
+        return []
+
+    if action == Tile.TRICKSTER:
+        if state.maybe_player_at(target) is not None:
+            # swap identities with target
+            state.swap_identity(start, target)
+
+            # bump target to random adjacent unoccupied square
+            target_index = state.positions[enemy].index(target)
+
+            obstructions = [s for s in state.all_positions() if s != target]
+            distances = _all_distances(target, obstructions)
+            bump_candidates = [
+                s for s, d in distances.items() if s not in obstructions and d == 1
+            ]
+            assert len(bump_candidates) > 0
+            bump_target = random.choice(bump_candidates)
+            state.positions[enemy][target_index] = bump_target
+
+        # move to the target square
+        start_index = state.positions[player].index(start)
+        state.positions[player][start_index] = target
+
+        # gain coins
+        state.coins[player] += COIN_GAIN[Tile.TRICKSTER] * repeats
         return []
 
     if action == Tile.HOOK:

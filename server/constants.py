@@ -80,17 +80,19 @@ class Tile(str, Enum):
     # explodes on impact and destroys a 3x3 square
     FIREBALL = "🀙"
 
-    # move knight-like, gain $1, knockback adjacent enemies
+    # move Bird-like, gain $1, knockback adjacent enemies
     # knockback kills if the enemy can't move
-    KNIGHT = "🀌"
+    RAM = "🀎"
 
-    # move 1 forward, gain $5
+    # move 1 forward, gain $4
     HARVESTER = "🀨"
 
     # spend $3 to kill anything behind you
     BACKSTABBER = "🀗"
 
-    # TODO: something with switching identities?
+    # move knight-like, gain $1
+    # if you land on an enemy, switch identities
+    # and bump them to a random adjacent unoccupied square
     TRICKSTER = "🀩"
 
     # SPECIAL TILES
@@ -130,7 +132,7 @@ ORIGINAL_TILES = [
 
 EXPANSION_TILES = [
     Tile.FIREBALL,
-    Tile.KNIGHT,
+    Tile.RAM,
     Tile.HARVESTER,
     Tile.BACKSTABBER,
     Tile.TRICKSTER,
