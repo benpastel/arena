@@ -267,21 +267,26 @@ def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
     # there must be enemies or the game would have ended
     assert len(enemy_targets) > 0
 
-    # move, FLOWER, and BIRD cost no coins
+    # these actions cost no coins
     # and move to any empty square at some distance
     #
-    # for now we'll allow empty lists when there is no valid target square;
+    # here we'll allow empty lists when there is no valid target square;
     # we'll drop those keys at the end
     flower_range = 2 if state.x2_tile == Tile.FLOWER else 1
     bird_range = 4 if state.x2_tile == Tile.BIRD else 2
+
+    # TODO: manhattan distance should probably respect obstructions too
+    bird_targets = [
+        s
+        for s, dist in empty_targets.items()
+        if 1 <= _manhattan_dist(start, s) <= bird_range
+    ]
+
     actions: dict[Action, list[Square]] = {
         OtherAction.MOVE: [s for s, dist in empty_targets.items() if dist == 1],
         Tile.FLOWER: [s for s, dist in empty_targets.items() if dist <= flower_range],
-        Tile.BIRD: [
-            s
-            for s, dist in empty_targets.items()
-            if 1 <= _manhattan_dist(start, s) <= bird_range
-        ],
+        Tile.BIRD: bird_targets,
+        Tile.RAM: bird_targets,
     }
 
     # harvester costs no coins, and moves forward one square to an empty square.
@@ -347,6 +352,41 @@ def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
     }
 
 
+def _take_ram_action(start: Square, target: Square, state: State) -> list[Square]:
+    """
+    Makes a ram move, updating state, and returning any tiles killed.
+    """
+    player = state.current_player
+    repeats = 2 if state.x2_tile == Tile.RAM else 1
+
+    # move to target square
+    start_index = state.positions[player].index(start)
+    state.positions[player][start_index] = target
+
+    # gain coins
+    state.coins[player] += COIN_GAIN[Tile.RAM] * repeats
+
+    # knockback any neighboring tiles
+    obstructions = [s for s in state.all_positions() if s != target]
+    distances = _all_distances(target, obstructions)
+    knockback_hits = [s for s, d in distances.items() if d == 1 and s in obstructions]
+    killed = []
+    for knocked_square in knockback_hits:
+        # for each tile getting knocked back, try to move it directly away from target.
+        # if that's obstructed, kill it.
+        knocked_player = state.player_at(knocked_square)
+        end_square = _knockback_end_square(target, knocked_square)
+
+        if end_square.on_board() and end_square not in obstructions:
+            # move it
+            knocked_index = state.positions[knocked_player].index(knocked_square)
+            state.positions[knocked_player][knocked_index] = end_square
+        else:
+            # kill it
+            killed.append(knocked_square)
+    return killed
+
+
 def take_action(
     start: Square, action: Action, target: Square, state: State
 ) -> list[Square]:
@@ -400,6 +440,9 @@ def take_action(
         # gain coins
         state.coins[player] += COIN_GAIN[Tile.TRICKSTER] * repeats
         return []
+
+    if action == Tile.RAM:
+        return _take_ram_action(start, target, state)
 
     if action == Tile.HOOK:
         # move target next to us
@@ -497,3 +540,22 @@ def reflect_action(
         return _explosion_hits(start, state.all_positions())
 
     assert False, f"unknown {action=}"
+
+
+def _knockback_end_square(origin: Square, knocked: Square) -> Square:
+    """
+    Return the square that a tile would be knocked back to.
+
+    Args:
+        origin: Square doing the knocking
+        knocked: Square being knocked back (must be distance 1 from origin)
+
+    Returns:
+        Square at distance 2 from origin in the same direction as knocked
+    """
+    # Get the direction vector from origin to knocked
+    row_diff = knocked.row - origin.row
+    col_diff = knocked.col - origin.col
+
+    # Double it to get the end square
+    return Square(row=origin.row + (row_diff * 2), col=origin.col + (col_diff * 2))

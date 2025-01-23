@@ -23,11 +23,12 @@ const TILES = {
   // "🀐": "🀐", // bird
   // "🀛": "🀛", // grenades
   // "🀒": "🀒", // knives
-  "🀍": "🀍", // hook
+  // "🀍": "🀍", // hook
   "🀨": "🀨", // harvester
   "🀗": "🀗", // backstabber
   "🀙": "🀙", // fireball
   "🀩": "🀩", // trickster
+  "🀎": "🀎", // ram
 };
 const HIDDEN_TILE = "🀫";
 const OTHER_ACTIONS = {
@@ -54,7 +55,7 @@ const TOOLTIPS = {
     + "<br>"
     + ". . X . .<br>"
     + ". X X X .<br>"
-    + "X X 🀛 X X<br>"
+    + "X X 🀐 X X<br>"
     + ". X X X .<br>"
     + ". . X . .",
   "🀛": "GRENADES<br>pay $3<br>"
@@ -78,6 +79,21 @@ const TOOLTIPS = {
   "🀗": "BACKSTABBER<br>pay $3<br>kill anything behind you",
   "🀙": "FIREBALL<br>pay $3<br>explode at target<br>direct hits reflected by FIREBALL",
   "🀩": "TRICKSTER<br>gain $1<br>move knight-like<br>if you land on an enemy, switch identities<br>and bump them to a random adjacent unoccupied square",
+  "🀎": "RAM<br>gain $1<br>"
+    + "move to an X:<br>"
+    + "<br>"
+    + ". . X . .<br>"
+    + ". X X X .<br>"
+    + "X X 🀎 X X<br>"
+    + ". X X X .<br>"
+    + ". . X . .<br>"
+    + "<br>"
+    + "then knockback: all tiles adjacent to where you end up get pushed back 1<br>"
+    + "or die if they can't move<br>"
+    + "<br>"
+    + "↖ ↑ ↗<br>"
+    + "← 🀎 →<br>"
+    + "↙ ↓ ↘<br>",
   "👍": "ACCEPT",
   "🚩": "CHALLENGE"
 }
@@ -124,6 +140,7 @@ const X2_TOOLTIPS = {
   "🀗": "2X BACKSTABBER<br>NOT IMPLEMENTED",
   "🀙": "2X FIREBALL<br>NOT IMPLEMENTED",
   "🀩": "2X TRICKSTER<br>NOT IMPLEMENTED",
+  "🀎": "2X RAM<br>NOT IMPLEMENTED",
 }
 
 export {

@@ -346,7 +346,7 @@ class State(BaseModel):
 TILES_IN_GAME = [
     Tile.TRICKSTER,
     Tile.FIREBALL,
-    Tile.HOOK,
+    Tile.RAM,
     Tile.BACKSTABBER,
     Tile.HARVESTER,
 ]
