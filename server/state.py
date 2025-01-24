@@ -374,7 +374,9 @@ def new_state(
 
     bonus_position, exchange_positions = bonus_and_exchange_positions()
     start_positions = choose_start_positions()
-    x2_tile = random.choice([t for t in Tile])
+
+    # x2_tile = random.choice([t for t in Tile])
+    x2_tile = None  # x2_tile disabled until we balance it for the expansion
 
     return State(
         tiles_in_game=tiles_in_game,

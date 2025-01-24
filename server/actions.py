@@ -274,6 +274,7 @@ def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
     # we'll drop those keys at the end
     flower_range = 2 if state.x2_tile == Tile.FLOWER else 1
     bird_range = 4 if state.x2_tile == Tile.BIRD else 2
+    ram_range = 4 if state.x2_tile == Tile.RAM else 2
 
     # TODO: manhattan distance should probably respect obstructions too
     bird_targets = [
@@ -281,12 +282,17 @@ def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
         for s, dist in empty_targets.items()
         if 1 <= _manhattan_dist(start, s) <= bird_range
     ]
+    ram_targets = [
+        s
+        for s, dist in empty_targets.items()
+        if 1 <= _manhattan_dist(start, s) <= ram_range
+    ]
 
     actions: dict[Action, list[Square]] = {
         OtherAction.MOVE: [s for s, dist in empty_targets.items() if dist == 1],
         Tile.FLOWER: [s for s, dist in empty_targets.items() if dist <= flower_range],
         Tile.BIRD: bird_targets,
-        Tile.RAM: bird_targets,
+        Tile.RAM: ram_targets,
     }
 
     # harvester costs no coins, and moves forward one square to an empty square.
