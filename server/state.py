@@ -1,5 +1,4 @@
 from random import shuffle
-import random
 
 from pydantic import BaseModel, computed_field
 
@@ -12,6 +11,7 @@ from server.constants import (
 )
 from server.board import (
     bonus_amount,
+    bonus_reveal,
     bonus_and_exchange_positions,
     choose_start_positions,
 )
@@ -76,10 +76,13 @@ class State(BaseModel):
     # position of the exchange squares that allow swapping tiles
     exchange_positions: list[Square]
 
-    # Position and value of the bonus square that gives extra + coin
+    # Position and value of the bonus square
+    # eventually the effect of the bonus square should be configurable in lobby
+    # for now we hardcode it
     bonus_position: Square
-    bonus_amount: int
-    x2_tile: Tile
+    bonus_amount: int  # extra coin per-turn from bonus square
+    bonus_reveal: int  # unused cards revealed per-turn from bonus square
+    x2_tile: Tile | None  # tile with doubled effectiveness, set via bonus square
 
     game_score: dict[Player, int] = {Player.N: 0, Player.S: 0}
 
@@ -134,12 +137,19 @@ class State(BaseModel):
                     return
         raise ValueError(f"Expected tile at {square}")
 
-    def reveal_unused(self) -> None:
-        """Reveal 1 unused tile to current player, or do nothing if they are all revealed."""
+    def reveal_unused(self) -> bool:
+        """
+        Reveal 1 unused tile to current player, or do nothing if they are all revealed.
+        Return whether a new tile was revealed.
+        """
         reveal_list = self.unused_revealed[self.current_player]
-        if not all(reveal_list):
-            next_idx = reveal_list.index(False)
-            reveal_list[next_idx] = True
+        if all(reveal_list):
+            # already revealed all unused tiles
+            return False
+
+        next_idx = reveal_list.index(False)
+        reveal_list[next_idx] = True
+        return True
 
     def player_at(self, square: Square) -> Player:
         """
@@ -244,6 +254,7 @@ class State(BaseModel):
             game_score=self.game_score,
             bonus_position=self.bonus_position,
             bonus_amount=self.bonus_amount,
+            bonus_reveal=self.bonus_reveal,
             x2_tile=self.x2_tile,
             exchange_positions=self.exchange_positions,
         )
@@ -407,5 +418,6 @@ def new_state(
         exchange_positions=exchange_positions,
         bonus_position=bonus_position,
         bonus_amount=bonus_amount(),
+        bonus_reveal=bonus_reveal(),
         x2_tile=x2_tile,
     )

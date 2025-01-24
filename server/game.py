@@ -36,13 +36,24 @@ from server.notify import (
 
 
 async def _resolve_bonus(
-    square: Square,
     state: State,
+    websockets: dict[Player, WebSocketServerProtocol],
 ) -> None:
-    """Give a player bonus $ for moving onto the bonus square"""
-    player = state.player_at(square)
-    state.log(f"{player.format_for_log()}: +${state.bonus_amount} bonus")
+    """Give a player bonus for starting their turn on the bonus square"""
+    player = state.maybe_player_at(state.bonus_position)
+    if state.current_player != player:
+        # current player does not get the bonus
+        return
+
+    revealed = 0
+    for _ in range(state.bonus_reveal):
+        revealed += state.reveal_unused()
+
+    state.log(
+        f"{player.format_for_log()} starts turn on bonus square: +${state.bonus_amount}, revealed {revealed} unused tiles"
+    )
     state.coins[player] += state.bonus_amount
+    await broadcast_state_changed(state, websockets)
 
 
 async def _move_x2(
@@ -154,7 +165,8 @@ async def _resolve_action(
         Tile.TRICKSTER,
         Tile.HARVESTER,
     ):
-        if target == state.bonus_position:
+
+        if state.x2_tile is not None and target == state.bonus_position:
             await _move_x2(target, state, websockets)
 
         if target in state.exchange_positions:
@@ -167,7 +179,7 @@ async def _resolve_action(
         else:
             end_square = grapple_end_square(start, target, obstructions=[])
 
-        if end_square == state.bonus_position:
+        if state.x2_tile is not None and end_square == state.bonus_position:
             await _move_x2(end_square, state, websockets)
 
         if end_square in state.exchange_positions:
@@ -454,6 +466,10 @@ async def _play_one_turn(
     Updates `state` with the result of the turn. Doesn't transition to the next turn
     or display that state to the players.
     """
+
+    # maybe give a bonus to current player for starting on the bonus square
+    await _resolve_bonus(state, websockets)
+
     # current player chooses their move
     start, action, target = await _select_action(state, websockets)
     if not action in Tile:

@@ -121,6 +121,14 @@ function addSpecialBottomRow(cell, contents) {
       element.dataset.tileName = content;
       element.classList.add('board-tile');
     }
+    // shrink font size if content is too long
+    if (content.length >= 8) {
+      element.style.fontSize = '3vmin';
+    } else if (content.length >= 6) {
+      element.style.fontSize = '4vmin';
+    } else if (content.length >= 3) {
+      element.style.fontSize = '5vmin';
+    }
     bottomRow.append(element);
   }
 }
@@ -135,7 +143,9 @@ function renderBoard(board, player_view) {
   // create the bonus square
   const [bonusRow, bonusCol] = player_view.bonus_position;
   const bonusCell = findCell(board, bonusRow, bonusCol);
-  addSpecialBottomRow(bonusCell, ['×2']);
+  const bonusText = '$'.repeat(player_view.bonus_amount) + '🔎'.repeat(player_view.bonus_reveal)
+
+  addSpecialBottomRow(bonusCell, [bonusText]);
 
   // create the exchange tile squares
   for (let p = 0; p < player_view.exchange_positions.length; p++) {
