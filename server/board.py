@@ -12,6 +12,7 @@ RANDOM_BONUS_AMOUNTS = [1, 2, 3]
 # how many unused cards are revealed per-turn from the bonus square?  randomized per game
 RANDOM_BONUS_REVEALS = [1, 2, 3]
 
+# how much $ it costs to smite.  maybe randomize per game?
 SMITE_COST = 10
 
 

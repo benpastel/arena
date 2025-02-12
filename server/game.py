@@ -476,16 +476,40 @@ async def _select_smite_target(
     state: State, player: Player, websockets: dict[Player, WebSocketServerProtocol]
 ) -> Square:
     await send_prompt(
-        f"Opponent exceeds ${state.smite_cost}; waiting for opponent to select a tile to smite.",
-        websockets[player],
+        "Waiting for opponent to select a tile to smite ⚡",
+        websockets[other_player(player)],
     )
     choice = await choose_action_or_square(
         [],
         state.positions[other_player(player)],
-        "Exceeded ${state.smite_cost}; select a tile to smite.",
+        "Select a tile to smite ⚡",
         websockets[player],
     )
     return cast(Square, choice)
+
+
+async def _maybe_smite(
+    state: State, websockets: dict[Player, WebSocketServerProtocol]
+) -> None:
+    """
+    Check if either player has enough coins to smite.
+    If so, select a target and resolve the smite.
+    """
+    if state.smite_cost <= state.coins[state.current_player]:
+        # the current player must have just gained enough coins to smite
+        # make sure both players see the updated coin amount before selecting a target
+        await broadcast_state_changed(state, websockets)
+
+        target = await _select_smite_target(state, state.current_player, websockets)
+        await _resolve_smite(state, websockets, target)
+
+    if state.smite_cost <= state.coins[state.other_player]:
+        # the other player must have just gained enough coins to smite
+        # make sure both players see the updated coin amount before selecting a target
+        await broadcast_state_changed(state, websockets)
+
+        target = await _select_smite_target(state, state.current_player, websockets)
+        await _resolve_smite(state, websockets, target)
 
 
 async def _play_one_turn(
@@ -502,10 +526,7 @@ async def _play_one_turn(
     await _resolve_bonus(state, websockets)
 
     # the bonus may push the current player's coins above the smite cost
-    # if so smite immediately
-    if state.smite_cost <= state.coins[state.current_player]:
-        target = await _select_smite_target(state, state.current_player, websockets)
-        await _resolve_smite(state, websockets, target)
+    await _maybe_smite(state, websockets)
 
     # current player chooses their move
     start, action, target = await _select_action(state, websockets)
@@ -586,16 +607,8 @@ async def _play_one_turn(
             await _lose_tile(state.other_player, state, websockets)
 
     # the action may push the current player's coins above the smite cost
-    # if so smite immediately
-    if state.smite_cost <= state.coins[state.current_player]:
-        target = await _select_smite_target(state, state.current_player, websockets)
-        await _resolve_smite(state, websockets, target)
-
-    # the action may have been reflected, pushing the opponent's coins above smite cost
-    # if so smite immediately
-    if state.smite_cost <= state.coins[state.other_player]:
-        target = await _select_smite_target(state, state.other_player, websockets)
-        await _resolve_smite(state, websockets, target)
+    # or the opponent's, if an action was reflected
+    await _maybe_smite(state, websockets)
 
 
 async def play_one_game(

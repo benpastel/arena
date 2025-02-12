@@ -198,7 +198,7 @@ function renderHand(player_view) {
     const panel = document.querySelector(`.hand.${player}`);
     const tileElements = panel.querySelectorAll('.hand-tile');
     const coinElement = panel.querySelector('.coins');
-    coinElement.innerHTML = `$${coins} (/$${player_view.smite_cost})`;
+    coinElement.innerHTML = `$${coins}/${player_view.smite_cost}`;
 
     if (hand.length !== tileElements.length) {
       // hand changed since the last render
