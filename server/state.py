@@ -14,6 +14,7 @@ from server.board import (
     bonus_reveal,
     bonus_and_exchange_positions,
     choose_start_positions,
+    SMITE_COST,
 )
 
 
@@ -83,6 +84,7 @@ class State(BaseModel):
     bonus_amount: int  # extra coin per-turn from bonus square
     bonus_reveal: int  # unused cards revealed per-turn from bonus square
     x2_tile: Tile | None  # tile with doubled effectiveness, set via bonus square
+    smite_cost: int  # automatically smite when money reaches this amount
 
     game_score: dict[Player, int] = {Player.N: 0, Player.S: 0}
 
@@ -255,6 +257,7 @@ class State(BaseModel):
             bonus_position=self.bonus_position,
             bonus_amount=self.bonus_amount,
             bonus_reveal=self.bonus_reveal,
+            smite_cost=self.smite_cost,
             x2_tile=self.x2_tile,
             exchange_positions=self.exchange_positions,
         )
@@ -420,4 +423,5 @@ def new_state(
         bonus_amount=bonus_amount(),
         bonus_reveal=bonus_reveal(),
         x2_tile=x2_tile,
+        smite_cost=SMITE_COST,
     )

@@ -114,10 +114,6 @@ class OtherAction(str, Enum):
     # Move 1 square and gain 1 mana
     MOVE = "↕"
 
-    # Pay 7 mana to kill at any range.
-    # If a player has above 10 mana they must smite on their turn.
-    SMITE = "⚡"
-
     def __str__(self) -> str:
         return f"{self.value} ({self.name.lower()})"
 

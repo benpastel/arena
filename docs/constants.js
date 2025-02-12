@@ -33,7 +33,6 @@ const TILES = {
 const HIDDEN_TILE = "🀫";
 const OTHER_ACTIONS = {
   "↕": "↕", // move
-  "⚡": "⚡", // smite
 };
 const RESPONSES = {
   "👍": "👍", // accept
@@ -42,7 +41,6 @@ const RESPONSES = {
 
 const TOOLTIPS = {
   "↕": "MOVE<br>move 1<br>gain $1",
-  "⚡": "SMITE<br>pay $7<br>kill any enemy",
   "🀥": "FLOWER<br>gain $3<br>"
     + "move to an X:<br>"
     + "<br>"

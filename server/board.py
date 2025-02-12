@@ -12,6 +12,8 @@ RANDOM_BONUS_AMOUNTS = [1, 2, 3]
 # how many unused cards are revealed per-turn from the bonus square?  randomized per game
 RANDOM_BONUS_REVEALS = [1, 2, 3]
 
+SMITE_COST = 10
+
 
 def bonus_and_exchange_positions() -> tuple[Square, list[Square]]:
     # randomly shuffle the middle squares,

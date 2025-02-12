@@ -317,10 +317,6 @@ def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
         s for s in enemy_targets if grapple_end_square(start, s, obstructions)
     ]
 
-    if coins >= SMITE_COST:
-        # can smite any enemy
-        actions[OtherAction.SMITE] = list(enemy_targets.keys())
-
     if coins >= KNIVES_RANGE_2_COST:
         actions[Tile.KNIVES] = [
             s for s in enemy_targets if 1 <= _manhattan_dist(start, s) <= 2
@@ -464,13 +460,6 @@ def take_action(
 
         # kill noboby
         return []
-
-    if action == OtherAction.SMITE:
-        # pay cost
-        state.coins[player] -= SMITE_COST
-
-        # kill target
-        return [target]
 
     if action == Tile.GRENADES:
         # pay cost
