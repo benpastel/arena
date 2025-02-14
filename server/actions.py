@@ -285,10 +285,16 @@ def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
         if 1 <= _manhattan_dist(start, s) <= bird_range
     ]
     if coins >= RAM_COST:
+        # to reduce misclicks, only allow ram moves that knockback an enemy
+        def _hits_any_enemy(s: Square) -> bool:
+            hits = _ram_knockback_targets(start, s, state)
+            enemy_hits = set(hits) & set(enemy_positions)
+            return len(enemy_hits) > 0
+
         ram_targets = [
             s
             for s, _ in empty_targets.items()
-            if 1 <= _manhattan_dist(start, s) <= ram_range
+            if 1 <= _manhattan_dist(start, s) <= ram_range and _hits_any_enemy(s)
         ]
     else:
         ram_targets = []
@@ -366,6 +372,15 @@ def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
     }
 
 
+def _ram_knockback_targets(start: Square, target: Square, state: State) -> list[Square]:
+    """
+    Return a list of tiles that would be knocked back from a ram move.
+    """
+    obstructions = [s for s in state.all_positions() if s != target]
+    distances = _all_distances(target, obstructions)
+    return [s for s, d in distances.items() if d == 1 and s in obstructions]
+
+
 def _take_ram_action(start: Square, target: Square, state: State) -> list[Square]:
     """
     Makes a ram move, updating state, and returning any tiles killed.
@@ -381,8 +396,7 @@ def _take_ram_action(start: Square, target: Square, state: State) -> list[Square
 
     # knockback any neighboring tiles
     obstructions = [s for s in state.all_positions() if s != target]
-    distances = _all_distances(target, obstructions)
-    knockback_hits = [s for s, d in distances.items() if d == 1 and s in obstructions]
+    knockback_hits = _ram_knockback_targets(start, target, state)
     killed = []
     for knocked_square in knockback_hits:
         # for each tile getting knocked back, try to move it directly away from target.
