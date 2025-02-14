@@ -80,7 +80,7 @@ class Tile(str, Enum):
     # explodes on impact and destroys a 3x3 square
     FIREBALL = "🀙"
 
-    # move Bird-like, gain $1, knockback adjacent enemies
+    # $1 to move 1, knockback adjacent enemies
     # knockback kills if the enemy can't move
     RAM = "🀎"
 
@@ -88,6 +88,7 @@ class Tile(str, Enum):
     HARVESTER = "🀨"
 
     # spend $3 to kill anything behind you
+    # OR: move 2, gain $1
     BACKSTABBER = "🀗"
 
     # move knight-like, gain $1

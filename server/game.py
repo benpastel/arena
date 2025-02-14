@@ -179,6 +179,7 @@ async def _resolve_action(
         Tile.TRICKSTER,
         Tile.HARVESTER,
         Tile.RAM,
+        Tile.BACKSTABBER,
     ):
 
         if state.x2_tile is not None and target == state.bonus_position:

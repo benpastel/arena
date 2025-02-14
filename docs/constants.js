@@ -74,18 +74,11 @@ const TOOLTIPS = {
     + "reflected by KNIVES",
   "🀍": "HOOK<br>steal $2<br>in straight or diagonal line<br>reflected by HOOK",
   "🀨": "HARVESTER<br>gain $4<br>move forward 1",
-  "🀗": "BACKSTABBER<br>pay $3<br>kill anything behind you",
+  "🀗": "BACKSTABBER<br>pay $3<br>kill anything behind you<br>"
+    + "or move 2 and gain $1",
   "🀙": "FIREBALL<br>pay $3<br>explode at target<br>direct hits reflected by FIREBALL",
   "🀩": "TRICKSTER<br>gain $1<br>move knight-like<br>if you land on an enemy, switch identities<br>and bump them to a random adjacent unoccupied square",
-  "🀎": "RAM<br>gain $1<br>"
-    + "move to an X:<br>"
-    + "<br>"
-    + ". . X . .<br>"
-    + ". X X X .<br>"
-    + "X X 🀎 X X<br>"
-    + ". X X X .<br>"
-    + ". . X . .<br>"
-    + "<br>"
+  "🀎": "RAM<br>pay $1, move 1<br>"
     + "then knockback: all tiles adjacent to where you end up get pushed back 1<br>"
     + "or die if they can't move<br>"
     + "<br>"

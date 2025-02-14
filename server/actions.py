@@ -20,7 +20,7 @@ COIN_GAIN = {
     Tile.FLOWER: 3,
     Tile.HARVESTER: 4,
     Tile.TRICKSTER: 1,
-    Tile.RAM: 1,
+    Tile.BACKSTABBER: 1,
 }
 SMITE_COST = 7
 GRENADES_COST = 3
@@ -29,6 +29,7 @@ KNIVES_RANGE_1_COST = 1
 KNIVES_RANGE_2_COST = 5
 GRAPPLE_STEAL_AMOUNT = 2
 BACKSTAB_COST = 3
+RAM_COST = 1
 
 
 def _all_distances(
@@ -274,18 +275,28 @@ def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
     # we'll drop those keys at the end
     flower_range = 2 if state.x2_tile == Tile.FLOWER else 1
     bird_range = 4 if state.x2_tile == Tile.BIRD else 2
-    ram_range = 4 if state.x2_tile == Tile.RAM else 2
+    backstab_move_range = 4 if state.x2_tile == Tile.BACKSTABBER else 2
+    ram_range = 2 if state.x2_tile == Tile.RAM else 1
 
     # TODO: manhattan distance should probably respect obstructions too
     bird_targets = [
         s
-        for s, dist in empty_targets.items()
+        for s, _ in empty_targets.items()
         if 1 <= _manhattan_dist(start, s) <= bird_range
     ]
-    ram_targets = [
+    if coins >= RAM_COST:
+        ram_targets = [
+            s
+            for s, _ in empty_targets.items()
+            if 1 <= _manhattan_dist(start, s) <= ram_range
+        ]
+    else:
+        ram_targets = []
+    # will append backstab enemy targets later
+    backstab_targets = [
         s
-        for s, dist in empty_targets.items()
-        if 1 <= _manhattan_dist(start, s) <= ram_range
+        for s, _ in empty_targets.items()
+        if 1 <= _manhattan_dist(start, s) <= backstab_move_range
     ]
 
     actions: dict[Action, list[Square]] = {
@@ -293,6 +304,7 @@ def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
         Tile.FLOWER: [s for s, dist in empty_targets.items() if dist <= flower_range],
         Tile.BIRD: bird_targets,
         Tile.RAM: ram_targets,
+        Tile.BACKSTABBER: backstab_targets,
     }
 
     # harvester costs no coins, and moves forward one square to an empty square.
@@ -333,7 +345,7 @@ def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
     if coins >= BACKSTAB_COST:
         # backstabber kills any enemy behind the start square
         # "behind" for Player.N is lower rows, and for Player.S is higher rows
-        actions[Tile.BACKSTABBER] = [
+        actions[Tile.BACKSTABBER] += [
             s
             for s in enemy_targets
             if (state.current_player == Player.N and s.row < start.row)
@@ -359,14 +371,13 @@ def _take_ram_action(start: Square, target: Square, state: State) -> list[Square
     Makes a ram move, updating state, and returning any tiles killed.
     """
     player = state.current_player
-    repeats = 2 if state.x2_tile == Tile.RAM else 1
 
     # move to target square
     start_index = state.positions[player].index(start)
     state.positions[player][start_index] = target
 
-    # gain coins
-    state.coins[player] += COIN_GAIN[Tile.RAM] * repeats
+    # spend cost
+    state.coins[player] -= RAM_COST
 
     # knockback any neighboring tiles
     obstructions = [s for s in state.all_positions() if s != target]
@@ -402,7 +413,9 @@ def take_action(
     enemy = state.other_player
     repeats = 2 if state.x2_tile == action else 1
 
-    if action in (OtherAction.MOVE, Tile.FLOWER, Tile.BIRD, Tile.HARVESTER):
+    if action in (OtherAction.MOVE, Tile.FLOWER, Tile.BIRD, Tile.HARVESTER) or (
+        action == Tile.BACKSTABBER and state.maybe_player_at(target) is None
+    ):
         # move to the target square
         start_index = state.positions[player].index(start)
         state.positions[player][start_index] = target
@@ -488,7 +501,7 @@ def take_action(
         # kill target
         return [target]
 
-    if action == Tile.BACKSTABBER:
+    if action == Tile.BACKSTABBER and state.maybe_player_at(target) is not None:
         # pay cost
         state.coins[player] -= BACKSTAB_COST
 
