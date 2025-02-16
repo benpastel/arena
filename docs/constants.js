@@ -23,11 +23,11 @@ const TILES = {
   // "🀐": "🀐", // bird
   // "🀛": "🀛", // grenades
   // "🀒": "🀒", // knives
-  // "🀍": "🀍", // hook
+  "🀍": "🀍", // hook
   "🀨": "🀨", // harvester
   "🀗": "🀗", // backstabber
   "🀙": "🀙", // fireball
-  "🀩": "🀩", // trickster
+  // "🀩": "🀩", // trickster
   "🀎": "🀎", // ram
 };
 const HIDDEN_TILE = "🀫";
