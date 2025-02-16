@@ -358,7 +358,8 @@ class State(BaseModel):
 # Eventually start tiles will be randomized and/or configurable from the lobby, but for now
 # they are hardcoded here.
 TILES_IN_GAME = [
-    Tile.TRICKSTER,
+    # Tile.TRICKSTER,
+    Tile.HOOK,
     Tile.FIREBALL,
     Tile.RAM,
     Tile.BACKSTABBER,
