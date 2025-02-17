@@ -499,6 +499,7 @@ async def _maybe_smite(
     """
     if state.smite_cost <= state.coins[state.current_player]:
         # the current player must have just gained enough coins to smite
+        await clear_selection(websockets)
         # make sure both players see the updated coin amount before selecting a target
         await broadcast_state_changed(state, websockets)
 
@@ -507,6 +508,7 @@ async def _maybe_smite(
 
     if state.smite_cost <= state.coins[state.other_player]:
         # the other player must have just gained enough coins to smite
+        await clear_selection(websockets)
         # make sure both players see the updated coin amount before selecting a target
         await broadcast_state_changed(state, websockets)
 
