@@ -127,12 +127,13 @@ async def _resolve_exchange(
 
 async def _resolve_smite(
     state: State,
+    player: Player,
     websockets: dict[Player, WebSocketServerProtocol],
     target: Square,
 ) -> None:
-    state.coins[state.current_player] -= state.smite_cost
+    state.coins[player] -= state.smite_cost
     state.log(
-        f"{state.current_player.format_for_log()} smites ⚡ {target.format_for_log()} for ${state.smite_cost}"
+        f"{player.format_for_log()} smites ⚡ {target.format_for_log()} for ${state.smite_cost}"
     )
 
     await _lose_tile(target, state, websockets)
@@ -502,15 +503,15 @@ async def _maybe_smite(
         await broadcast_state_changed(state, websockets)
 
         target = await _select_smite_target(state, state.current_player, websockets)
-        await _resolve_smite(state, websockets, target)
+        await _resolve_smite(state, state.current_player, websockets, target)
 
     if state.smite_cost <= state.coins[state.other_player]:
         # the other player must have just gained enough coins to smite
         # make sure both players see the updated coin amount before selecting a target
         await broadcast_state_changed(state, websockets)
 
-        target = await _select_smite_target(state, state.current_player, websockets)
-        await _resolve_smite(state, websockets, target)
+        target = await _select_smite_target(state, state.other_player, websockets)
+        await _resolve_smite(state, state.other_player, websockets, target)
 
 
 async def _play_one_turn(
@@ -576,7 +577,7 @@ async def _play_one_turn(
         if reflect_response == Response.ACCEPT:
             # reflect succeeds
             # original action fails
-            state.log("Hook reflected.")
+            state.log(f"{action} reflected.")
             await clear_selection(websockets)
             await _resolve_action(
                 start, action, target, state, websockets, reflect=True
