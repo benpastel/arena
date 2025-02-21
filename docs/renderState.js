@@ -218,59 +218,35 @@ function renderHand(player_view) {
 }
 
 function renderHiddenTiles(player_view) {
-  const panel = document.querySelector('.hidden-tiles');
-  setTooltip(panel, 'The tiles currently hidden from you.');
 
-  const contents = document.querySelector('.hidden-tiles-contents');
-  contents.innerHTML = '';
-  for (const tile of player_view.hidden_tiles) {
-    contents.innerHTML += tile;
-  }
 }
 
 function renderOther(player_view) {
-  for (const player of PLAYERS) {
-    const unusedPanel = document.querySelector('.unused');
-    const discardPanel = document.querySelector('.discard');
-    const unusedElements = unusedPanel.querySelectorAll('.hand-tile');
-    const discardElements = discardPanel.querySelectorAll('.hand-tile');
+  const unusedPanel = document.querySelector('.unused');
+  setTooltip(unusedPanel, 'Tiles unused this game.');
 
-    setTooltip(unusedPanel, 'Tiles unused this game.');
-    setTooltip(discardPanel, 'Tiles discarded from play.');
-
-    // redraw from scratch in case visibility changed
-    for (const element of unusedElements) {
-      unusedPanel.removeChild(element);
-    }
-    for (const element of discardElements) {
-      discardPanel.removeChild(element);
-    }
-    for (const tile of player_view.unused_tiles) {
-      const element = document.createElement("span");
-      element.innerHTML = tile;
-      element.dataset.tileName = tile;
-      element.classList.add('hand-tile');
-      unusedPanel.append(element);
-    }
-    for (const tile of player_view.discard) {
-      const element = document.createElement("span");
-      element.innerHTML = tile;
-      element.dataset.tileName = tile;
-      element.classList.add('hand-tile');
-      discardPanel.append(element);
-    }
+  const unusedContents = document.querySelector('.unused-contents');
+  unusedContents.innerHTML = 'unused: ';
+  for (const tile of player_view.unused_tiles) {
+    unusedContents.innerHTML += tile;
   }
-  // mark the x2_tile
-  console.log(`marking {player_view.x2_tile}`);
-  const tileButtons = document.querySelectorAll('.tile-button');
-  for (const element of tileButtons) {
-    if (player_view.x2_tile === element.dataset.name) {
-      element.classList.add('x2');
-      setTooltip(element, X2_TOOLTIPS[element.dataset.name]);
-    } else {
-      element.classList.remove('x2');
-      setTooltip(element, TOOLTIPS[element.dataset.name]);
-    }
+
+  const discardPanel = document.querySelector('.discard');
+  setTooltip(discardPanel, 'Tiles discarded from play.');
+
+  const discardContents = document.querySelector('.discard-contents');
+  discardContents.innerHTML = 'discarded: ';
+  for (const tile of player_view.discard) {
+    discardContents.innerHTML += tile;
+  }
+
+  const hiddenPanel = document.querySelector('.hidden-tiles');
+  setTooltip(hiddenPanel, 'All the tiles currently unknown to you.');
+
+  const contents = document.querySelector('.hidden-tiles-contents');
+  contents.innerHTML = 'unknown to you: ';
+  for (const tile of player_view.hidden_tiles) {
+    contents.innerHTML += tile;
   }
 }
 

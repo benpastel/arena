@@ -47,12 +47,12 @@ body {
   font-weight: bold;
 }
 
-/* the other box displays unused & discard tiles */
+/* the other box displays unused, discard, and hidden tiles */
 .other {
   grid-column: 1 / 2;
-  grid-row: 3 / 4;
+  grid-row: 2 / 4;
 
-  font-size: 5vh;
+  font-size: 4.5vh;
 
   display: flex;
   justify-content: center;
@@ -77,18 +77,6 @@ explaining what happened in previous turns
   font-size: 2vmin;
   line-height: 2.1vmin;
   cursor: text;
-  border-bottom-width: 0;
-}
-
-/*
-The hidden tiles are a list of tiles that are currently not visible to the player
-*/
-.hidden-tiles {
-  grid-column: 1 / 2;
-  grid-row: 2 / 3;
-  font-size: 4.5vh;
-  color: grey;
-  font-weight: light;
   border-bottom-width: 0;
 }
 
