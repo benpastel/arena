@@ -15,6 +15,7 @@ from server.board import (
     bonus_and_exchange_positions,
     choose_start_positions,
     SMITE_COST,
+    NEGATIVE_COINS_OK,
 )
 
 
@@ -316,9 +317,8 @@ class State(BaseModel):
         # check tile locations are unique
         assert len(self.all_positions()) == len(set(self.all_positions()))
 
-        # check coins non-negative
-        # TODO
-        # assert all(self.coins[player] >= 0 for player in Player)
+        if not NEGATIVE_COINS_OK:
+            assert all(self.coins[player] >= 0 for player in Player)
 
         assert self.current_player != self.other_player
 

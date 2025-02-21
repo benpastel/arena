@@ -11,6 +11,7 @@ from server.constants import (
     COLUMNS,
     Player,
 )
+from server.board import NEGATIVE_COINS_OK
 
 
 """Money gains & costs"""
@@ -481,7 +482,10 @@ def take_action(
         state.positions[enemy][target_index] = end_square
 
         # steal
-        steal_amount = min(GRAPPLE_STEAL_AMOUNT, state.coins[enemy] * repeats)
+        if NEGATIVE_COINS_OK:
+            steal_amount = GRAPPLE_STEAL_AMOUNT * repeats
+        else:
+            steal_amount = min(GRAPPLE_STEAL_AMOUNT, state.coins[enemy] * repeats)
         state.coins[player] += steal_amount
         state.coins[enemy] -= steal_amount
 

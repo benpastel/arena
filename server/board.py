@@ -15,6 +15,9 @@ RANDOM_BONUS_REVEALS = [1, 2, 3]
 # how much $ it costs to smite.  maybe randomize per game?
 SMITE_COST = 10
 
+# can you go into debt via HOOK?
+NEGATIVE_COINS_OK = True
+
 
 def bonus_and_exchange_positions() -> tuple[Square, list[Square]]:
     # randomly shuffle the middle squares,
