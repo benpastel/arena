@@ -21,7 +21,7 @@ COIN_GAIN = {
     Tile.FLOWER: 3,
     Tile.HARVESTER: 4,
     Tile.TRICKSTER: 1,
-    Tile.BACKSTABBER: 1,
+    Tile.BACKSTABBER: 2,
 }
 SMITE_COST = 7
 GRENADES_COST = 3
