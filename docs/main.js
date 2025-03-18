@@ -60,7 +60,7 @@ function joinGame(prompt, websocket) {
 function getWebSocketServer() {
   if (window.location.host === "localhost:8000") {
     return "ws://localhost:8001/";
-  } else if (window.location.host === "benpastel.github.io") {
+  } else if (window.location.host === "benpastel.github.io" || window.location.host === "benpastel.com") {
     // github pages => heroku
     return "wss://benji-arena-7507cf3c8c79.herokuapp.com";
   } else {
