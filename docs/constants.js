@@ -7,6 +7,7 @@ const COLUMNS = 5;
 // must match css classes and python enums
 const NORTH_PLAYER = "north";
 const SOUTH_PLAYER = "south";
+const SOLO_MODE = "solo";
 const PLAYERS = [NORTH_PLAYER, SOUTH_PLAYER];
 
 // must match css classes

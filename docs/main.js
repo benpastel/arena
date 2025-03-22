@@ -4,6 +4,7 @@
 import {
   NORTH_PLAYER,
   SOUTH_PLAYER,
+  SOLO_MODE,
 } from "./constants.js";
 
 import {
@@ -39,12 +40,11 @@ let CHOICE_ID = 0;
 function joinGame(prompt, websocket) {
   websocket.addEventListener("open", () => {
     // send an "join" event informing the server which player we are
-    // based on hardcoded url ?player=north or ?player=south
-    // TODO: move to path
+    // based on hardcoded url ?player=north or ?player=south, or ?player=solo
     const params = new URLSearchParams(window.location.search);
     const player = params.get("player");
-    if (! (player === NORTH_PLAYER || player === SOUTH_PLAYER)) {
-      const msg = `⚠️⚠️⚠️<br>Set your url to ?player=${NORTH_PLAYER} or ?player=${SOUTH_PLAYER}<br>⚠️⚠️⚠️`;
+    if (! (player === NORTH_PLAYER || player === SOUTH_PLAYER || player === SOLO_MODE)) {
+      const msg = `⚠️⚠️⚠️<br>Set your url to ?player=${NORTH_PLAYER} or ?player=${SOUTH_PLAYER} or ?player=${SOLO_MODE}<br>⚠️⚠️⚠️`;
       prompt.innerHTML = msg;
       console.log(params);
       throw new Error(msg);
