@@ -76,6 +76,12 @@ class DummyWebsocket(WebSocketServerProtocol):
     without checking if it's a human or bot.
     """
 
+    # always open
+    open: bool = True
+
+    def __init__(self):
+        pass
+
     async def send(
         self, message: str | bytes | Iterable[str | bytes] | AsyncIterable[str | bytes]
     ) -> None:

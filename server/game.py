@@ -19,13 +19,7 @@ from server.constants import (
     Response,
     other_player,
 )
-from server.choices import (
-    choose_action_or_square,
-    choose_square_or_hand,
-    choose_response,
-    choose_exchange,
-    send_prompt,
-)
+from server.choices import send_prompt
 from server.notify import (
     broadcast_state_changed,
     notify_selection_changed,
@@ -67,11 +61,10 @@ async def _move_x2(
         players[other_player(player)].websocket,
     )
     choices: list[Action] = [t for t in Tile if t != state.x2_tile and t != Tile.HIDDEN]
-    choice = await choose_action_or_square(
+    choice = await players[player].choose_action_or_square(
         choices,
         [],
         "Move the ×2 to a different action.",
-        players[player].websocket,
     )
     assert isinstance(choice, Tile)
     state.x2_tile = choice
@@ -106,10 +99,9 @@ async def _resolve_exchange(
 
     old_tile = state.tile_at(square)
     exchange_choices = state.exchange_tiles[exchange_index] + [old_tile]
-    choice = await choose_exchange(
+    choice = await players[player].choose_exchange(
         exchange_choices,
         "Exchange tiles, or keep your current tile.",
-        players[player].websocket,
     )
 
     if choice != old_tile:
@@ -217,7 +209,7 @@ async def _select_action(
         "Waiting for opponent to select their action.",
         players[state.other_player].websocket,
     )
-    websocket = players[state.current_player].websocket
+    current_agent = players[state.current_player]
 
     possible_starts = state.positions[state.current_player]
     assert 1 <= len(possible_starts) <= 2
@@ -225,8 +217,8 @@ async def _select_action(
         # only one choice
         start = possible_starts[0]
     else:
-        choice = await choose_action_or_square(
-            [], possible_starts, "Select a tile.", websocket
+        choice = await current_agent.choose_action_or_square(
+            [], possible_starts, "Select a tile."
         )
         start = cast(Square, choice)
 
@@ -241,7 +233,7 @@ async def _select_action(
         # display the partial selection and valid actions/targets to the
         # current player
         await notify_selection_changed(
-            state.current_player, start, action, None, websocket
+            state.current_player, start, action, None, current_agent.websocket
         )
 
         if not action and len(possible_starts) == 1:
@@ -257,8 +249,8 @@ async def _select_action(
             possible_squares = possible_starts + possible_targets
             prompt = "Select a target, or a different action or tile."
 
-        choice = await choose_action_or_square(
-            possible_actions, possible_squares, prompt, websocket
+        choice = await current_agent.choose_action_or_square(
+            possible_actions, possible_squares, prompt
         )
         if choice in possible_targets:
             # they chose a target
@@ -335,13 +327,13 @@ async def _lose_tile(
             players[other_player(player)].websocket,
         )
 
-    websocket = players[player].websocket
+    agent = players[player]
+
     if len(possible_squares) > 1:
-        choice = await choose_square_or_hand(
+        choice = await agent.choose_square_or_hand(
             possible_squares,
             [],
             "Choose which tile to lose.",
-            websocket,
         )
         square = cast(Square, choice)
     else:
@@ -352,7 +344,7 @@ async def _lose_tile(
     while True:
         # mark the selected tile with an X for this player
         await notify_selection_changed(
-            player, start=None, action=None, target=square, websocket=websocket
+            player, start=None, action=None, target=square, websocket=agent.websocket
         )
 
         tile = state.tile_at(square)
@@ -370,21 +362,19 @@ async def _lose_tile(
 
         if len(possible_squares) == 1:
             # the player chooses the replacement tile
-            choice = await choose_square_or_hand(
+            choice = await agent.choose_square_or_hand(
                 possible_squares=[],
                 possible_hand_tiles=hand_tiles,
                 prompt="Choose the replacement tile from your hand.",
-                websocket=websocket,
             )
             replacement = cast(Tile, choice)
             break
 
         # otherwise, the player chooses the replacement tile or changes the lost tile
-        choice = await choose_square_or_hand(
+        choice = await agent.choose_square_or_hand(
             possible_squares=possible_squares,
             possible_hand_tiles=hand_tiles,
             prompt="Choose the replacement tile from your hand, or a different tile to lose.",
-            websocket=websocket,
         )
         if choice in hand_tiles:
             replacement = cast(Tile, choice)
@@ -454,10 +444,9 @@ async def _select_response(
         "Waiting for opponent to respond.", players[state.current_player].websocket
     )
 
-    return await choose_response(
+    return await players[state.other_player].choose_response(
         possible_responses,
         f"Opponent claimed {action}.  Choose your response.",
-        players[state.other_player].websocket,
     )
 
 
@@ -468,10 +457,9 @@ async def _select_reflect_response(
         "Waiting for opponent to respond to reflect.",
         players[state.other_player].websocket,
     )
-    response = await choose_response(
+    response = await players[state.current_player].choose_response(
         [Response.ACCEPT, Response.CHALLENGE],
         f"Opponent reflected with {action}.  Choose your response.",
-        players[state.current_player].websocket,
     )
     return cast(Response, response)
 
@@ -483,11 +471,10 @@ async def _select_smite_target(
         "Waiting for opponent to select a tile to smite ⚡",
         players[other_player(player)].websocket,
     )
-    choice = await choose_action_or_square(
+    choice = await players[player].choose_action_or_square(
         [],
         state.positions[other_player(player)],
         "Select a tile to smite ⚡",
-        players[player].websocket,
     )
     return cast(Square, choice)
 

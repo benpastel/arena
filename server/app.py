@@ -38,7 +38,8 @@ async def handler(websocket: WebSocketServerProtocol) -> None:
 
     if event["player"] == SOLO_PLAYER:
         # in solo mode, the player is south and the AI is north
-        PLAYERS[Player.S] = Human(websocket)
+        player = Player.S
+        PLAYERS[player] = Human(websocket)
         PLAYERS[Player.N] = RandomBot()
     else:
         # in pvp, the player is the one specified in the url
