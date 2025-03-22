@@ -98,8 +98,6 @@ async def _send_highlights(
     await websocket.send(json.dumps(event))
 
 
-# TODO: rename Action | Response variables to something like "icons" everywhere?
-# or make a type that covers them?
 @asynccontextmanager
 async def _highlighted(
     websocket: WebSocketServerProtocol,
@@ -108,6 +106,7 @@ async def _highlighted(
     hand_tiles: list[Tile] = [],
     board_tiles: list[Tile] = [],
 ):
+    """Sends a list of highlighted options to the player.  Clears highlights when done."""
     await _send_highlights(websocket, squares, actions, hand_tiles, board_tiles)
     yield
     # clear highlights in UI by highlighting empty lists

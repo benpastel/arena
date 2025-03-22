@@ -1,8 +1,7 @@
 from typing import Optional, cast
 from random import shuffle
 
-from websockets.server import WebSocketServerProtocol
-
+from server.agents import Agent
 from server.actions import (
     valid_targets,
     take_action,
@@ -37,7 +36,7 @@ from server.notify import (
 
 async def _resolve_bonus(
     state: State,
-    websockets: dict[Player, WebSocketServerProtocol],
+    players: dict[Player, Agent],
 ) -> None:
     """Give a player bonus for starting their turn on the bonus square"""
     player = state.maybe_player_at(state.bonus_position)
@@ -53,38 +52,38 @@ async def _resolve_bonus(
         f"{player.format_for_log()} starts turn on bonus square: +${state.bonus_amount}, revealed {revealed} unused tiles"
     )
     state.coins[player] += state.bonus_amount
-    await broadcast_state_changed(state, websockets)
+    await broadcast_state_changed(state, players)
 
 
 async def _move_x2(
     square: Square,
     state: State,
-    websockets: dict[Player, WebSocketServerProtocol],
+    players: dict[Player, Agent],
 ) -> None:
     """Allow the player to move the x2 highlight."""
     player = state.player_at(square)
     await send_prompt(
         "Waiting for opponent to move the ×2.",
-        websockets[other_player(player)],
+        players[other_player(player)].websocket,
     )
     choices: list[Action] = [t for t in Tile if t != state.x2_tile and t != Tile.HIDDEN]
     choice = await choose_action_or_square(
         choices,
         [],
         "Move the ×2 to a different action.",
-        websockets[player],
+        players[player].websocket,
     )
     assert isinstance(choice, Tile)
     state.x2_tile = choice
     state.log(f"{player.format_for_log()} moved ×2 to {choice}")
 
-    await broadcast_state_changed(state, websockets)
+    await broadcast_state_changed(state, players)
 
 
 async def _resolve_exchange(
     square: Square,
     state: State,
-    websockets: dict[Player, WebSocketServerProtocol],
+    players: dict[Player, Agent],
 ) -> None:
     """Allow a player to exchange with a exchange square"""
     player = state.player_at(square)
@@ -94,10 +93,10 @@ async def _resolve_exchange(
     # player can now see the exchange position
     state.exchange_tiles_revealed[player][exchange_index] = True
 
-    await broadcast_state_changed(state, websockets)
+    await broadcast_state_changed(state, players)
     await send_prompt(
         "Waiting for opponent to exchange tiles.",
-        websockets[other_player(player)],
+        players[other_player(player)].websocket,
     )
 
     # if they could, other player can no longer see the exchange position or tile
@@ -110,7 +109,7 @@ async def _resolve_exchange(
     choice = await choose_exchange(
         exchange_choices,
         "Exchange tiles, or keep your current tile.",
-        websockets[player],
+        players[player].websocket,
     )
 
     if choice != old_tile:
@@ -128,7 +127,7 @@ async def _resolve_exchange(
 async def _resolve_smite(
     state: State,
     player: Player,
-    websockets: dict[Player, WebSocketServerProtocol],
+    players: dict[Player, Agent],
     target: Square,
 ) -> None:
     state.coins[player] -= state.smite_cost
@@ -136,8 +135,8 @@ async def _resolve_smite(
         f"{player.format_for_log()} smites ⚡ {target.format_for_log()} for ${state.smite_cost}"
     )
 
-    await _lose_tile(target, state, websockets)
-    await clear_selection(websockets)
+    await _lose_tile(target, state, players)
+    await clear_selection(players)
 
 
 async def _resolve_action(
@@ -145,7 +144,7 @@ async def _resolve_action(
     action: Action,
     target: Square,
     state: State,
-    websockets: dict[Player, WebSocketServerProtocol],
+    players: dict[Player, Agent],
     reflect: bool = False,
 ) -> None:
     if state.x2_tile == action:
@@ -168,9 +167,9 @@ async def _resolve_action(
             state.log(f"{repeat + 1} / {repeats} - ")
 
         for hit in hits:
-            await _lose_tile(hit, state, websockets)
+            await _lose_tile(hit, state, players)
 
-        await clear_selection(websockets)
+        await clear_selection(players)
 
     # we may have moved onto a special square
     if action in (
@@ -184,10 +183,10 @@ async def _resolve_action(
     ):
 
         if state.x2_tile is not None and target == state.bonus_position:
-            await _move_x2(target, state, websockets)
+            await _move_x2(target, state, players)
 
         if target in state.exchange_positions:
-            await _resolve_exchange(target, state, websockets)
+            await _resolve_exchange(target, state, players)
 
     # hook may have moved someone onto one
     if action == Tile.HOOK:
@@ -197,14 +196,14 @@ async def _resolve_action(
             end_square = grapple_end_square(start, target, obstructions=[])
 
         if state.x2_tile is not None and end_square == state.bonus_position:
-            await _move_x2(end_square, state, websockets)
+            await _move_x2(end_square, state, players)
 
         if end_square in state.exchange_positions:
-            await _resolve_exchange(end_square, state, websockets)
+            await _resolve_exchange(end_square, state, players)
 
 
 async def _select_action(
-    state: State, websockets: dict[Player, WebSocketServerProtocol]
+    state: State, players: dict[Player, Agent]
 ) -> tuple[Square, Action, Square]:
     """
     Prompt the player to choose the action for their turn.
@@ -215,9 +214,10 @@ async def _select_action(
         - target square of the action
     """
     await send_prompt(
-        "Waiting for opponent to select their action.", websockets[state.other_player]
+        "Waiting for opponent to select their action.",
+        players[state.other_player].websocket,
     )
-    websocket = websockets[state.current_player]
+    websocket = players[state.current_player].websocket
 
     possible_starts = state.positions[state.current_player]
     assert 1 <= len(possible_starts) <= 2
@@ -268,7 +268,7 @@ async def _select_action(
 
             # show both players the proposed action
             await broadcast_selection_changed(
-                state.current_player, start, action, target, websockets
+                state.current_player, start, action, target, players
             )
             return start, action, target
         elif choice in possible_actions:
@@ -286,7 +286,7 @@ async def _select_action(
 async def _lose_tile(
     player_or_square: Player | Square,
     state: State,
-    websockets: dict[Player, WebSocketServerProtocol],
+    players: dict[Player, Agent],
 ) -> None:
     """
      - Prompt the player to choose a tile to lose, if applicable
@@ -329,12 +329,13 @@ async def _lose_tile(
     if len(possible_squares) > 1 or len(state.tiles_in_hand[player]) > 0:
         # current player will need to choose something, so set a waiting prompt for opponent
         # and send any state updates so far to both players
-        await broadcast_state_changed(state, websockets)
+        await broadcast_state_changed(state, players)
         await send_prompt(
-            "Waiting for opponent to lose tile.", websockets[other_player(player)]
+            "Waiting for opponent to lose tile.",
+            players[other_player(player)].websocket,
         )
 
-    websocket = websockets[player]
+    websocket = players[player].websocket
     if len(possible_squares) > 1:
         choice = await choose_square_or_hand(
             possible_squares,
@@ -417,8 +418,8 @@ async def _lose_tile(
         )
 
     state.score_point(other_player(player))
-    await clear_selection(websockets)
-    await broadcast_state_changed(state, websockets)
+    await clear_selection(players)
+    await broadcast_state_changed(state, players)
 
 
 async def _select_response(
@@ -426,7 +427,7 @@ async def _select_response(
     action: Action,
     target: Square,
     state: State,
-    websockets: dict[Player, WebSocketServerProtocol],
+    players: dict[Player, Agent],
 ) -> Response | Tile:
     assert action in Tile
 
@@ -450,75 +451,72 @@ async def _select_response(
         possible_responses.append(Tile.FIREBALL)
 
     await send_prompt(
-        "Waiting for opponent to respond.", websockets[state.current_player]
+        "Waiting for opponent to respond.", players[state.current_player].websocket
     )
 
     return await choose_response(
         possible_responses,
         f"Opponent claimed {action}.  Choose your response.",
-        websockets[state.other_player],
+        players[state.other_player].websocket,
     )
 
 
 async def _select_reflect_response(
-    action: Action, state: State, websockets: dict[Player, WebSocketServerProtocol]
+    action: Action, state: State, players: dict[Player, Agent]
 ) -> Response:
     await send_prompt(
-        "Waiting for opponent to respond to reflect.", websockets[state.other_player]
+        "Waiting for opponent to respond to reflect.",
+        players[state.other_player].websocket,
     )
     response = await choose_response(
         [Response.ACCEPT, Response.CHALLENGE],
         f"Opponent reflected with {action}.  Choose your response.",
-        websockets[state.current_player],
+        players[state.current_player].websocket,
     )
     return cast(Response, response)
 
 
 async def _select_smite_target(
-    state: State, player: Player, websockets: dict[Player, WebSocketServerProtocol]
+    state: State, player: Player, players: dict[Player, Agent]
 ) -> Square:
     await send_prompt(
         "Waiting for opponent to select a tile to smite ⚡",
-        websockets[other_player(player)],
+        players[other_player(player)].websocket,
     )
     choice = await choose_action_or_square(
         [],
         state.positions[other_player(player)],
         "Select a tile to smite ⚡",
-        websockets[player],
+        players[player].websocket,
     )
     return cast(Square, choice)
 
 
-async def _maybe_smite(
-    state: State, websockets: dict[Player, WebSocketServerProtocol]
-) -> None:
+async def _maybe_smite(state: State, players: dict[Player, Agent]) -> None:
     """
     Check if either player has enough coins to smite.
     If so, select a target and resolve the smite.
     """
     if state.smite_cost <= state.coins[state.current_player]:
         # the current player must have just gained enough coins to smite
-        await clear_selection(websockets)
+        await clear_selection(players)
         # make sure both players see the updated coin amount before selecting a target
-        await broadcast_state_changed(state, websockets)
+        await broadcast_state_changed(state, players)
 
-        target = await _select_smite_target(state, state.current_player, websockets)
-        await _resolve_smite(state, state.current_player, websockets, target)
+        target = await _select_smite_target(state, state.current_player, players)
+        await _resolve_smite(state, state.current_player, players, target)
 
     if state.smite_cost <= state.coins[state.other_player]:
         # the other player must have just gained enough coins to smite
-        await clear_selection(websockets)
+        await clear_selection(players)
         # make sure both players see the updated coin amount before selecting a target
-        await broadcast_state_changed(state, websockets)
+        await broadcast_state_changed(state, players)
 
-        target = await _select_smite_target(state, state.other_player, websockets)
-        await _resolve_smite(state, state.other_player, websockets, target)
+        target = await _select_smite_target(state, state.other_player, players)
+        await _resolve_smite(state, state.other_player, players, target)
 
 
-async def _play_one_turn(
-    state: State, websockets: dict[Player, WebSocketServerProtocol]
-) -> None:
+async def _play_one_turn(state: State, players: dict[Player, Agent]) -> None:
     """
     Play one turn, prompting both players for choices as needed.
 
@@ -527,27 +525,27 @@ async def _play_one_turn(
     """
 
     # maybe give a bonus to current player for starting on the bonus square
-    await _resolve_bonus(state, websockets)
+    await _resolve_bonus(state, players)
 
     # the bonus may push the current player's coins above the smite cost
-    await _maybe_smite(state, websockets)
+    await _maybe_smite(state, players)
 
     # current player chooses their move
-    start, action, target = await _select_action(state, websockets)
+    start, action, target = await _select_action(state, players)
     if not action in Tile:
         assert action in OtherAction
         # the player didn't claim a tile
         # i.e. they moved or smited
         # so no possibility of challenge
-        await _resolve_action(start, action, target, state, websockets)
+        await _resolve_action(start, action, target, state, players)
         return
 
     # ask opponent to accept, challenge, or reflect as appropriate
-    response = await _select_response(start, action, target, state, websockets)
+    response = await _select_response(start, action, target, state, players)
 
     if response == Response.ACCEPT:
         # other player allows the action to proceed
-        await _resolve_action(start, action, target, state, websockets)
+        await _resolve_action(start, action, target, state, players)
 
     elif response == Response.CHALLENGE:
         state.reveal_at(start)
@@ -560,19 +558,19 @@ async def _play_one_turn(
                 msg
                 + f" Challenge fails!  First the {action} happens, then {state.other_player.format_for_log()} will choose a tile to lose."
             )
-            await _resolve_action(start, action, target, state, websockets)
-            await _lose_tile(state.other_player, state, websockets)
+            await _resolve_action(start, action, target, state, players)
+            await _lose_tile(state.other_player, state, players)
         else:
             # challenge succeeds
             # original action fails
             state.log(msg + " Challenge succeeds!")
-            await clear_selection(websockets)
-            await _lose_tile(state.current_player, state, websockets)
+            await clear_selection(players)
+            await _lose_tile(state.current_player, state, players)
     else:
         assert action == response
         # the response was to reflect
         # which the original player may challenge
-        reflect_response = await _select_reflect_response(response, state, websockets)
+        reflect_response = await _select_reflect_response(response, state, players)
         target_tile = state.tile_at(target)
         reveal_msg = f"{state.other_player.format_for_log()} reveals a {target_tile}."
 
@@ -580,10 +578,8 @@ async def _play_one_turn(
             # reflect succeeds
             # original action fails
             state.log(f"{action} reflected.")
-            await clear_selection(websockets)
-            await _resolve_action(
-                start, action, target, state, websockets, reflect=True
-            )
+            await clear_selection(players)
+            await _resolve_action(start, action, target, state, players, reflect=True)
         elif target_tile == response:
             # challenge fails
             # reflect succeeds
@@ -593,11 +589,9 @@ async def _play_one_turn(
                 reveal_msg
                 + f" Challenge fails!  First the {response} is reflected, then {state.current_player.format_for_log()} will choose a tile to lose."
             )
-            await clear_selection(websockets)
-            await _resolve_action(
-                start, action, target, state, websockets, reflect=True
-            )
-            await _lose_tile(state.current_player, state, websockets)
+            await clear_selection(players)
+            await _resolve_action(start, action, target, state, players, reflect=True)
+            await _lose_tile(state.current_player, state, players)
         else:
             state.reveal_at(target)
             # challenge succeeds
@@ -607,16 +601,16 @@ async def _play_one_turn(
                 reveal_msg
                 + f" Challenge succeeds!  First the {action} happens, then {state.other_player.format_for_log()} will choose a tile to lose."
             )
-            await _resolve_action(start, action, target, state, websockets)
-            await _lose_tile(state.other_player, state, websockets)
+            await _resolve_action(start, action, target, state, players)
+            await _lose_tile(state.other_player, state, players)
 
     # the action may push the current player's coins above the smite cost
     # or the opponent's, if an action was reflected
-    await _maybe_smite(state, websockets)
+    await _maybe_smite(state, players)
 
 
 async def play_one_game(
-    match_score: dict[Player, int], websockets: dict[Player, WebSocketServerProtocol]
+    match_score: dict[Player, int], players: dict[Player, Agent]
 ) -> dict[Player, int]:
     """
     Play one game on the connected websockets.
@@ -629,17 +623,17 @@ async def play_one_game(
     state = new_state(match_score)
     state.log("New game!")
     print("Sending initial state to both players.")
-    await broadcast_state_changed(state, websockets)
+    await broadcast_state_changed(state, players)
 
     while state.game_result() == GameResult.ONGOING:
         state.check_consistency()
 
-        await _play_one_turn(state, websockets)
+        await _play_one_turn(state, players)
 
         state.next_turn()
 
-        await broadcast_state_changed(state, websockets)
+        await broadcast_state_changed(state, players)
 
     state.log(f"Game over!  {state.game_result()}!")
-    await broadcast_state_changed(state, websockets)
+    await broadcast_state_changed(state, players)
     return state.game_score
