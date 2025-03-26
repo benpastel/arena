@@ -2,7 +2,7 @@ from websockets.server import WebSocketServerProtocol
 from typing import Iterable, AsyncIterable
 import random
 
-from server.constants import Action, Square, Tile, Response
+from server.constants import Action, Square, Tile, Response, OtherAction
 from server.choices import (
     choose_action_or_square,
     choose_square_or_hand,
@@ -96,13 +96,14 @@ class DummyWebsocket(WebSocketServerProtocol):
 class RandomBot:
     """
     Chooses actions and responses at random.
-        - truthful 2/3 of the time
+        - truthful 3/4 of the time
         - challenges 1/4 of the time
     """
+
     def __init__(self):
         self.websocket = DummyWebsocket()
-        self.truth_prob = 2/3
-        self.challenge_prob = 1/4
+        self.truth_prob = 3 / 4
+        self.challenge_prob = 1 / 4
 
     async def choose_action_or_square(
         self,
@@ -112,20 +113,30 @@ class RandomBot:
         true_action_hint: Action | None,
     ) -> Action | Square:
 
-        true_action = true_action_hint if true_action_hint in possible_actions else None
-        lie_actions = [a for a in possible_actions if a != true_action]
+        true_actions = [
+            a
+            for a in possible_actions
+            if a == true_action_hint or a == OtherAction.MOVE
+        ]
+        lie_actions = [a for a in possible_actions if a not in true_actions]
 
-        if true_action and lie_actions:
-            # there's a choice between true and lying actions, so choose randomly
+        # if there's a choice between true and lying actions, choose truth or lie randomly
+        if true_actions and lie_actions:
             if random.random() < self.truth_prob:
-                return true_action
+                # prefer something other than moving
+                nonmove_true_actions = [
+                    a for a in true_actions if a != OtherAction.MOVE
+                ]
+                if nonmove_true_actions:
+                    return random.choice(nonmove_true_actions)
+                else:
+                    return OtherAction.MOVE
             else:
                 return random.choice(lie_actions)
 
         # otherwise, choose randomly
         choices: list[Action | Square] = possible_actions + possible_squares
         return random.choice(choices)
-
 
     async def choose_square_or_hand(
         self,
@@ -149,18 +160,24 @@ class RandomBot:
             return true_response_hint
 
         # sometimes challenge
-        if Response.CHALLENGE in possible_responses and random.random() < self.challenge_prob:
+        if (
+            Response.CHALLENGE in possible_responses
+            and random.random() < self.challenge_prob
+        ):
             return random.choice(possible_responses)
 
         # sometimes lie about reflecting
-        lie_responses = [r for r in possible_responses if r != true_response_hint and isinstance(r, Tile)]
+        lie_responses = [
+            r
+            for r in possible_responses
+            if r != true_response_hint and isinstance(r, Tile)
+        ]
         if lie_responses and random.random() > self.truth_prob:
             return random.choice(lie_responses)
 
         # otherwise, accept
         assert Response.ACCEPT in possible_responses
         return Response.ACCEPT
-
 
     async def choose_exchange(
         self,

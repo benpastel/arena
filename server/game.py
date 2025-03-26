@@ -225,25 +225,43 @@ async def _select_action(
         )
         start = cast(Square, choice)
 
-    # choose in a loop
-    # to allow changing out choice of start square & action
-    action: Optional[Action] = None
-    while True:
+    # for bots, choose once
+    if not isinstance(current_agent, Human):
         true_action_hint = state.maybe_tile_at(start)
         actions_and_targets = valid_targets(start, state)
         possible_actions = list(actions_and_targets.keys())
-        possible_targets = actions_and_targets.get(cast(Action, action), [])
+        bot_action = await current_agent.choose_action_or_square(
+            possible_actions, [], "Select an action.", true_action_hint
+        )
+        assert isinstance(bot_action, Action)
+        target = await current_agent.choose_action_or_square(
+            [], actions_and_targets[bot_action], "Select a target.", None
+        )
+        assert isinstance(target, Square)
+        # show both players the proposed action
+        await broadcast_selection_changed(
+            state.current_player, start, bot_action, target, players
+        )
+        return start, bot_action, target
+
+    # for humans, choose in a loop
+    # to allow changing out choice of start square & action
+    chosen_action: Optional[Action] = None
+    while True:
+        actions_and_targets = valid_targets(start, state)
+        possible_actions = list(actions_and_targets.keys())
+        possible_targets = actions_and_targets[chosen_action] if chosen_action else []
 
         # display the partial selection and valid actions/targets to the
         # current player
         await notify_selection_changed(
-            state.current_player, start, action, None, current_agent.websocket
+            state.current_player, start, chosen_action, None, current_agent.websocket
         )
 
-        if not action and len(possible_starts) == 1:
+        if not chosen_action and len(possible_starts) == 1:
             possible_squares = []
             prompt = "Select an action."
-        elif not action:
+        elif not chosen_action:
             possible_squares = possible_starts
             prompt = "Select an action, or a different tile."
         elif len(possible_starts) == 1:
@@ -254,29 +272,29 @@ async def _select_action(
             prompt = "Select a target, or a different action or tile."
 
         choice = await current_agent.choose_action_or_square(
-            possible_actions, possible_squares, prompt, true_action_hint
+            possible_actions, possible_squares, prompt, true_action_hint=None
         )
         if choice in possible_targets:
             # they chose a target
             # we should now have all 3 selected
-            assert action is not None
+            assert chosen_action is not None
             target = cast(Square, choice)
 
             # show both players the proposed action
             await broadcast_selection_changed(
-                state.current_player, start, action, target, players
+                state.current_player, start, chosen_action, target, players
             )
-            return start, action, target
+            return start, chosen_action, target
         elif choice in possible_actions:
             # they chose an action
             # go around again for the target or different action
-            action = cast(Action, choice)
+            chosen_action = cast(Action, choice)
         else:
             # they chose a start square
             # go around again for the action or different start
             assert choice in possible_starts
             start = cast(Square, choice)
-            action = None
+            chosen_action = None
 
 
 async def _lose_tile(
@@ -466,6 +484,7 @@ async def _select_reflect_response(
     response = await players[state.current_player].choose_response(
         [Response.ACCEPT, Response.CHALLENGE],
         f"Opponent reflected with {action}.  Choose your response.",
+        true_response_hint=None,
     )
     return cast(Response, response)
 

@@ -125,11 +125,17 @@ class State(BaseModel):
 
     def tile_at(self, square: Square) -> Tile:
         """The tile occupying on the board at this square.  Error if there isn't one."""
+        maybe_tile = self.maybe_tile_at(square)
+        if maybe_tile is None:
+            raise ValueError(f"Expected tile at {square}")
+        return maybe_tile
+
+    def maybe_tile_at(self, square: Square) -> Tile | None:
         for player in Player:
             for s, other_square in enumerate(self.positions[player]):
                 if other_square == square:
                     return self.tiles_on_board[player][s]
-        raise ValueError(f"Expected tile at {square}")
+        return None
 
     def reveal_at(self, square: Square) -> None:
         """Reveal the tile at square.  Error if there isn't one."""
