@@ -8,28 +8,37 @@ import signal
 from websockets.server import WebSocketServerProtocol, serve
 
 from server.constants import Player
-from server.game import play_one_game
-from server.notify import broadcast_game_over
+from server.game import play_one_match
 from server.agents import Agent, Human, RandomBot
 
-
-# For now we support at most one game at a time.
-# this tracks the websocket of each connected player
-# until both players are connected and we can start the game.
-PLAYERS: dict[Player, Agent] = {}
 
 # URL player parameter for playing against the AI
 SOLO_PLAYER = "solo"
 
+# PVP_PLAYERS is a dict from joined players (NORTH or SOUTH) to the human agent.
+# At most 1 PVP game at a time (see `handler` docstring for explanation)
+PVP_PLAYERS: dict[Player, Agent] = {}
+
 
 async def handler(websocket: WebSocketServerProtocol) -> None:
     """
-    Register player => websocket in a global registry.
-    If we are the 2nd connecting player, start the game.
-    Otherwise, wait forever for another player.
+    Supports:
+        - any number of solo games (player vs AI)
+        - at most 1 PVP game (2 human players)
+
+    When a new websocket connects, it could be:
+        - a player creating a solo game
+        - the first player joining a PVP game
+        - the second player joining a PVP game
+
+    If the first player joins a PVP game, just register their websocket and then wait forever;
+    the actual game will run in the second player's handler.
 
     Consumes a single message from the websocket queue containing the Player
-    (north or south).  Future messages are handled inside the game task.
+    (north, south, or solo).  Future messages are handled inside the game task.
+
+    `play_one_match` makes a best effort to close the websocket when a player disconnects;
+    if it fails, we rely on the default timeouts in the `serve` caller to close the connection.
     """
     assert isinstance(websocket, WebSocketServerProtocol)
     message = await websocket.recv()
@@ -38,46 +47,25 @@ async def handler(websocket: WebSocketServerProtocol) -> None:
 
     if event["player"] == SOLO_PLAYER:
         # in solo mode, the player is south and the AI is north
-        player = Player.S
-        PLAYERS[player] = Human(websocket)
-        PLAYERS[Player.N] = RandomBot()
+        players: dict[Player, Agent] = {
+            Player.S: Human(websocket),
+            Player.N: RandomBot(),
+        }
+        await play_one_match(players)
+        return
+
+    # in pvp, the player is the one specified in the url
+    # overwrite the existing websocket/agent if it exists
+    player = Player(event["player"])
+    PVP_PLAYERS[player] = Human(websocket)
+
+    if len(PVP_PLAYERS) == 2 and all(w.websocket.open for w in PVP_PLAYERS.values()):
+        print(f"{player} connected; starting match")
+        await play_one_match(PVP_PLAYERS)
+        return
     else:
-        # in pvp, the player is the one specified in the url
-        # wait for the other player to connect
-        player = Player(event["player"])
-        PLAYERS[player] = Human(websocket)
-
-    # and double check whether DummyWebsocket should support wait_closed, open, etc.
-    print(f"{player} connected")
-
-    try:
-        if len(PLAYERS) == 2 and all(w.websocket.open for w in PLAYERS.values()):
-            # both players are connected, so start the match.
-            print(f"New match with {PLAYERS}")
-            match_score = {Player.N: 0, Player.S: 0}
-            while True:
-                game_score = await play_one_game(match_score.copy(), PLAYERS)
-                for player, points in game_score.items():
-                    match_score[player] += points
-
-                # let the player's board redraw before sending the game over alert
-                await asyncio.sleep(0.5)
-
-                await broadcast_game_over(PLAYERS, game_score)
-        else:
-            # wait forever for the other player to connect
-            # the other player's handler will run the game and close the connection
-            print(f"{player} waiting for other player")
-            await websocket.wait_closed()
-    finally:
-        # whichever handler gets here closes both connections
-        # both players will need to refresh to play a new game
-        #
-        # TODO: think the synchronization here through more carefully
-        # and also what behavior you'd like if someone loses connection
-        for agent in PLAYERS.values():
-            if isinstance(agent, Human):
-                await agent.websocket.close()
+        print(f"{player} waiting for other player")
+        await websocket.wait_closed()
 
 
 async def main() -> None:

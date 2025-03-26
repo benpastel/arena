@@ -1,7 +1,8 @@
 from typing import Optional, cast
 from random import shuffle
+import asyncio
 
-from server.agents import Agent
+from server.agents import Agent, Human
 from server.actions import (
     valid_targets,
     take_action,
@@ -25,6 +26,7 @@ from server.notify import (
     notify_selection_changed,
     broadcast_selection_changed,
     clear_selection,
+    broadcast_game_over,
 )
 
 
@@ -624,3 +626,24 @@ async def play_one_game(
     state.log(f"Game over!  {state.game_result()}!")
     await broadcast_state_changed(state, players)
     return state.game_score
+
+
+async def play_one_match(players: dict[Player, Agent]) -> None:
+    """
+    Play games forever in a loop, updating the match score and broadcasting each game's score.
+    """
+    print(f"New match with {players}")
+    match_score = {Player.N: 0, Player.S: 0}
+    try:
+        while True:
+            game_score = await play_one_game(match_score.copy(), players)
+            for player, points in game_score.items():
+                match_score[player] += points
+
+            await asyncio.sleep(0.5)
+
+            await broadcast_game_over(players, game_score)
+    finally:
+        for agent in players.values():
+            if isinstance(agent, Human):
+                await agent.websocket.close()
