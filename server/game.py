@@ -510,6 +510,13 @@ async def _maybe_smite(state: State, players: dict[Player, Agent]) -> None:
     Check if either player has enough coins to smite.
     If so, select a target and resolve the smite.
     """
+    if state.game_result() != GameResult.ONGOING:
+        # sometimes we hit enough coins to smite at the same time as the game ends, if e.g.
+        # the opponent lost a challenge.
+        # only smite if the game is still ongoing
+        return
+
+    # if the current player has enough coins to smite, select a target and resolve the smite
     if state.smite_cost <= state.coins[state.current_player]:
         # the current player must have just gained enough coins to smite
         await clear_selection(players)
