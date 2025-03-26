@@ -64,8 +64,6 @@ function createActionPanel(action_panel, tiles) {
   sep1.classList = "action-separator";
   action_panel.append(sep1);
   for (const name of tiles) {
-    console.log(name);
-    console.log(TILES[name]);
     const element = document.createElement("div");
     element.innerHTML = TILES[name];
     element.dataset.name = name;
