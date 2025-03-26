@@ -67,6 +67,7 @@ async def _move_x2(
         choices,
         [],
         "Move the ×2 to a different action.",
+        true_action_hint=None,
     )
     assert isinstance(choice, Tile)
     state.x2_tile = choice
@@ -220,7 +221,7 @@ async def _select_action(
         start = possible_starts[0]
     else:
         choice = await current_agent.choose_action_or_square(
-            [], possible_starts, "Select a tile."
+            [], possible_starts, "Select a tile.", true_action_hint=None
         )
         start = cast(Square, choice)
 
@@ -228,6 +229,7 @@ async def _select_action(
     # to allow changing out choice of start square & action
     action: Optional[Action] = None
     while True:
+        true_action_hint = state.maybe_tile_at(start)
         actions_and_targets = valid_targets(start, state)
         possible_actions = list(actions_and_targets.keys())
         possible_targets = actions_and_targets.get(cast(Action, action), [])
@@ -252,7 +254,7 @@ async def _select_action(
             prompt = "Select a target, or a different action or tile."
 
         choice = await current_agent.choose_action_or_square(
-            possible_actions, possible_squares, prompt
+            possible_actions, possible_squares, prompt, true_action_hint
         )
         if choice in possible_targets:
             # they chose a target
@@ -424,6 +426,7 @@ async def _select_response(
     assert action in Tile
 
     player_at_target = state.maybe_player_at(target)
+    tile_at_target = state.maybe_tile_at(target)
 
     possible_responses: list[Response | Tile] = [
         Response.ACCEPT,
@@ -449,6 +452,7 @@ async def _select_response(
     return await players[state.other_player].choose_response(
         possible_responses,
         f"Opponent claimed {action}.  Choose your response.",
+        true_response_hint=tile_at_target,
     )
 
 
@@ -477,6 +481,7 @@ async def _select_smite_target(
         [],
         state.positions[other_player(player)],
         "Select a tile to smite ⚡",
+        true_action_hint=None,
     )
     return cast(Square, choice)
 
