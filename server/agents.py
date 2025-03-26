@@ -117,7 +117,7 @@ class RandomBot:
 
         if true_action and lie_actions:
             # there's a choice between true and lying actions, so choose randomly
-            if self.truth_prob < random.random():
+            if random.random() < self.truth_prob:
                 return true_action
             else:
                 return random.choice(lie_actions)
@@ -149,12 +149,12 @@ class RandomBot:
             return true_response_hint
 
         # sometimes challenge
-        if Response.CHALLENGE in possible_responses and self.challenge_prob < random.random():
+        if Response.CHALLENGE in possible_responses and random.random() < self.challenge_prob:
             return random.choice(possible_responses)
 
         # sometimes lie about reflecting
         lie_responses = [r for r in possible_responses if r != true_response_hint and isinstance(r, Tile)]
-        if lie_responses and self.truth_prob > random.random():
+        if lie_responses and random.random() > self.truth_prob:
             return random.choice(lie_responses)
 
         # otherwise, accept
