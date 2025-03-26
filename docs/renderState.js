@@ -11,7 +11,6 @@ import {
   SOUTH_PLAYER,
   HIDDEN_TILE,
   TOOLTIPS,
-  X2_TOOLTIPS,
 } from "./constants.js";
 
 
@@ -47,7 +46,11 @@ function setTooltip(element, text) {
 }
 
 
-function createActionPanel(action_panel) {
+function createActionPanel(action_panel, tiles) {
+  // delete old action panel contents
+  for (const element of action_panel.querySelectorAll("div")) {
+    action_panel.removeChild(element);
+  }
 
   for (const name in OTHER_ACTIONS) {
     const element = document.createElement("div");
@@ -60,7 +63,9 @@ function createActionPanel(action_panel) {
   const sep1 = document.createElement('div');
   sep1.classList = "action-separator";
   action_panel.append(sep1);
-  for (const name in TILES) {
+  for (const name of tiles) {
+    console.log(name);
+    console.log(TILES[name]);
     const element = document.createElement("div");
     element.innerHTML = TILES[name];
     element.dataset.name = name;
@@ -94,10 +99,6 @@ function addSpecialBottomRow(cell, contents) {
   //
   // `contents`: array to set inner html of the new elements
   // also set the tileName to those contents if they are tiles
-
-  // TODO don't re-add every time, but do rewrite contents if they change
-  // re-adding everytime will drop any target selection
-
   cell.classList.add('special');
 
   const topRow = document.createElement("div");
@@ -105,7 +106,6 @@ function addSpecialBottomRow(cell, contents) {
   cell.append(topRow);
 
   // put an empty div in the top row to hold the vertical space
-  // TODO less hacky with a grid layout
   const empty = document.createElement("div");
   empty.innerHTML = '​';
   topRow.append(empty);
@@ -133,7 +133,10 @@ function addSpecialBottomRow(cell, contents) {
   }
 }
 
-function renderBoard(board, player_view) {
+function renderBoard(board, player_view, action_panel) {
+  const tiles = player_view.tiles_in_game;
+  createActionPanel(action_panel, tiles);
+
   // set board empty
   for (const cell of board.querySelectorAll(".cell")) {
     cell.innerHTML = "";

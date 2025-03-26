@@ -9,12 +9,14 @@ from server.constants import (
     Tile,
     other_player,
 )
-from server.board import (
-    bonus_amount,
-    bonus_reveal,
+from server.config import (
+    choose_bonus_amount,
+    choose_bonus_reveal,
+    choose_start_coins,
+    choose_smite_cost,
     bonus_and_exchange_positions,
     choose_start_positions,
-    SMITE_COST,
+    choose_tiles_in_game,
     NEGATIVE_COINS_OK,
 )
 
@@ -361,29 +363,26 @@ class State(BaseModel):
         self.tiles_on_board_revealed[target_player][target_idx] = True
 
 
-# Eventually start tiles will be randomized and/or configurable from the lobby, but for now
-# they are hardcoded here.
-TILES_IN_GAME = [
-    # Tile.TRICKSTER,
-    Tile.HOOK,
-    Tile.FIREBALL,
-    Tile.RAM,
-    Tile.BACKSTABBER,
-    Tile.HARVESTER,
-]
-
-# temporarily set equal while balancing the expansion
-# consider making N start with 1 more than S?
-START_COINS = {Player.N: 2, Player.S: 2}
-
-
 def new_state(
     match_score: dict[Player, int],
-    tiles_in_game: list[Tile] = TILES_IN_GAME,
+    randomize: bool,
 ) -> State:
     """
     Return a new state with the tiles randomly dealt.
     """
+    start_coins_per_player = choose_start_coins(randomize)
+    smite_cost = choose_smite_cost(randomize)
+    bonus_amount = choose_bonus_amount(randomize)
+    bonus_reveal = choose_bonus_reveal(randomize)
+    tiles_in_game = choose_tiles_in_game(randomize)
+    start_positions = choose_start_positions()
+    bonus_position, exchange_positions = bonus_and_exchange_positions()
+
+    start_coins = {
+        Player.N: start_coins_per_player,
+        Player.S: start_coins_per_player,
+    }
+
     # 3 copies of each tile
     tiles: list[Tile] = [tile for tile in tiles_in_game for s in range(3)]
 
@@ -393,11 +392,7 @@ def new_state(
     # shuffle, then deal out the cards from fixed indices
     shuffle(tiles)
 
-    bonus_position, exchange_positions = bonus_and_exchange_positions()
-    start_positions = choose_start_positions()
-
-    # x2_tile = random.choice([t for t in Tile])
-    x2_tile = None  # x2_tile disabled until we balance it for the expansion
+    x2_tile = None  # TODO: x2 tile no longer supported; remove all references
 
     return State(
         tiles_in_game=tiles_in_game,
@@ -419,16 +414,16 @@ def new_state(
             Player.S: [False, False, False],
         },
         discard=[],
-        coins=START_COINS,
+        coins=start_coins,
         public_log=[],
-        # currently S hardcoded to go first, but N has extra coin
+        # south player goes first
         current_player=Player.S,
         other_player=Player.N,
         match_score=match_score,
         exchange_positions=exchange_positions,
         bonus_position=bonus_position,
-        bonus_amount=bonus_amount(),
-        bonus_reveal=bonus_reveal(),
+        bonus_amount=bonus_amount,
+        bonus_reveal=bonus_reveal,
         x2_tile=x2_tile,
-        smite_cost=SMITE_COST,
+        smite_cost=smite_cost,
     )

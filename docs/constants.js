@@ -16,19 +16,16 @@ const CHOSEN_START = "chosen-start"; // the square of the tile selected mid-turn
 const CHOSEN_ACTION = "chosen-action"; // an action is selected mid-turn
 const CHOSEN_TARGET = "chosen-target"; // a square is selected mid-turn as the target
 
-// TODO: this list should include all tiles, and the tiles chosen for the game should be read
-// from the state.  For now I'm just hardcoding the active tiles.
-// must match python enums
 const TILES = {
-  // "🀥": "🀥", // flower
-  // "🀐": "🀐", // bird
-  // "🀛": "🀛", // grenades
-  // "🀒": "🀒", // knives
+  "🀥": "🀥", // flower
+  "🀐": "🀐", // bird
+  "🀛": "🀛", // grenades
+  "🀒": "🀒", // knives
   "🀍": "🀍", // hook
   "🀨": "🀨", // harvester
   "🀗": "🀗", // backstabber
   "🀙": "🀙", // fireball
-  // "🀩": "🀩", // trickster
+  "🀩": "🀩", // trickster
   "🀎": "🀎", // ram
 };
 const HIDDEN_TILE = "🀫";
@@ -90,51 +87,6 @@ const TOOLTIPS = {
   "👍": "ACCEPT",
   "🚩": "CHALLENGE"
 }
-const X2_TOOLTIPS = {
-  "🀥": "2X FLOWER<br>gain $6<br>"
-    + "move to an X:<br>"
-    + "<br>"
-    + "X X X X X<br>"
-    + "X X X X X<br>"
-    + "X X 🀥 X X<br>"
-    + "X X X X X<br>"
-    + "X X X X X<br>",
-  "🀐": "2X BIRD<br>gain $4<br>"
-    + "reveal 2 unused tiles<br>"
-    + "move to an X:<br>"
-    + "<br>"
-    + ". . . . X . . . .<br>"
-    + ". . . X X X . . .<br>"
-    + ". . X X X X X . .<br>"
-    + ". X X X X X X X .<br>"
-    + "X X X X 🀛 X X X X<br>"
-    + ". X X X X X X X .<br>"
-    + ". . X X X X X . .<br>"
-    + ". . . X X X . . .<br>"
-    + ". . . . X . . . .",
-  "🀛": "2X GRENADE <br>pay $3<br>"
-    + "roll a grenade to the X if unobstructed and explode a 3x3 square twice:<br>"
-    + "<br>"
-    + ". . X . .<br>"
-    + ". . . . .<br>"
-    + "X . 🀛 . X<br>"
-    + ". . . . .<br>"
-    + ". . X . .",
-  "🀒": "2X KNIVES<br>pay the amount shown to kill twice:<br>"
-    + "<br>"
-    + ". . 5 . .<br>"
-    + ". 5 1 5 .<br>"
-    + "5 1 🀒 1 5<br>"
-    + ". 5 1 5 .<br>"
-    + ". . 5 . .<br>"
-    + "reflected twice by KNIVES",
-  "🀍": "2X HOOK<br>steal $4<br>in straight or diagonal line<br>reflected twice by HOOK",
-  "🀨": "2X HARVESTER<br>NOT IMPLEMENTED",
-  "🀗": "2X BACKSTABBER<br>NOT IMPLEMENTED",
-  "🀙": "2X FIREBALL<br>NOT IMPLEMENTED",
-  "🀩": "2X TRICKSTER<br>NOT IMPLEMENTED",
-  "🀎": "2X RAM<br>NOT IMPLEMENTED",
-}
 
 export {
   ROWS,
@@ -152,6 +104,5 @@ export {
   RESPONSES,
   HIDDEN_TILE,
   TOOLTIPS,
-  X2_TOOLTIPS,
 };
 

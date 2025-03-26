@@ -128,7 +128,6 @@ class RandomBot:
         else:
             return random.choice(lie_actions)
 
-
     async def choose_square_or_hand(
         self,
         possible_squares: list[Square],

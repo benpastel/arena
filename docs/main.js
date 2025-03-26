@@ -41,8 +41,10 @@ function joinGame(prompt, websocket) {
   websocket.addEventListener("open", () => {
     // send an "join" event informing the server which player we are
     // based on hardcoded url ?player=north or ?player=south, or ?player=solo
+    // and ?randomize=true or ?randomize=false
     const params = new URLSearchParams(window.location.search);
     const player = params.get("player");
+    const randomize = params.get("randomize").toLowerCase() === "true";
     if (! (player === NORTH_PLAYER || player === SOUTH_PLAYER || player === SOLO_MODE)) {
       const msg = `⚠️⚠️⚠️<br>Set your url to ?player=${NORTH_PLAYER} or ?player=${SOUTH_PLAYER} or ?player=${SOLO_MODE}<br>⚠️⚠️⚠️`;
       prompt.innerHTML = msg;
@@ -51,7 +53,8 @@ function joinGame(prompt, websocket) {
     }
     const event = {
       type: "join",
-      player
+      player,
+      randomize
     };
     websocket.send(JSON.stringify(event));
   });
@@ -73,9 +76,6 @@ window.addEventListener("DOMContentLoaded", () => {
   const board = document.querySelector(".board");
   createBoard(board);
 
-  const actionPanel = document.querySelector(".actions");
-  createActionPanel(actionPanel);
-
   const prompt = document.querySelector(".prompt");
   prompt.innerHTML = "⌛⌛⌛<br>Waiting for other player to join<br>⌛⌛⌛";
 
@@ -83,6 +83,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // Open the WebSocket connection and register event handlers.
   const websocket = new WebSocket(getWebSocketServer());
+
+  const actionPanel = document.querySelector(".actions");
   joinGame(prompt, websocket);
 
   sendSelection(board, actionPanel, infoPanel, websocket);
@@ -214,7 +216,7 @@ function receiveMoves(board, actionPanel, websocket) {
     if (event.type === "STATE_CHANGE") {
       const player_view = event["playerView"];
 
-      renderBoard(board, player_view);
+      renderBoard(board, player_view, actionPanel);
       renderLog(log, player_view);
       renderHiddenTiles(player_view);
       renderHand(player_view);

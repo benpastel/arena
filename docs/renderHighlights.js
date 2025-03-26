@@ -1,6 +1,6 @@
 "use strict";
 
-import {PLAYERS, HIGHLIGHT} from "./constants.js";
+import {HIGHLIGHT} from "./constants.js";
 
 
 function highlightSquares(squares, board) {

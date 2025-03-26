@@ -119,22 +119,6 @@ class OtherAction(str, Enum):
         return f"{self.value} ({self.name.lower()})"
 
 
-ORIGINAL_TILES = [
-    Tile.FLOWER,
-    Tile.HOOK,
-    Tile.BIRD,
-    Tile.GRENADES,
-    Tile.KNIVES,
-]
-
-EXPANSION_TILES = [
-    Tile.FIREBALL,
-    Tile.RAM,
-    Tile.HARVESTER,
-    Tile.BACKSTABBER,
-    Tile.TRICKSTER,
-]
-
 # An action is: use a tile power or a different action
 Action = Tile | OtherAction
 

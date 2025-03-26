@@ -630,19 +630,16 @@ async def _play_one_turn(state: State, players: dict[Player, Agent]) -> None:
 
 
 async def play_one_game(
-    match_score: dict[Player, int], players: dict[Player, Agent]
+    match_score: dict[Player, int], players: dict[Player, Agent], randomize: bool
 ) -> dict[Player, int]:
     """
     Play one game on the connected websockets.
 
     Returns the game score.
-
-    No graceful handling of disconnects or other websocket exceptions yet.
     """
     # initialize a new game
-    state = new_state(match_score)
+    state = new_state(match_score, randomize)
     state.log("New game!")
-    print("Sending initial state to both players.")
     await broadcast_state_changed(state, players)
 
     while state.game_result() == GameResult.ONGOING:
@@ -659,15 +656,18 @@ async def play_one_game(
     return state.game_score
 
 
-async def play_one_match(players: dict[Player, Agent]) -> None:
+async def play_one_match(players: dict[Player, Agent], randomize: bool) -> None:
     """
     Play games forever in a loop, updating the match score and broadcasting each game's score.
+
+    If randomize is True, all the game start configuration is randomized; otherwise we use
+    the default configuration.
     """
     print(f"New match with {players}")
     match_score = {Player.N: 0, Player.S: 0}
     try:
         while True:
-            game_score = await play_one_game(match_score.copy(), players)
+            game_score = await play_one_game(match_score.copy(), players, randomize)
             for player, points in game_score.items():
                 match_score[player] += points
 

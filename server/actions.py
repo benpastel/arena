@@ -11,7 +11,7 @@ from server.constants import (
     COLUMNS,
     Player,
 )
-from server.board import NEGATIVE_COINS_OK
+from server.config import NEGATIVE_COINS_OK
 
 
 """Money gains & costs"""
