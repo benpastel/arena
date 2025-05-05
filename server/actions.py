@@ -600,6 +600,9 @@ def reflect_action(
         state.coins[enemy] += steal_amount
         state.coins[player] -= steal_amount
 
+        # kill noboby
+        return []
+
     if action == Tile.FIREBALL:
         # explode at start
         return _explosion_hits(start, state.all_positions())
