@@ -32,6 +32,7 @@ POSSIBLE_TILES = [
     Tile.HARVESTER,
     Tile.BIRD,
     Tile.KNIVES,
+    Tile.THIEF,
     Tile.FIREBALL,
     Tile.BACKSTABBER,
     Tile.GRENADES,

@@ -27,6 +27,7 @@ const TILES = {
   "🀙": "🀙", // fireball
   "🀩": "🀩", // trickster
   "🀎": "🀎", // ram
+  "🀌": "🀌", // thief
 };
 const HIDDEN_TILE = "🀫";
 const OTHER_ACTIONS = {
@@ -84,6 +85,7 @@ const TOOLTIPS = {
     + "↖ ↑ ↗<br>"
     + "← 🀎 →<br>"
     + "↙ ↓ ↘<br>",
+  "🀌": "THIEF<br>steal $4<br>swap places with target<br>reflected by THIEF",
   "👍": "ACCEPT",
   "🚩": "CHALLENGE"
 }

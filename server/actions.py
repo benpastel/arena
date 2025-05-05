@@ -29,6 +29,7 @@ FIREBALL_COST = 3
 KNIVES_RANGE_1_COST = 1
 KNIVES_RANGE_2_COST = 5
 GRAPPLE_STEAL_AMOUNT = 2
+THIEF_STEAL_AMOUNT = 4
 BACKSTAB_COST = 3
 RAM_COST = 3
 
@@ -335,6 +336,7 @@ def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
     actions[Tile.HOOK] = [
         s for s in enemy_targets if grapple_end_square(start, s, obstructions)
     ]
+    actions[Tile.THIEF] = [s for s in enemy_targets if 1 == _manhattan_dist(start, s)]
 
     if coins >= KNIVES_RANGE_2_COST:
         actions[Tile.KNIVES] = [
@@ -485,7 +487,27 @@ def take_action(
         if NEGATIVE_COINS_OK:
             steal_amount = GRAPPLE_STEAL_AMOUNT * repeats
         else:
-            steal_amount = min(GRAPPLE_STEAL_AMOUNT, state.coins[enemy] * repeats)
+            steal_amount = min(GRAPPLE_STEAL_AMOUNT * repeats, state.coins[enemy])
+        state.coins[player] += steal_amount
+        state.coins[enemy] -= steal_amount
+
+        # kill noboby
+        return []
+
+    if action == Tile.THIEF:
+        # swap places with target
+        start_index = state.positions[player].index(start)
+        target_index = state.positions[enemy].index(target)
+        start_square = state.positions[player][start_index]
+        target_square = state.positions[enemy][target_index]
+        state.positions[player][start_index] = target_square
+        state.positions[enemy][target_index] = start_square
+
+        # steal
+        if NEGATIVE_COINS_OK:
+            steal_amount = THIEF_STEAL_AMOUNT * repeats
+        else:
+            steal_amount = min(THIEF_STEAL_AMOUNT * repeats, state.coins[enemy])
         state.coins[player] += steal_amount
         state.coins[enemy] -= steal_amount
 
@@ -560,6 +582,23 @@ def reflect_action(
 
         # kill noboby
         return []
+
+    if action == Tile.THIEF:
+        # swap places with target; same as original action
+        start_index = state.positions[player].index(start)
+        target_index = state.positions[enemy].index(target)
+        start_square = state.positions[player][start_index]
+        target_square = state.positions[enemy][target_index]
+        state.positions[player][start_index] = target_square
+        state.positions[enemy][target_index] = start_square
+
+        # steal; same as original action with players swapped
+        if NEGATIVE_COINS_OK:
+            steal_amount = THIEF_STEAL_AMOUNT * repeats
+        else:
+            steal_amount = min(THIEF_STEAL_AMOUNT * repeats, state.coins[player])
+        state.coins[enemy] += steal_amount
+        state.coins[player] -= steal_amount
 
     if action == Tile.FIREBALL:
         # explode at start

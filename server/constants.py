@@ -96,6 +96,9 @@ class Tile(str, Enum):
     # and bump them to a random adjacent unoccupied square
     TRICKSTER = "🀩"
 
+    # steal $4, swap places with target
+    THIEF = "🀌"
+
     # SPECIAL TILES
 
     # Represents a tile with value unknown to a player

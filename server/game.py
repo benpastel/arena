@@ -134,6 +134,20 @@ async def _resolve_smite(
     await clear_selection(players)
 
 
+async def _check_special_square(
+    end_square: Square, state: State, players: dict[Player, Agent]
+) -> None:
+    """
+    One of the players moved onto end_square, either directly or as side effect of an action;
+    If it's a special square, resolve it.
+    """
+    if state.x2_tile is not None and end_square == state.bonus_position:
+        await _move_x2(end_square, state, players)
+
+    if end_square in state.exchange_positions:
+        await _resolve_exchange(end_square, state, players)
+
+
 async def _resolve_action(
     start: Square,
     action: Action,
@@ -176,25 +190,23 @@ async def _resolve_action(
         Tile.RAM,
         Tile.BACKSTABBER,
     ):
+        await _check_special_square(target, state, players)
 
-        if state.x2_tile is not None and target == state.bonus_position:
-            await _move_x2(target, state, players)
-
-        if target in state.exchange_positions:
-            await _resolve_exchange(target, state, players)
-
-    # hook may have moved someone onto one
+    # hook may have pulled someone onto one
     if action == Tile.HOOK:
         if reflect:
+            # player moved
             end_square = grapple_end_square(target, start, obstructions=[])
         else:
+            # enemy moved
             end_square = grapple_end_square(start, target, obstructions=[])
+        assert end_square is not None
+        await _check_special_square(end_square, state, players)
 
-        if state.x2_tile is not None and end_square == state.bonus_position:
-            await _move_x2(end_square, state, players)
-
-        if end_square in state.exchange_positions:
-            await _resolve_exchange(end_square, state, players)
+    # thief swaps positions, which might moveither player onto one
+    if action == Tile.THIEF:
+        await _check_special_square(start, state, players)
+        await _check_special_square(target, state, players)
 
 
 async def _select_action(
@@ -453,6 +465,9 @@ async def _select_response(
     if action == Tile.HOOK:
         # Tile.HOOK reflects Tile.HOOK
         possible_responses.append(Tile.HOOK)
+    elif action == Tile.THIEF:
+        # Tile.THIEF reflects Tile.THIEF
+        possible_responses.append(Tile.THIEF)
     elif action == Tile.KNIVES:
         # Tile.KNIVES reflects Tile.KNIVES
         possible_responses.append(Tile.KNIVES)
