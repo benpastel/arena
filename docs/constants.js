@@ -85,7 +85,11 @@ const TOOLTIPS = {
     + "↖ ↑ ↗<br>"
     + "← 🀎 →<br>"
     + "↙ ↓ ↘<br>",
-  "🀌": "THIEF<br>steal $4<br>swap places with target<br>reflected by THIEF",
+  "🀌": "THIEF<br>steal $4<br>swap places with target<br>reflected by THIEF"
+    + "x x x<br>"
+    + "x 🀌 x<br>"
+    + "x x x<br>"
+    + "<br>reflected by THIEF",
   "👍": "ACCEPT",
   "🚩": "CHALLENGE"
 }

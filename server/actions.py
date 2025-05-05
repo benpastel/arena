@@ -336,7 +336,7 @@ def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
     actions[Tile.HOOK] = [
         s for s in enemy_targets if grapple_end_square(start, s, obstructions)
     ]
-    actions[Tile.THIEF] = [s for s in enemy_targets if 1 == _manhattan_dist(start, s)]
+    actions[Tile.THIEF] = [s for s, dist in enemy_targets.items() if dist == 1]
 
     if coins >= KNIVES_RANGE_2_COST:
         actions[Tile.KNIVES] = [
