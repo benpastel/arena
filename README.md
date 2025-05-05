@@ -6,7 +6,7 @@ An original 2-player board game of strategy and deception.
 
 ## Rules
 
-Players move tiles around the board to gain money and kill enemy tiles.  Each tile has a special ability, but tile identities are hidden from the opponent.  
+Players move tiles around the board to gain money and kill enemy tiles.  Each tile has a special ability, but tile identities are hidden from the opponent.
 
 Each turn, each player chooses one of their tiles and chooses an ability for it to use, and the opponent can accept or challenge.
 
@@ -16,6 +16,7 @@ Each game uses 5 types of tiles, with 3 copies each.  The tile abilities are:
  - 🀐 BIRD: move 2, gain $2, 🔎 REVEAL one tile unused this game
  - 🀛 GRENADES: roll a grenade exactly 2 squares away in an unobstructed cardinal direction, and explode a 3x3 square.
  - 🀒 KNIVES: pay $1 to kill at range 1, or $5 to kill at range 2.  Reflected by 🀒 KNIVES.
+ - 🀌 THIEF: steal $4 at range 1, and swap places with target.  Reflected by 🀌 THIEF.
  - 🀗 BACKSTABBER: pay $3 to kill behind you; or move 2 and gain $1.  Reflected by 🀗 BACKSTABBER.
  - 🀙 FIREBALL: pay $3 to shoot a fireball along a straight or diagonal line, exploding 3x3 at impact. Direct hits reflected by FIREBALL.
  - 🀩 TRICKSTER: move like a knight, gain $1; >if you land on an enemy, switch identities and bump them to a random adjacent unoccupied square.
