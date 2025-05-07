@@ -15,7 +15,7 @@ POSSIBLE_BONUS_REVEALS = [0, 1, 2, 3]
 DEFAULT_BONUS_REVEAL = 1
 
 # how much $ it costs to smite, randomized per game
-POSSIBLE_SMITE_COSTS = [8, 9, 10, 11, 12]
+POSSIBLE_SMITE_COSTS = [7, 8, 9, 10, 11]
 DEFAULT_SMITE_COST = 10
 
 # how much $ each player starts with, randomized per game
