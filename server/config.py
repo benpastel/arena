@@ -40,11 +40,11 @@ POSSIBLE_TILES = [
     Tile.RAM,
 ]
 DEFAULT_TILES = [
-    Tile.HARVESTER,
-    Tile.KNIVES,
-    Tile.FIREBALL,
-    Tile.BACKSTABBER,
+    Tile.THIEF,
     Tile.HOOK,
+    Tile.BIRD,
+    Tile.KNIVES,
+    Tile.BACKSTABBER,
 ]
 
 
