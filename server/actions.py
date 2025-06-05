@@ -193,18 +193,19 @@ def _grenade_targets(
 
 
 def _fireball_targets(
-    start: Square, obstructions: list[Square], enemy_positions: list[Square]
+    start: Square, obstructions: list[Square], enemies_and_webs: list[Square]
 ) -> list[Square]:
     """
     Return a possibly-empty list of valid squares to target a fireball.
 
-    Fireballs travel diagonally in a straight line until they hit a tile, or right before the
-    edge of the board.  They explode on impact and destroy a 3x3 area centered on the impact.
+    Fireballs travel diagonally in a straight line until they hit a tile, a web belonging to either player,
+    or right before the edge of the board.  They explode on impact and destroy any tiles or webs in a 3x3 area
+    centered on the impact.
 
-    For now we restrict to squares that hit at least one enemy to reduce misclicks.
+    For now we restrict to squares that hit at least one enemy or web to reduce misclicks.
     """
-    assert len(enemy_positions) > 0
-    assert all(e in obstructions for e in enemy_positions)
+    assert len(enemies_and_webs) > 0
+    assert all(t in obstructions for t in enemies_and_webs)
     assert start not in obstructions
 
     # start by finding the impact square in each diagonal direction
@@ -218,11 +219,11 @@ def _fireball_targets(
             next_t = Square(t.row + row_step, t.col + col_step)
         impact_squares.append(t)
 
-    # filter to squares that hit at least one enemy
+    # filter to squares that hit at least one enemy or web
     return [
         t
         for t in impact_squares
-        if any(hit in enemy_positions for hit in _explosion_hits(t, obstructions))
+        if any(hit in enemies_and_webs for hit in _explosion_hits(t, obstructions))
     ]
 
 
@@ -286,6 +287,7 @@ def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
         for s, _ in empty_targets.items()
         if 1 <= _manhattan_dist(start, s) <= bird_range
     ]
+    spider_targets = bird_targets
     if coins >= RAM_COST:
         # to reduce misclicks, only allow ram moves that knockback an enemy
         def _hits_any_enemy(s: Square) -> bool:
@@ -313,6 +315,7 @@ def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
         Tile.BIRD: bird_targets,
         Tile.RAM: ram_targets,
         Tile.BACKSTABBER: backstab_targets,
+        Tile.SPIDER: spider_targets,
     }
 
     # harvester costs no coins, and moves forward one square to an empty square.
@@ -362,7 +365,10 @@ def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
         ]
 
     if coins >= FIREBALL_COST:
-        actions[Tile.FIREBALL] = _fireball_targets(start, obstructions, enemy_positions)
+        web_positions = state.web_positions[state.current_player] + state.web_positions[state.other_player]
+        enemies_and_webs = enemy_positions + web_positions
+        fireball_obstructions = obstructions + web_positions
+        actions[Tile.FIREBALL] = _fireball_targets(start, fireball_obstructions, enemies_and_webs)
 
     # drop actions with no valid targets
     ok_actions = {a: targets for a, targets in actions.items() if len(targets) > 0}

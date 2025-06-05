@@ -65,6 +65,10 @@ class State(BaseModel):
     # points used to cast tiles
     coins: dict[Player, int]
 
+    # Webs dropped by spiders for each player.
+    # if an opponent passes through, they lose a turn
+    webs: dict[Player, list[Square]]
+
     # human-readable event log of public information
     # TODO: nested indentation?
     # TODO: tag with player so we can color-code them?
@@ -261,6 +265,7 @@ class State(BaseModel):
             current_player=self.current_player,
             other_player=self.other_player,
             coins=self.coins,
+            webs=self.webs,
             match_score=self.match_score,
             game_score=self.game_score,
             bonus_position=self.bonus_position,
@@ -418,6 +423,7 @@ def new_state(
         },
         discard=[],
         coins=start_coins,
+        webs={Player.N: [], Player.S: []}, # no webs start on board
         public_log=[],
         # south player goes first
         current_player=Player.S,
