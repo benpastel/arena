@@ -32,7 +32,7 @@ GRAPPLE_STEAL_AMOUNT = 2
 THIEF_STEAL_AMOUNT = 4
 BACKSTAB_COST = 3
 RAM_COST = 3
-
+WEB_STEAL_AMOUNT = 3
 
 def _all_distances(
     start: Square,

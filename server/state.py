@@ -365,16 +365,19 @@ class State(BaseModel):
 
 def new_state(
     match_score: dict[Player, int],
-    randomize: bool,
+    tileset: Literal["random", "default", "new"],
 ) -> State:
     """
     Return a new state with the tiles randomly dealt.
     """
+    # if the tileset is not default, randomize everything
+    randomize = (tileset != "default")
+
     start_coins_per_player = choose_start_coins(randomize)
     smite_cost = choose_smite_cost(randomize)
     bonus_amount = choose_bonus_amount(randomize)
     bonus_reveal = choose_bonus_reveal(randomize)
-    tiles_in_game = choose_tiles_in_game(randomize)
+    tiles_in_game = choose_tiles_in_game(tileset)
     start_positions = choose_start_positions()
     bonus_position, exchange_positions = bonus_and_exchange_positions()
 

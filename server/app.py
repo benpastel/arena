@@ -34,23 +34,20 @@ async def handler(websocket: WebSocketServerProtocol) -> None:
     If the first player joins a PVP game, just register their websocket and then wait forever;
     the actual game will run in the second player's handler.
 
-    2nd player to connect determines whether the game uses the default configuration, or a randomized configuration,
-    via the `randomize` parameter.
+    2nd player to connect determines the starting tileset.
 
     Consumes a single message from the websocket queue containing the Player
     (north, south, or solo).  Future messages are handled inside the game task.
 
     `play_one_match` makes a best effort to close the websocket when a player disconnects;
     if it fails, we rely on the default timeouts in the `serve` caller to close the connection.
-
-    2nd player to connect
     """
     assert isinstance(websocket, WebSocketServerProtocol)
     message = await websocket.recv()
     event = json.loads(message)
+    tileset = event["tiles"]
     assert event["type"] == "join"
-    assert event["randomize"] in [True, False]
-    randomize = event["randomize"]
+    assert tileset in ["random", "default", "new"]
 
     if event["player"] == SOLO_PLAYER:
         # in solo mode, the player is south and the AI is north
@@ -58,7 +55,7 @@ async def handler(websocket: WebSocketServerProtocol) -> None:
             Player.S: Human(websocket),
             Player.N: RandomBot(),
         }
-        await play_one_match(players, randomize)
+        await play_one_match(players, tileset)
         return
 
     # in pvp, the player is the one specified in the url
@@ -68,7 +65,7 @@ async def handler(websocket: WebSocketServerProtocol) -> None:
 
     if len(PVP_PLAYERS) == 2 and all(w.websocket.open for w in PVP_PLAYERS.values()):
         print(f"{player} connected; starting match")
-        await play_one_match(PVP_PLAYERS, randomize)
+        await play_one_match(PVP_PLAYERS, tileset)
         return
     else:
         print(f"{player} waiting for other player")

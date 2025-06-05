@@ -89,7 +89,7 @@ class Tile(str, Enum):
 
     # spend $3 to kill anything behind you
     # OR: move 2, gain $1
-    BACKSTABBER = "🀗"
+    BACKSTABBER = "🀇"
 
     # move knight-like, gain $1
     # if you land on an enemy, switch identities
@@ -98,6 +98,12 @@ class Tile(str, Enum):
 
     # steal $4, swap places with target
     THIEF = "🀌"
+
+    # move 2, gain $0, take turn again after exchange
+    # leave web behind
+    #   - enemy crossing it loses a turn
+    #   - blocks fireballs; destroyed by fireballs
+    SPIDER = "🀗"
 
     # SPECIAL TILES
 

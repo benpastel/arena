@@ -73,7 +73,7 @@ const TOOLTIPS = {
     + "reflected by KNIVES",
   "🀍": "HOOK<br>steal $2<br>in straight or diagonal line<br>reflected by HOOK",
   "🀨": "HARVESTER<br>gain $4<br>move forward 1",
-  "🀗": "BACKSTABBER<br>pay $3, kill behind you<br>reflected by BACKSTABBER<br>"
+  "🀇": "BACKSTABBER<br>pay $3, kill behind you<br>reflected by BACKSTABBER<br>"
     + "OR<br>"
     + "move 2, gain $1",
   "🀙": "FIREBALL<br>pay $3<br>explode at target<br>direct hits reflected by FIREBALL",

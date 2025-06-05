@@ -1,4 +1,4 @@
-from typing import Optional, cast
+from typing import Optional, cast, Literal
 from random import shuffle
 import asyncio
 
@@ -645,7 +645,7 @@ async def _play_one_turn(state: State, players: dict[Player, Agent]) -> None:
 
 
 async def play_one_game(
-    match_score: dict[Player, int], players: dict[Player, Agent], randomize: bool
+    match_score: dict[Player, int], players: dict[Player, Agent], tileset: Literal["random", "default", "new"]
 ) -> dict[Player, int]:
     """
     Play one game on the connected websockets.
@@ -653,7 +653,7 @@ async def play_one_game(
     Returns the game score.
     """
     # initialize a new game
-    state = new_state(match_score, randomize)
+    state = new_state(match_score, tileset)
     state.log("New game!")
     await broadcast_state_changed(state, players)
 
@@ -671,18 +671,15 @@ async def play_one_game(
     return state.game_score
 
 
-async def play_one_match(players: dict[Player, Agent], randomize: bool) -> None:
+async def play_one_match(players: dict[Player, Agent], tileset: Literal["random", "default", "new"]) -> None:
     """
     Play games forever in a loop, updating the match score and broadcasting each game's score.
-
-    If randomize is True, all the game start configuration is randomized; otherwise we use
-    the default configuration.
     """
     print(f"New match with {players}")
     match_score = {Player.N: 0, Player.S: 0}
     try:
         while True:
-            game_score = await play_one_game(match_score.copy(), players, randomize)
+            game_score = await play_one_game(match_score.copy(), players, tileset)
             for player, points in game_score.items():
                 match_score[player] += points
 

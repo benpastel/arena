@@ -41,12 +41,18 @@ function joinGame(prompt, websocket) {
   websocket.addEventListener("open", () => {
     // send an "join" event informing the server which player we are
     // based on hardcoded url ?player=north or ?player=south, or ?player=solo
-    // and ?randomize=true or ?randomize=false
+    // and ?tiles=random, ?tiles=default, or ?tiles=new
     const params = new URLSearchParams(window.location.search);
-    const player = params.get("player");
-    const randomize = params.get("randomize").toLowerCase() === "true";
+    const player = params.get("player").toLowerCase();
+    const tiles = params.get("tiles").toLowerCase();
     if (! (player === NORTH_PLAYER || player === SOUTH_PLAYER || player === SOLO_MODE)) {
       const msg = `⚠️⚠️⚠️<br>Set your url to ?player=${NORTH_PLAYER} or ?player=${SOUTH_PLAYER} or ?player=${SOLO_MODE}<br>⚠️⚠️⚠️`;
+      prompt.innerHTML = msg;
+      console.log(params);
+      throw new Error(msg);
+    }
+    if (! (tiles === "random" || tiles === "default" || tiles === "new")) {
+      const msg = `⚠️⚠️⚠️<br>Set your url to ?tiles=random, ?tiles=default, or ?tiles=new<br>⚠️⚠️⚠️`;
       prompt.innerHTML = msg;
       console.log(params);
       throw new Error(msg);
@@ -54,7 +60,7 @@ function joinGame(prompt, websocket) {
     const event = {
       type: "join",
       player,
-      randomize
+      tiles
     };
     websocket.send(JSON.stringify(event));
   });
