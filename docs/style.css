@@ -281,3 +281,14 @@ currently available actions are highlighted
   cursor: pointer;
 }
 
+.web {
+  position: absolute;  /* Take out of normal flow to overlay on cell contents */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);  /* Center perfectly in cell */
+  font-size: 2em;  /* Make web emoji larger than normal text */
+  opacity: 0.5;  /* Semi-transparent to not obscure underlying content */
+  pointer-events: none;  /* Allow clicks to pass through to underlying elements */
+  /* Color is inherited from the player class (north/south) */
+}
+

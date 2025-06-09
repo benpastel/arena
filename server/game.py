@@ -254,6 +254,14 @@ async def _resolve_action(
     if action == Tile.SPIDER and target in state.exchange_positions:
         state.go_again = True
 
+    # spider lays web on all traveled squares
+    if action == Tile.SPIDER:
+        if start not in state.webs[state.current_player]:
+            state.webs[state.current_player].add(start)
+        for square in _path(start, target):
+            if square not in state.webs[state.current_player]:
+                state.webs[state.current_player].add(square)
+
 
 async def _select_action(
     state: State, players: dict[Player, Agent]

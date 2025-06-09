@@ -218,8 +218,27 @@ function renderHand(player_view) {
   }
 }
 
-function renderHiddenTiles(player_view) {
+function renderWebs(player_view) {
+  // clear all webs
+  for (const cell of board.querySelectorAll(".cell")) {
+    const existingWeb = cell.querySelector('.web');
+    if (existingWeb) {
+      cell.removeChild(existingWeb);
+    }
+  }
 
+  // add webs for each player, as semi-transparent emoji
+  for (const player of PLAYERS) {
+    const webs = player_view.webs[player];
+    for (const square of webs) {
+      const cell = findCell(board, square.row, square.col);
+
+      const web = document.createElement('span');
+      web.innerHTML = '🕸️';
+      web.classList.add('web', player);
+      cell.appendChild(web);
+    }
+  }
 }
 
 function renderOther(player_view) {
@@ -252,4 +271,4 @@ function renderOther(player_view) {
 }
 
 
-export {createBoard, renderBoard, renderLog, renderHand, createActionPanel, findCell, renderOther, renderHiddenTiles};
+export {createBoard, renderBoard, renderLog, renderHand, createActionPanel, findCell, renderOther, renderWebs};
