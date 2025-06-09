@@ -53,7 +53,7 @@ NEW_TILES = [
     Tile.FIREBALL,
     Tile.HOOK,
     Tile.THIEF,
-    Tile.KNIVES,
+    Tile.HARVESTER,
 ]
 
 

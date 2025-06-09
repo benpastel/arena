@@ -148,6 +148,38 @@ async def _check_special_square(
         await _resolve_exchange(end_square, state, players)
 
 
+def _path(start: Square, target: Square) -> list[Square]:
+    """
+    Return a list of squares from start to target
+        excludes start
+        includes target (if different from start)
+    """
+    # find the direction target is from start
+    row_change = target.row - start.row
+    col_change = target.col - start.col
+
+    # step towards the target, updating start until we reach the target
+    path = []
+    while start != target:
+        start = Square(start.row + row_change, start.col + col_change)
+        path.append(start)
+    return path
+
+
+async def _check_web(start: Square, target: Square, state: State, moving_player: Player) -> None:
+    """
+    If the player moved onto an enemy web, they'll skip their next turn.  Doesn't stack.
+    """
+    enemy_webs = state.webs[other_player(moving_player)]
+
+    # if any of the squares on the path are enemy webs, the player skips their next turn
+    # also clears any webs they stepped on
+    for square in _path(start, target):
+        if square in enemy_webs:
+            state.skip_next_turn[moving_player] = True
+            enemy_webs.remove(square)
+
+
 async def _resolve_action(
     start: Square,
     action: Action,
@@ -180,7 +212,7 @@ async def _resolve_action(
 
         await clear_selection(players)
 
-    # we may have moved onto a special square
+    # we may have moved onto a special square or web
     if action in (
         OtherAction.MOVE,
         Tile.FLOWER,
@@ -189,24 +221,38 @@ async def _resolve_action(
         Tile.HARVESTER,
         Tile.RAM,
         Tile.BACKSTABBER,
+        Tile.SPIDER,
     ):
         await _check_special_square(target, state, players)
+        await _check_web(start, target, state, moving_player = state.current_player)
 
-    # hook may have pulled someone onto one
+    # hook may have pulled someone onto one, or dragged someone across a web
     if action == Tile.HOOK:
         if reflect:
             # player moved
+            moving_player = state.current_player
             end_square = grapple_end_square(target, start, obstructions=[])
         else:
             # enemy moved
+            moving_player = state.other_player
             end_square = grapple_end_square(start, target, obstructions=[])
         assert end_square is not None
         await _check_special_square(end_square, state, players)
+        await _check_web(start, target, state, moving_player)
 
-    # thief swaps positions, which might moveither player onto one
+    # thief swaps positions, which might move either player onto one
     if action == Tile.THIEF:
         await _check_special_square(start, state, players)
         await _check_special_square(target, state, players)
+
+        # current player moved to target
+        await _check_web(target, target, state, moving_player = state.current_player)
+        # other player moved to start
+        await _check_web(start, start, state, moving_player = state.other_player)
+
+    # spider goes again after exchange
+    if action == Tile.SPIDER and target in state.exchange_positions:
+        state.go_again = True
 
 
 async def _select_action(
@@ -559,89 +605,104 @@ async def _play_one_turn(state: State, players: dict[Player, Agent]) -> None:
     or display that state to the players.
     """
 
+    if state.skip_next_turn[state.current_player]:
+        state.log(f"{state.current_player.format_for_log()} skips their turn.")
+        state.skip_next_turn[state.current_player] = False
+        return
+
     # maybe give a bonus to current player for starting on the bonus square
+    # this only happens once, even if the current player goes again
     await _resolve_bonus(state, players)
 
     # the bonus may push the current player's coins above the smite cost
     await _maybe_smite(state, players)
 
-    # current player chooses their move
-    start, action, target = await _select_action(state, players)
-    if not action in Tile:
-        assert action in OtherAction
-        # the player didn't claim a tile
-        # i.e. they moved or smited
-        # so no possibility of challenge
-        await _resolve_action(start, action, target, state, players)
-        return
+    # spider on exchange may allow the current player to go again
+    # in which case we repeat the whole turn, except for the bonus
+    state.go_again = True
+    while state.go_again:
+        state.go_again = False
 
-    # ask opponent to accept, challenge, or reflect as appropriate
-    response = await _select_response(start, action, target, state, players)
-
-    if response == Response.ACCEPT:
-        # other player allows the action to proceed
-        await _resolve_action(start, action, target, state, players)
-
-    elif response == Response.CHALLENGE:
-        state.reveal_at(start)
-        start_tile = state.tile_at(start)
-        msg = f"{state.current_player.format_for_log()} reveals a {start_tile}."
-        if action == start_tile:
-            # challenge fails
-            # original action succeeds
-            state.log(
-                msg
-                + f" Challenge fails!  First the {action} happens, then {state.other_player.format_for_log()} will choose a tile to lose."
-            )
+        # current player chooses their move
+        start, action, target = await _select_action(state, players)
+        if not action in Tile:
+            assert action in OtherAction
+            # the player didn't claim a tile
+            # i.e. they moved or smited
+            # so no possibility of challenge
             await _resolve_action(start, action, target, state, players)
-            await _lose_tile(state.other_player, state, players)
-        else:
-            # challenge succeeds
-            # original action fails
-            state.log(msg + " Challenge succeeds!")
-            await clear_selection(players)
-            await _lose_tile(state.current_player, state, players)
-    else:
-        assert action == response
-        # the response was to reflect
-        # which the original player may challenge
-        reflect_response = await _select_reflect_response(response, state, players)
-        target_tile = state.tile_at(target)
-        reveal_msg = f"{state.other_player.format_for_log()} reveals a {target_tile}."
+            continue
 
-        if reflect_response == Response.ACCEPT:
-            # reflect succeeds
-            # original action fails
-            state.log(f"{action} reflected.")
-            await clear_selection(players)
-            await _resolve_action(start, action, target, state, players, reflect=True)
-        elif target_tile == response:
-            # challenge fails
-            # reflect succeeds
-            # original action fails
-            state.reveal_at(target)
-            state.log(
-                reveal_msg
-                + f" Challenge fails!  First the {response} is reflected, then {state.current_player.format_for_log()} will choose a tile to lose."
-            )
-            await clear_selection(players)
-            await _resolve_action(start, action, target, state, players, reflect=True)
-            await _lose_tile(state.current_player, state, players)
-        else:
-            state.reveal_at(target)
-            # challenge succeeds
-            # reflect fails
-            # original action succeeds
-            state.log(
-                reveal_msg
-                + f" Challenge succeeds!  First the {action} happens, then {state.other_player.format_for_log()} will choose a tile to lose."
-            )
+        # ask opponent to accept, challenge, or reflect as appropriate
+        response = await _select_response(start, action, target, state, players)
+
+        if response == Response.ACCEPT:
+            # other player allows the action to proceed
             await _resolve_action(start, action, target, state, players)
-            await _lose_tile(state.other_player, state, players)
 
-    # the action may push the current player's coins above the smite cost
-    # or the opponent's, if an action was reflected
-    await _maybe_smite(state, players)
+        elif response == Response.CHALLENGE:
+            state.reveal_at(start)
+            start_tile = state.tile_at(start)
+            msg = f"{state.current_player.format_for_log()} reveals a {start_tile}."
+            if action == start_tile:
+                # challenge fails
+                # original action succeeds
+                state.log(
+                    msg
+                    + f" Challenge fails!  First the {action} happens, then {state.other_player.format_for_log()} will choose a tile to lose."
+                )
+                await _resolve_action(start, action, target, state, players)
+                await _lose_tile(state.other_player, state, players)
+            else:
+                # challenge succeeds
+                # original action fails
+                state.log(msg + " Challenge succeeds!")
+                await clear_selection(players)
+                await _lose_tile(state.current_player, state, players)
+        else:
+            assert action == response
+            # the response was to reflect
+            # which the original player may challenge
+            reflect_response = await _select_reflect_response(response, state, players)
+            target_tile = state.tile_at(target)
+            reveal_msg = f"{state.other_player.format_for_log()} reveals a {target_tile}."
+
+            if reflect_response == Response.ACCEPT:
+                # reflect succeeds
+                # original action fails
+                state.log(f"{action} reflected.")
+                await clear_selection(players)
+                await _resolve_action(start, action, target, state, players, reflect=True)
+            elif target_tile == response:
+                # challenge fails
+                # reflect succeeds
+                # original action fails
+                state.reveal_at(target)
+                state.log(
+                    reveal_msg
+                    + f" Challenge fails!  First the {response} is reflected, then {state.current_player.format_for_log()} will choose a tile to lose."
+                )
+                await clear_selection(players)
+                await _resolve_action(start, action, target, state, players, reflect=True)
+                await _lose_tile(state.current_player, state, players)
+            else:
+                state.reveal_at(target)
+                # challenge succeeds
+                # reflect fails
+                # original action succeeds
+                state.log(
+                    reveal_msg
+                    + f" Challenge succeeds!  First the {action} happens, then {state.other_player.format_for_log()} will choose a tile to lose."
+                )
+                await _resolve_action(start, action, target, state, players)
+                await _lose_tile(state.other_player, state, players)
+
+        # the action may push the current player's coins above the smite cost
+        # or the opponent's, if an action was reflected
+        await _maybe_smite(state, players)
+
+        if state.go_again:
+            state.log(f"{state.current_player.format_for_log()} takes another action.")
 
 
 async def play_one_game(
@@ -661,8 +722,6 @@ async def play_one_game(
         state.check_consistency()
 
         await _play_one_turn(state, players)
-
-        state.next_turn()
 
         await broadcast_state_changed(state, players)
 
