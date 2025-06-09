@@ -224,7 +224,7 @@ function receiveMoves(board, actionPanel, websocket) {
 
       renderBoard(board, player_view, actionPanel);
       renderLog(log, player_view);
-      renderWebs(player_view);
+      renderWebs(board, player_view);
       renderHand(player_view);
       renderOther(player_view);
     }

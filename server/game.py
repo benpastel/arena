@@ -8,6 +8,7 @@ from server.actions import (
     take_action,
     reflect_action,
     grapple_end_square,
+    path,
 )
 from server.state import new_state, State
 from server.constants import (
@@ -148,24 +149,6 @@ async def _check_special_square(
         await _resolve_exchange(end_square, state, players)
 
 
-def _path(start: Square, target: Square) -> list[Square]:
-    """
-    Return a list of squares from start to target
-        excludes start
-        includes target (if different from start)
-    """
-    # find the direction target is from start
-    row_change = target.row - start.row
-    col_change = target.col - start.col
-
-    # step towards the target, updating start until we reach the target
-    path = []
-    while start != target:
-        start = Square(start.row + row_change, start.col + col_change)
-        path.append(start)
-    return path
-
-
 async def _check_web(
     start: Square, target: Square, state: State, moving_player: Player
 ) -> None:
@@ -176,7 +159,7 @@ async def _check_web(
 
     # if any of the squares on the path are enemy webs, the player skips their next turn
     # also clears any webs they stepped on
-    for square in _path(start, target):
+    for square in path(start, target):
         if square in enemy_webs:
             state.skip_next_turn[moving_player] = True
             enemy_webs.remove(square)
@@ -255,14 +238,6 @@ async def _resolve_action(
     # spider goes again after exchange
     if action == Tile.SPIDER and target in state.exchange_positions:
         state.go_again = True
-
-    # spider lays web on all traveled squares
-    if action == Tile.SPIDER:
-        if start not in state.webs[state.current_player]:
-            state.webs[state.current_player].append(start)
-        for square in _path(start, target):
-            if square not in state.webs[state.current_player]:
-                state.webs[state.current_player].append(square)
 
 
 async def _select_action(
@@ -718,7 +693,7 @@ async def _play_one_turn(state: State, players: dict[Player, Agent]) -> None:
         await _maybe_smite(state, players)
 
         if state.go_again:
-            state.log(f"{state.current_player.format_for_log()} takes another action.")
+            state.log(f"{state.current_player.format_for_log()} can move again.")
 
 
 async def play_one_game(
@@ -740,6 +715,8 @@ async def play_one_game(
         state.check_consistency()
 
         await _play_one_turn(state, players)
+
+        state.next_turn()
 
         await broadcast_state_changed(state, players)
 

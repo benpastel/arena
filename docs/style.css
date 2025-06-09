@@ -281,14 +281,23 @@ currently available actions are highlighted
   cursor: pointer;
 }
 
+/* Web styling - tints the cell background to show player control */
 .web {
-  position: absolute;  /* Take out of normal flow to overlay on cell contents */
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);  /* Center perfectly in cell */
-  font-size: 2em;  /* Make web emoji larger than normal text */
-  opacity: 0.5;  /* Semi-transparent to not obscure underlying content */
-  pointer-events: none;  /* Allow clicks to pass through to underlying elements */
-  /* Color is inherited from the player class (north/south) */
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.3;  /* Semi-transparent overlay */
+  pointer-events: none;  /* Allow clicks to pass through */
+}
+
+/* Set background colors for web overlays */
+.web.north {
+  background-color: red;
+}
+
+.web.south {
+  background-color: blue;
 }
 

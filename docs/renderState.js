@@ -218,7 +218,7 @@ function renderHand(player_view) {
   }
 }
 
-function renderWebs(player_view) {
+function renderWebs(board, player_view) {
   // clear all webs
   for (const cell of board.querySelectorAll(".cell")) {
     const existingWeb = cell.querySelector('.web');
@@ -227,14 +227,13 @@ function renderWebs(player_view) {
     }
   }
 
-  // add webs for each player, as semi-transparent emoji
+  // add webs for each player as background tints
   for (const player of PLAYERS) {
     const webs = player_view.webs[player];
-    for (const square of webs) {
-      const cell = findCell(board, square.row, square.col);
+    for (const [r, c] of webs) {
+      const cell = findCell(board, r, c);
 
-      const web = document.createElement('span');
-      web.innerHTML = '🕸️';
+      const web = document.createElement('div');
       web.classList.add('web', player);
       cell.appendChild(web);
     }

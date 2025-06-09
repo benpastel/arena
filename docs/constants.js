@@ -91,9 +91,10 @@ const TOOLTIPS = {
     + "x x x<br>"
     + "<br>reflected by THIEF",
   "🀗": "SPIDER<br>move 2, gain $0<br>after exchange, gain a turn<br>"
-    + "drops web<br>"
-    + "- enemy crossing it loses a turn<br>"
-    + "- catches fireballs; destroyed by fireballs & grenades",
+    + "lays webs<br>"
+    + "enemy crossing web loses a turn<br>"
+    + "webs block fireballs<br>"
+    + "fireballs & grenades destroy webs",
   "👍": "ACCEPT",
   "🚩": "CHALLENGE"
 }

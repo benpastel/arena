@@ -22,6 +22,7 @@ COIN_GAIN = {
     Tile.HARVESTER: 4,
     Tile.TRICKSTER: 1,
     Tile.BACKSTABBER: 2,
+    Tile.SPIDER: 0,
 }
 SMITE_COST = 7
 GRENADES_COST = 3
@@ -33,6 +34,24 @@ THIEF_STEAL_AMOUNT = 4
 BACKSTAB_COST = 3
 RAM_COST = 3
 WEB_STEAL_AMOUNT = 3
+
+
+def path(start: Square, target: Square) -> list[Square]:
+    """
+    Return a list of squares from start to target
+        excludes start
+        includes target (if different from start)
+    """
+    # find the direction target is from start
+    row_change = 1 if target.row > start.row else -1 if target.row < start.row else 0
+    col_change = 1 if target.col > start.col else -1 if target.col < start.col else 0
+
+    # step towards the target, updating start until we reach the target
+    path = []
+    while start != target:
+        start = Square(start.row + row_change, start.col + col_change)
+        path.append(start)
+    return path
 
 
 def _all_distances(
@@ -207,7 +226,8 @@ def _fireball_targets(
     """
     assert len(enemies_and_webs) > 0
     assert all(t in obstructions for t in enemies_and_webs)
-    assert start not in obstructions
+    if start in obstructions:
+        obstructions.remove(start)
 
     # start by finding the impact square in each diagonal direction
     impact_squares = []
@@ -439,9 +459,21 @@ def take_action(
     enemy = state.other_player
     repeats = 2 if state.x2_tile == action else 1
 
-    if action in (OtherAction.MOVE, Tile.FLOWER, Tile.BIRD, Tile.HARVESTER) or (
-        action == Tile.BACKSTABBER and state.maybe_player_at(target) is None
-    ):
+    # spider lays web on all traveled squares
+    if action == Tile.SPIDER:
+        if start not in state.webs[state.current_player]:
+            state.webs[state.current_player].append(start)
+        for square in path(start, target):
+            if square not in state.webs[state.current_player]:
+                state.webs[state.current_player].append(square)
+
+    if action in (
+        OtherAction.MOVE,
+        Tile.FLOWER,
+        Tile.BIRD,
+        Tile.HARVESTER,
+        Tile.SPIDER,
+    ) or (action == Tile.BACKSTABBER and state.maybe_player_at(target) is None):
         # move to the target square
         start_index = state.positions[player].index(start)
         state.positions[player][start_index] = target
