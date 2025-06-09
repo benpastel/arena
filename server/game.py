@@ -238,9 +238,9 @@ async def _resolve_action(
         await _check_special_square(target, state, players)
 
         # current player moved to target
-        await _check_web(target, target, state, moving_player=state.current_player)
+        await _check_web(start, target, state, moving_player=state.current_player)
         # other player moved to start
-        await _check_web(start, start, state, moving_player=state.other_player)
+        await _check_web(target, start, state, moving_player=state.other_player)
 
     # spider goes again after exchange
     if action == Tile.SPIDER and target in state.exchange_positions:
