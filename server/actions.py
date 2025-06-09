@@ -34,6 +34,7 @@ BACKSTAB_COST = 3
 RAM_COST = 3
 WEB_STEAL_AMOUNT = 3
 
+
 def _all_distances(
     start: Square,
     obstructions: list[Square],
@@ -365,10 +366,12 @@ def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
         ]
 
     if coins >= FIREBALL_COST:
-        web_positions = state.web_positions[state.current_player] + state.web_positions[state.other_player]
-        enemies_and_webs = enemy_positions + web_positions
-        fireball_obstructions = obstructions + web_positions
-        actions[Tile.FIREBALL] = _fireball_targets(start, fireball_obstructions, enemies_and_webs)
+        webs = state.webs[state.current_player] + state.webs[state.other_player]
+        enemies_and_webs = enemy_positions + webs
+        fireball_obstructions = obstructions + webs
+        actions[Tile.FIREBALL] = _fireball_targets(
+            start, fireball_obstructions, enemies_and_webs
+        )
 
     # drop actions with no valid targets
     ok_actions = {a: targets for a, targets in actions.items() if len(targets) > 0}

@@ -1,4 +1,5 @@
 from random import shuffle
+from typing import Literal
 
 from pydantic import BaseModel, computed_field
 
@@ -69,7 +70,7 @@ class State(BaseModel):
     # if an opponent passes through, they'll lose their next turn (doesn't stack)
     webs: dict[Player, list[Square]]
     skip_next_turn: dict[Player, bool]
-    go_again: bool # when a spider exchanges, the current player may go again
+    go_again: bool  # when a spider exchanges, the current player may go again
 
     # human-readable event log of public information
     # TODO: nested indentation?
@@ -380,7 +381,7 @@ def new_state(
     Return a new state with the tiles randomly dealt.
     """
     # if the tileset is not default, randomize everything
-    randomize = (tileset != "default")
+    randomize = tileset != "default"
 
     start_coins_per_player = choose_start_coins(randomize)
     smite_cost = choose_smite_cost(randomize)
@@ -427,7 +428,7 @@ def new_state(
         },
         discard=[],
         coins=start_coins,
-        webs={Player.N: [], Player.S: []}, # no webs start on board
+        webs={Player.N: [], Player.S: []},  # no webs start on board
         skip_next_turn={Player.N: False, Player.S: False},
         go_again=False,
         public_log=[],

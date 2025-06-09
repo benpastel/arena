@@ -166,7 +166,9 @@ def _path(start: Square, target: Square) -> list[Square]:
     return path
 
 
-async def _check_web(start: Square, target: Square, state: State, moving_player: Player) -> None:
+async def _check_web(
+    start: Square, target: Square, state: State, moving_player: Player
+) -> None:
     """
     If the player moved onto an enemy web, they'll skip their next turn.  Doesn't stack.
     """
@@ -224,7 +226,7 @@ async def _resolve_action(
         Tile.SPIDER,
     ):
         await _check_special_square(target, state, players)
-        await _check_web(start, target, state, moving_player = state.current_player)
+        await _check_web(start, target, state, moving_player=state.current_player)
 
     # hook may have pulled someone onto one, or dragged someone across a web
     if action == Tile.HOOK:
@@ -246,9 +248,9 @@ async def _resolve_action(
         await _check_special_square(target, state, players)
 
         # current player moved to target
-        await _check_web(target, target, state, moving_player = state.current_player)
+        await _check_web(target, target, state, moving_player=state.current_player)
         # other player moved to start
-        await _check_web(start, start, state, moving_player = state.other_player)
+        await _check_web(start, start, state, moving_player=state.other_player)
 
     # spider goes again after exchange
     if action == Tile.SPIDER and target in state.exchange_positions:
@@ -257,10 +259,10 @@ async def _resolve_action(
     # spider lays web on all traveled squares
     if action == Tile.SPIDER:
         if start not in state.webs[state.current_player]:
-            state.webs[state.current_player].add(start)
+            state.webs[state.current_player].append(start)
         for square in _path(start, target):
             if square not in state.webs[state.current_player]:
-                state.webs[state.current_player].add(square)
+                state.webs[state.current_player].append(square)
 
 
 async def _select_action(
@@ -673,14 +675,18 @@ async def _play_one_turn(state: State, players: dict[Player, Agent]) -> None:
             # which the original player may challenge
             reflect_response = await _select_reflect_response(response, state, players)
             target_tile = state.tile_at(target)
-            reveal_msg = f"{state.other_player.format_for_log()} reveals a {target_tile}."
+            reveal_msg = (
+                f"{state.other_player.format_for_log()} reveals a {target_tile}."
+            )
 
             if reflect_response == Response.ACCEPT:
                 # reflect succeeds
                 # original action fails
                 state.log(f"{action} reflected.")
                 await clear_selection(players)
-                await _resolve_action(start, action, target, state, players, reflect=True)
+                await _resolve_action(
+                    start, action, target, state, players, reflect=True
+                )
             elif target_tile == response:
                 # challenge fails
                 # reflect succeeds
@@ -691,7 +697,9 @@ async def _play_one_turn(state: State, players: dict[Player, Agent]) -> None:
                     + f" Challenge fails!  First the {response} is reflected, then {state.current_player.format_for_log()} will choose a tile to lose."
                 )
                 await clear_selection(players)
-                await _resolve_action(start, action, target, state, players, reflect=True)
+                await _resolve_action(
+                    start, action, target, state, players, reflect=True
+                )
                 await _lose_tile(state.current_player, state, players)
             else:
                 state.reveal_at(target)
@@ -714,7 +722,9 @@ async def _play_one_turn(state: State, players: dict[Player, Agent]) -> None:
 
 
 async def play_one_game(
-    match_score: dict[Player, int], players: dict[Player, Agent], tileset: Literal["random", "default", "new"]
+    match_score: dict[Player, int],
+    players: dict[Player, Agent],
+    tileset: Literal["random", "default", "new"],
 ) -> dict[Player, int]:
     """
     Play one game on the connected websockets.
@@ -738,7 +748,9 @@ async def play_one_game(
     return state.game_score
 
 
-async def play_one_match(players: dict[Player, Agent], tileset: Literal["random", "default", "new"]) -> None:
+async def play_one_match(
+    players: dict[Player, Agent], tileset: Literal["random", "default", "new"]
+) -> None:
     """
     Play games forever in a loop, updating the match score and broadcasting each game's score.
     """
