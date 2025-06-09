@@ -189,6 +189,10 @@ class State(BaseModel):
         """All squares with a tile on board, regardless of player"""
         return self.positions[Player.N] + self.positions[Player.S]
 
+    def all_webs(self) -> list[Square]:
+        """All squares with a web on board, regardless of player"""
+        return self.webs[Player.N] + self.webs[Player.S]
+
     def log(self, msg: str) -> None:
         self.public_log.append(msg)
 

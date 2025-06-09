@@ -155,6 +155,8 @@ async def _check_web(
     """
     If the player moved onto an enemy web, they'll skip their next turn.  Doesn't stack.
     """
+    already_skipping = state.skip_next_turn[moving_player]
+
     enemy_webs = state.webs[other_player(moving_player)]
 
     # if any of the squares on the path are enemy webs, the player skips their next turn
@@ -163,6 +165,11 @@ async def _check_web(
         if square in enemy_webs:
             state.skip_next_turn[moving_player] = True
             enemy_webs.remove(square)
+
+    if state.skip_next_turn[moving_player] and not already_skipping:
+        state.log(
+            f"{moving_player.format_for_log()} is tangled in WEB 🕸️ and will skip their next turn."
+        )
 
 
 async def _resolve_action(
@@ -593,6 +600,7 @@ async def _play_one_turn(state: State, players: dict[Player, Agent]) -> None:
     if state.skip_next_turn[state.current_player]:
         state.log(f"{state.current_player.format_for_log()} skips their turn.")
         state.skip_next_turn[state.current_player] = False
+        await broadcast_state_changed(state, players)
         return
 
     # maybe give a bonus to current player for starting on the bonus square
@@ -694,6 +702,8 @@ async def _play_one_turn(state: State, players: dict[Player, Agent]) -> None:
 
         if state.go_again:
             state.log(f"{state.current_player.format_for_log()} can move again.")
+
+        await broadcast_state_changed(state, players)
 
 
 async def play_one_game(

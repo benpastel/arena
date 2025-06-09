@@ -386,9 +386,8 @@ def valid_targets(start: Square, state: State) -> dict[Action, list[Square]]:
         ]
 
     if coins >= FIREBALL_COST:
-        webs = state.webs[state.current_player] + state.webs[state.other_player]
-        enemies_and_webs = enemy_positions + webs
-        fireball_obstructions = obstructions + webs
+        enemies_and_webs = enemy_positions + state.all_webs()
+        fireball_obstructions = obstructions + state.all_webs()
         actions[Tile.FIREBALL] = _fireball_targets(
             start, fireball_obstructions, enemies_and_webs
         )
@@ -559,14 +558,22 @@ def take_action(
         # pay cost
         state.coins[player] -= GRENADES_COST
 
-        # see `_explosion_hits` for definition of who dies
+        # remove all webs hit by blast
+        for web in _explosion_hits(target, state.webs[player]):
+            state.webs[player].remove(web)
+        for web in _explosion_hits(target, state.webs[enemy]):
+            state.webs[enemy].remove(web)
         return _explosion_hits(target, state.all_positions())
 
     if action == Tile.FIREBALL:
         # pay cost
         state.coins[player] -= FIREBALL_COST
 
-        # see `_explosion_hits` for definition of who dies
+        # remove all webs hit by blast
+        for web in _explosion_hits(target, state.webs[player]):
+            state.webs[player].remove(web)
+        for web in _explosion_hits(target, state.webs[enemy]):
+            state.webs[enemy].remove(web)
         return _explosion_hits(target, state.all_positions())
 
     if action == Tile.KNIVES:
