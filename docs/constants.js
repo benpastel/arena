@@ -23,7 +23,8 @@ const TILES = {
   "🀒": "🀒", // knives
   "🀍": "🀍", // hook
   "🀨": "🀨", // harvester
-  "🀗": "🀗", // backstabber
+  "🀗": "🀗", // spider
+  "🀇": "🀇", // backstabber
   "🀙": "🀙", // fireball
   "🀩": "🀩", // trickster
   "🀎": "🀎", // ram
