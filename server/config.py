@@ -6,6 +6,9 @@ import random
 from typing import Literal
 from server.constants import Square, Player, COLUMNS, ROWS, Tile
 
+# All tileset names accepted by the server / URL ?tiles= param.
+Tileset = Literal["random", "default", "new", "default2"]
+
 # how much extra $ do you get from sitting on the bonus square, randomized per game
 POSSIBLE_BONUS_AMOUNTS = [1, 2, 3]
 DEFAULT_BONUS_AMOUNT = 2
@@ -55,70 +58,80 @@ NEW_TILES = [
     Tile.THIEF,
     Tile.HARVESTER,
 ]
+# curated 5-tile set with randomized smite/bonus/coins
+DEFAULT2_TILES = [
+    Tile.HARVESTER,
+    Tile.BIRD,
+    Tile.FIREBALL,
+    Tile.THIEF,
+    Tile.HOOK,
+]
 
 
-def bonus_and_exchange_positions() -> tuple[Square, list[Square]]:
+def bonus_and_exchange_positions(rng: random.Random) -> tuple[Square, list[Square]]:
     # Always randomized.
     # randomly shuffle the middle squares,
     # then deal them out by index
     squares = [Square(2, c) for c in range(COLUMNS)]
-    random.shuffle(squares)
+    rng.shuffle(squares)
     return squares[0], [squares[1], squares[2]]
 
 
-def choose_bonus_amount(randomize: bool) -> int:
+def choose_bonus_amount(randomize: bool, rng: random.Random) -> int:
     if randomize:
-        return random.choice(POSSIBLE_BONUS_AMOUNTS)
+        return rng.choice(POSSIBLE_BONUS_AMOUNTS)
     else:
         return DEFAULT_BONUS_AMOUNT
 
 
-def choose_bonus_reveal(randomize: bool) -> int:
+def choose_bonus_reveal(randomize: bool, rng: random.Random) -> int:
     if randomize:
-        return random.choice(POSSIBLE_BONUS_REVEALS)
+        return rng.choice(POSSIBLE_BONUS_REVEALS)
     else:
         return DEFAULT_BONUS_REVEAL
 
 
-def choose_smite_cost(randomize: bool) -> int:
+def choose_smite_cost(randomize: bool, rng: random.Random) -> int:
     if randomize:
-        return random.choice(POSSIBLE_SMITE_COSTS)
+        return rng.choice(POSSIBLE_SMITE_COSTS)
     else:
         return DEFAULT_SMITE_COST
 
 
-def choose_start_coins(randomize: bool) -> int:
+def choose_start_coins(randomize: bool, rng: random.Random) -> int:
     if randomize:
-        return random.choice(POSSIBLE_START_COINS)
+        return rng.choice(POSSIBLE_START_COINS)
     else:
         return DEFAULT_START_COINS
 
 
-def choose_start_positions() -> dict[Player, list[Square]]:
+def choose_start_positions(rng: random.Random) -> dict[Player, list[Square]]:
     # Always randomized.
     # randomly shuffle the column indices for the first and last rows
     # then deal them out by index
     top = [Square(0, c) for c in range(COLUMNS)]
     bottom = [Square(ROWS - 1, c) for c in range(COLUMNS)]
-    random.shuffle(top)
-    random.shuffle(bottom)
+    rng.shuffle(top)
+    rng.shuffle(bottom)
     return {
         Player.N: [top[0], top[1]],
         Player.S: [bottom[0], bottom[1]],
     }
 
 
-def choose_tiles_in_game(tileset: Literal["random", "default", "new"]) -> list[Tile]:
+def choose_tiles_in_game(tileset: Tileset, rng: random.Random) -> list[Tile]:
     if tileset == "random":
         # choose 5 tiles at random
         # preserve the original ordering, which is ordered in increasing complexity
         # for a better learning curve when first reading the tooltips
-        random_indices = random.sample(range(len(POSSIBLE_TILES)), 5)
+        random_indices = rng.sample(range(len(POSSIBLE_TILES)), 5)
         random_indices = sorted(random_indices)
         return [POSSIBLE_TILES[i] for i in random_indices]
     elif tileset == "default":
         return DEFAULT_TILES
     elif tileset == "new":
         return NEW_TILES
+    elif tileset == "default2":
+        return DEFAULT2_TILES
     else:
         raise ValueError(f"Invalid tileset: {tileset}")

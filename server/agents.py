@@ -25,12 +25,14 @@ class Human:
         possible_squares: list[Square],
         prompt: str,
         true_action_hint: Action | None,
+        previews: list[dict] | None = None,
     ) -> Action | Square:
         return await choose_action_or_square(
             possible_actions,
             possible_squares,
             prompt,
             self.websocket,
+            previews=previews,
         )
 
     async def choose_square_or_hand(
@@ -110,6 +112,7 @@ class RandomBot:
         possible_squares: list[Square],
         prompt: str,
         true_action_hint: Action | None,
+        previews: list[dict] | None = None,  # bots ignore previews
     ) -> Action | Square:
 
         # if there's a true, nonmove action, always take it

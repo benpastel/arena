@@ -57,7 +57,8 @@ const TOOLTIPS = {
     + ". X X X .<br>"
     + ". . X . .",
   "🀛": "GRENADES<br>pay $3<br>"
-    + "roll a grenade to the X if unobstructed and explode a 3x3 square:<br>"
+    + "roll a grenade to an X (midpoint must be empty),<br>"
+    + "explode a 3x3 square at impact:<br>"
     + "<br>"
     + ". . X . .<br>"
     + ". . . . .<br>"
@@ -72,12 +73,18 @@ const TOOLTIPS = {
     + ". 5 1 5 .<br>"
     + ". . 5 . .<br>"
     + "reflected by KNIVES",
-  "🀍": "HOOK<br>steal $2<br>in straight or diagonal line<br>reflected by HOOK",
+  "🀍": "HOOK<br>steal $2<br>"
+    + "in straight or diagonal line of sight<br>"
+    + "pull enemy to the square next to you<br>"
+    + "reflected by HOOK",
   "🀨": "HARVESTER<br>gain $4<br>move forward 1",
   "🀇": "BACKSTABBER<br>pay $3, kill behind you<br>reflected by BACKSTABBER<br>"
     + "OR<br>"
     + "move 2, gain $1",
-  "🀙": "FIREBALL<br>pay $3<br>explode at target<br>direct hits reflected by FIREBALL",
+  "🀙": "FIREBALL<br>pay $3<br>"
+    + "fire diagonally; stops at first tile or web<br>"
+    + "3x3 explosion at impact (destroys tiles & webs)<br>"
+    + "direct hits reflected by FIREBALL",
   "🀩": "TRICKSTER<br>gain $1<br>move knight-like<br>if you land on an enemy, switch identities<br>and bump them to a random adjacent unoccupied square",
   "🀎": "RAM<br>pay $3, move 1 cardinal<br>"
     + "then knockback: all tiles adjacent to where you end up get pushed back 1<br>"

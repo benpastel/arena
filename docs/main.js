@@ -28,6 +28,9 @@ import {
   highlightActions,
   highlightHand,
   highlightBoardTiles,
+  renderPreviews,
+  activatePreviewAt,
+  deactivateAllPreviews,
 } from "./renderHighlights.js";
 
 
@@ -41,26 +44,39 @@ function joinGame(prompt, websocket) {
   websocket.addEventListener("open", () => {
     // send an "join" event informing the server which player we are
     // based on hardcoded url ?player=north or ?player=south, or ?player=solo
-    // and ?tiles=random, ?tiles=default, or ?tiles=new
+    // and ?tiles=random, ?tiles=default, ?tiles=new, or ?tiles=default2
+    // and optional ?seed=<int> to reproduce a starting deal
     const params = new URLSearchParams(window.location.search);
     const player = params.get("player").toLowerCase();
     const tiles = params.get("tiles").toLowerCase();
+    const seedParam = params.get("seed");
     if (! (player === NORTH_PLAYER || player === SOUTH_PLAYER || player === SOLO_MODE)) {
       const msg = `⚠️⚠️⚠️<br>Set your url to ?player=${NORTH_PLAYER} or ?player=${SOUTH_PLAYER} or ?player=${SOLO_MODE}<br>⚠️⚠️⚠️`;
       prompt.innerHTML = msg;
       console.log(params);
       throw new Error(msg);
     }
-    if (! (tiles === "random" || tiles === "default" || tiles === "new")) {
-      const msg = `⚠️⚠️⚠️<br>Set your url to ?tiles=random, ?tiles=default, or ?tiles=new<br>⚠️⚠️⚠️`;
+    if (! (tiles === "random" || tiles === "default" || tiles === "new" || tiles === "default2")) {
+      const msg = `⚠️⚠️⚠️<br>Set your url to ?tiles=random, ?tiles=default, ?tiles=new, or ?tiles=default2<br>⚠️⚠️⚠️`;
       prompt.innerHTML = msg;
       console.log(params);
       throw new Error(msg);
     }
+    let seed = null;
+    if (seedParam !== null && seedParam !== "") {
+      const parsed = parseInt(seedParam, 10);
+      if (!Number.isFinite(parsed) || parsed < 0) {
+        const msg = `⚠️⚠️⚠️<br>?seed= must be a non-negative integer<br>⚠️⚠️⚠️`;
+        prompt.innerHTML = msg;
+        throw new Error(msg);
+      }
+      seed = parsed;
+    }
     const event = {
       type: "join",
       player,
-      tiles
+      tiles,
+      seed,
     };
     websocket.send(JSON.stringify(event));
   });
@@ -81,6 +97,17 @@ window.addEventListener("DOMContentLoaded", () => {
   // Initialize the UI.
   const board = document.querySelector(".board");
   createBoard(board);
+
+  // attach preview hover handlers once; they consult the live preview map
+  // populated by renderPreviews each HIGHLIGHT_CHANGE.
+  for (const cell of board.querySelectorAll(".cell")) {
+    cell.addEventListener("mouseenter", () => {
+      const r = parseInt(cell.dataset.row);
+      const c = parseInt(cell.dataset.column);
+      activatePreviewAt(r, c, board);
+    });
+    cell.addEventListener("mouseleave", () => deactivateAllPreviews(board));
+  }
 
   const prompt = document.querySelector(".prompt");
   prompt.innerHTML = "⌛⌛⌛<br>Waiting for other player to join<br>⌛⌛⌛";
@@ -203,11 +230,13 @@ function receiveHighlights(board, actionPanel, infoPanel, websocket) {
       const actions = event["actions"];
       const handTiles = event["handTiles"];
       const boardTiles = event["boardTiles"];
+      const previews = event["previews"];
 
       highlightSquares(squares, board);
       highlightActions(actions, actionPanel);
       highlightHand(handTiles, infoPanel);
       highlightBoardTiles(boardTiles, board);
+      renderPreviews(previews, board);
     }
   });
 }
