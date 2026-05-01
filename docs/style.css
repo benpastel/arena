@@ -281,51 +281,6 @@ currently available actions are highlighted
   cursor: pointer;
 }
 
-/* small footer in the .other panel that shows the initial-deal seed */
-.seed {
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 1.6vh;
-  color: lightgrey;
-  margin-top: 0.5vh;
-}
-
-/*
-Action preview overlays for fireball / grenades / hook.
-Server sends per-target {path, explosion, landing} squares; renderPreviews adds
-faint .preview overlays on every involved cell, and adds .active on hover over
-the target so a single trajectory + AOE pops out.
-*/
-.preview {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  transition: opacity 0.08s linear;
-}
-.preview.path {
-  background-color: orange;
-  opacity: 0.08;
-}
-.preview.path.active {
-  opacity: 0.4;
-}
-.preview.explosion {
-  background-color: red;
-  opacity: 0.06;
-}
-.preview.explosion.active {
-  opacity: 0.35;
-}
-.preview.landing {
-  background-color: gold;
-  opacity: 0.12;
-}
-.preview.landing.active {
-  opacity: 0.55;
-}
-
 /* Web styling - tints the cell background to show player control */
 .web {
   position: absolute;

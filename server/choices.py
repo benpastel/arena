@@ -87,7 +87,6 @@ async def _send_highlights(
     actions: list[Action | Response],
     hand_tiles: list[Tile],
     board_tiles: list[Tile],
-    previews: list[dict] | None = None,
 ):
     event = {
         "type": OutEventType.HIGHLIGHT_CHANGE,
@@ -95,8 +94,6 @@ async def _send_highlights(
         "actions": actions,
         "handTiles": hand_tiles,
         "boardTiles": board_tiles,
-        # per-target previews (path / explosion / landing) for fireball, grenades, hook
-        "previews": previews or [],
     }
     await websocket.send(json.dumps(event))
 
@@ -108,15 +105,12 @@ async def _highlighted(
     actions: list[Action | Response] = [],
     hand_tiles: list[Tile] = [],
     board_tiles: list[Tile] = [],
-    previews: list[dict] | None = None,
 ):
     """Sends a list of highlighted options to the player.  Clears highlights when done."""
-    await _send_highlights(
-        websocket, squares, actions, hand_tiles, board_tiles, previews
-    )
+    await _send_highlights(websocket, squares, actions, hand_tiles, board_tiles)
     yield
     # clear highlights in UI by highlighting empty lists
-    await _send_highlights(websocket, [], [], [], [], None)
+    await _send_highlights(websocket, [], [], [], [])
 
 
 async def choose_action_or_square(
@@ -124,13 +118,11 @@ async def choose_action_or_square(
     possible_squares: list[Square],
     prompt: str,
     websocket: WebSocketServerProtocol,
-    previews: list[dict] | None = None,
 ) -> Action | Square:
     async with _highlighted(
         websocket,
         actions=cast(list[Action | Response], possible_actions),
         squares=possible_squares,
-        previews=previews,
     ):
         # loop until we get a valid action or square
         while True:

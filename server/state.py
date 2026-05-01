@@ -1,4 +1,5 @@
-import random
+from random import shuffle
+from typing import Literal
 
 from pydantic import BaseModel, computed_field
 
@@ -18,11 +19,7 @@ from server.config import (
     choose_start_positions,
     choose_tiles_in_game,
     NEGATIVE_COINS_OK,
-    Tileset,
 )
-
-# Seeds are 32-bit unsigned ints; URL-friendly and plenty of entropy for the initial deal.
-SEED_MAX = 2**32
 
 
 class State(BaseModel):
@@ -100,10 +97,6 @@ class State(BaseModel):
     smite_cost: int  # automatically smite when money reaches this amount
 
     game_score: dict[Player, int] = {Player.N: 0, Player.S: 0}
-
-    # seed used for the initial deal of this game; in-game shuffles use the global RNG.
-    # exposed to the players so they can rerun the same starting position (?seed= URL param).
-    seed: int
 
     @computed_field  # type: ignore[misc]
     @property
@@ -290,7 +283,6 @@ class State(BaseModel):
             smite_cost=self.smite_cost,
             x2_tile=self.x2_tile,
             exchange_positions=self.exchange_positions,
-            seed=self.seed,
         )
 
     def check_consistency(self) -> None:
@@ -387,30 +379,21 @@ class State(BaseModel):
 
 def new_state(
     match_score: dict[Player, int],
-    tileset: Tileset,
-    seed: int | None = None,
+    tileset: Literal["random", "default", "new"],
 ) -> State:
     """
     Return a new state with the tiles randomly dealt.
-
-    If `seed` is given, it fully determines the initial deal (positions, tiles, bonus, etc).
-    Otherwise a fresh seed is generated.  Either way, the resolved seed is stored on the state.
-    In-game shuffles (e.g. exchange tiles, bot decisions) keep using the global RNG.
     """
-    if seed is None:
-        seed = random.randrange(SEED_MAX)
-    rng = random.Random(seed)
-
     # if the tileset is not default, randomize everything
     randomize = tileset != "default"
 
-    start_coins_per_player = choose_start_coins(randomize, rng)
-    smite_cost = choose_smite_cost(randomize, rng)
-    bonus_amount = choose_bonus_amount(randomize, rng)
-    bonus_reveal = choose_bonus_reveal(randomize, rng)
-    tiles_in_game = choose_tiles_in_game(tileset, rng)
-    start_positions = choose_start_positions(rng)
-    bonus_position, exchange_positions = bonus_and_exchange_positions(rng)
+    start_coins_per_player = choose_start_coins(randomize)
+    smite_cost = choose_smite_cost(randomize)
+    bonus_amount = choose_bonus_amount(randomize)
+    bonus_reveal = choose_bonus_reveal(randomize)
+    tiles_in_game = choose_tiles_in_game(tileset)
+    start_positions = choose_start_positions()
+    bonus_position, exchange_positions = bonus_and_exchange_positions()
 
     start_coins = {
         Player.N: start_coins_per_player,
@@ -424,7 +407,7 @@ def new_state(
     assert len(tiles) == 15
 
     # shuffle, then deal out the cards from fixed indices
-    rng.shuffle(tiles)
+    shuffle(tiles)
 
     x2_tile = None  # TODO: x2 tile no longer supported; remove all references
 
@@ -463,5 +446,4 @@ def new_state(
         bonus_reveal=bonus_reveal,
         x2_tile=x2_tile,
         smite_cost=smite_cost,
-        seed=seed,
     )

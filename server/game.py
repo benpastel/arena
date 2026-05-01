@@ -1,4 +1,4 @@
-from typing import Optional, cast
+from typing import Optional, cast, Literal
 from random import shuffle
 import asyncio
 
@@ -9,13 +9,8 @@ from server.actions import (
     reflect_action,
     grapple_end_square,
     path,
-    target_preview,
 )
-
-# tiles whose targeting benefits from a path/explosion/landing visualization
-PREVIEW_ACTIONS = (Tile.FIREBALL, Tile.GRENADES, Tile.HOOK)
 from server.state import new_state, State
-from server.config import Tileset
 from server.constants import (
     Player,
     Square,
@@ -326,20 +321,8 @@ async def _select_action(
             possible_squares = possible_starts + possible_targets
             prompt = "Select a target, or a different action or tile."
 
-        # for fireball/grenades/hook, compute per-target previews so the UI can
-        # shade the trajectory/AOE/landing.  Logic lives in actions.target_preview.
-        previews: list[dict] = []
-        if chosen_action in PREVIEW_ACTIONS:
-            previews = [
-                target_preview(start, chosen_action, t, state) for t in possible_targets
-            ]
-
         choice = await current_agent.choose_action_or_square(
-            possible_actions,
-            possible_squares,
-            prompt,
-            true_action_hint=None,
-            previews=previews,
+            possible_actions, possible_squares, prompt, true_action_hint=None
         )
         if choice in possible_targets:
             # they chose a target
@@ -726,8 +709,7 @@ async def _play_one_turn(state: State, players: dict[Player, Agent]) -> None:
 async def play_one_game(
     match_score: dict[Player, int],
     players: dict[Player, Agent],
-    tileset: Tileset,
-    seed: int | None = None,
+    tileset: Literal["random", "default", "new"],
 ) -> dict[Player, int]:
     """
     Play one game on the connected websockets.
@@ -735,7 +717,7 @@ async def play_one_game(
     Returns the game score.
     """
     # initialize a new game
-    state = new_state(match_score, tileset, seed=seed)
+    state = new_state(match_score, tileset)
     state.log("New game!")
     await broadcast_state_changed(state, players)
 
@@ -754,25 +736,16 @@ async def play_one_game(
 
 
 async def play_one_match(
-    players: dict[Player, Agent],
-    tileset: Tileset,
-    seed: int | None = None,
+    players: dict[Player, Agent], tileset: Literal["random", "default", "new"]
 ) -> None:
     """
     Play games forever in a loop, updating the match score and broadcasting each game's score.
-
-    `seed` (if given) only seeds the FIRST game; subsequent games in the match get fresh seeds.
     """
     print(f"New match with {players}")
     match_score = {Player.N: 0, Player.S: 0}
     try:
-        first_game = True
         while True:
-            game_seed = seed if first_game else None
-            first_game = False
-            game_score = await play_one_game(
-                match_score.copy(), players, tileset, seed=game_seed
-            )
+            game_score = await play_one_game(match_score.copy(), players, tileset)
             for player, points in game_score.items():
                 match_score[player] += points
 

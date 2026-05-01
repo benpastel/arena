@@ -170,49 +170,6 @@ def _explosion_hits(center: Square, positions: list[Square]) -> list[Square]:
     ]
 
 
-def _explosion_squares(center: Square) -> list[Square]:
-    """All on-board squares in the 3x3 centered on `center` (regardless of contents)."""
-    return [
-        Square(r, c)
-        for r in range(center.row - 1, center.row + 2)
-        for c in range(center.col - 1, center.col + 2)
-        if 0 <= r < ROWS and 0 <= c < COLUMNS
-    ]
-
-
-def target_preview(
-    start: Square, action: Action, target: Square, state: State
-) -> dict:
-    """
-    Visualization data for an action targeting `target`.  See frontend `renderPreviews`.
-
-    Keys (always present, possibly empty):
-      - "target":    the target square (echoed for client-side lookup)
-      - "path":      squares the action travels through, e.g. fireball trajectory or hook line
-      - "explosion": 3x3 cells affected by the AOE blast (fireball / grenades)
-      - "landing":   square where someone ends up (hook pulls the enemy here)
-    """
-    preview = {
-        "target": target,
-        "path": [],
-        "explosion": [],
-        "landing": None,
-    }
-    if action == Tile.FIREBALL:
-        # impact at `target`; path is the diagonal trail from start, explosion is 3x3 at impact
-        preview["path"] = path(start, target)
-        preview["explosion"] = _explosion_squares(target)
-    elif action == Tile.GRENADES:
-        # grenade rolls over the (empty) midpoint to land on `target`, then explodes 3x3
-        preview["path"] = [_midpoint(start, target), target]
-        preview["explosion"] = _explosion_squares(target)
-    elif action == Tile.HOOK:
-        # rope traces the LOS line; enemy ends up on the square adjacent to start
-        preview["path"] = path(start, target)
-        preview["landing"] = grapple_end_square(start, target, obstructions=[])
-    return preview
-
-
 def _midpoint(x: Square, y: Square) -> Square:
     new_row = (x.row + y.row) // 2
     new_col = (x.col + y.col) // 2

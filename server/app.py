@@ -47,11 +47,7 @@ async def handler(websocket: WebSocketServerProtocol) -> None:
     event = json.loads(message)
     tileset = event["tiles"]
     assert event["type"] == "join"
-    assert tileset in ["random", "default", "new", "default2"]
-
-    # optional ?seed= URL param; None → server generates one for the first game
-    seed_raw = event.get("seed")
-    seed: int | None = int(seed_raw) if seed_raw not in (None, "") else None
+    assert tileset in ["random", "default", "new"]
 
     if event["player"] == SOLO_PLAYER:
         # in solo mode, the player is south and the AI is north
@@ -59,7 +55,7 @@ async def handler(websocket: WebSocketServerProtocol) -> None:
             Player.S: Human(websocket),
             Player.N: RandomBot(),
         }
-        await play_one_match(players, tileset, seed=seed)
+        await play_one_match(players, tileset)
         return
 
     # in pvp, the player is the one specified in the url
@@ -69,8 +65,7 @@ async def handler(websocket: WebSocketServerProtocol) -> None:
 
     if len(PVP_PLAYERS) == 2 and all(w.websocket.open for w in PVP_PLAYERS.values()):
         print(f"{player} connected; starting match")
-        # 2nd-player-to-connect's seed wins, matching the existing tileset behavior
-        await play_one_match(PVP_PLAYERS, tileset, seed=seed)
+        await play_one_match(PVP_PLAYERS, tileset)
         return
     else:
         print(f"{player} waiting for other player")

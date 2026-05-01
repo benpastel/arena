@@ -267,12 +267,6 @@ function renderOther(player_view) {
   for (const tile of player_view.hidden_tiles) {
     contents.innerHTML += tile;
   }
-
-  // seed for the initial deal — share or append ?seed=<value> to the URL to replay it.
-  const seedPanel = document.querySelector('.seed');
-  setTooltip(seedPanel, 'Initial-deal seed.  Add <code>?seed=N</code> to the URL to replay this deal.');
-  const seedContents = document.querySelector('.seed-contents');
-  seedContents.textContent = `seed: ${player_view.seed}`;
 }
 
 
