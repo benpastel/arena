@@ -201,8 +201,15 @@ function renderHand(player_view) {
     const coinElement = panel.querySelector('.coins');
     coinElement.innerHTML = `$${coins}/${player_view.smite_cost}`;
 
-    if (hand.length !== tileElements.length) {
-      // hand changed since the last render
+    // compare by contents, not just count: a rematch can deal a new hand with the
+    // same number of tiles, and a length-only check would leave stale tiles (and
+    // stale dataset.tileName) from the previous game in the DOM.
+    const currentTiles = Array.from(tileElements, (e) => e.dataset.tileName);
+    const handChanged =
+      hand.length !== currentTiles.length ||
+      hand.some((tile, i) => tile !== currentTiles[i]);
+
+    if (handChanged) {
       // redraw from scratch
       for (const element of tileElements) {
         panel.removeChild(element);
