@@ -260,10 +260,19 @@ a {
   font-weight: light;
 }
 
+/* quit gets the bottom-left corner to itself */
+.quit-panel {
+  grid-column: 1 / 2;
+  grid-row: 4 / 5;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  border-bottom-width: 0;
+}
 .quit {
-  font-size: 2vh;
-  padding: 0.3vh 1.5vh;
-  margin: 1vh 0;
+  font-size: 3vh;
 }
 
 /*
@@ -302,7 +311,10 @@ the action panel has buttons for move, smite, the tiles, and the responses
 currently available actions are highlighted
 */
 .actions {
-  grid-column: 1 / 4;
+  grid-column: 2 / 4;
+
+  /* the quit panel's right border is the line between them */
+  border-left-width: 0;
   grid-row: 4 / 4;
 
   display: flex;
