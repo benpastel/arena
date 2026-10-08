@@ -3,12 +3,18 @@
 import {HIGHLIGHT} from "./constants.js";
 
 
-function highlightSquares(squares, board) {
+function highlightSquares(squares, board, mySide) {
   // highlight some squares on the board
   // pass an empty list to clear all highlighting
+  //
+  // a highlighted square holding your own piece is a choice of that piece, which is
+  // drawn on the piece rather than the square
   for (const element of board.querySelectorAll(".cell")) {
     // default unhighlighted
-    element.classList.remove(HIGHLIGHT);
+    element.classList.remove(HIGHLIGHT, "own-piece");
+    if (mySide && (element.classList.contains(mySide) || element.querySelector(`.topRow.${mySide}`))) {
+      element.classList.add("own-piece");
+    }
 
     // highlight if in target list
     const r = parseInt(element.dataset.row);

@@ -188,7 +188,11 @@ function renderBoard(board, player_view, action_panel) {
         // put the tile directly in the cell
         container = cell;
       }
-      container.innerHTML = char;
+      const piece = document.createElement("span");
+      piece.classList.add("piece");
+      piece.textContent = char;
+      container.innerHTML = "";
+      container.append(piece);
       container.classList.add(player);
     }
   }

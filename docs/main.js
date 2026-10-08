@@ -210,7 +210,7 @@ window.addEventListener("DOMContentLoaded", () => {
     } else if (event.type === "HIGHLIGHT_CHANGE") {
       // highlight possible squares, actions, responses, or tiles in hand
       // the server should call this again with empty lists to clear the highlights
-      highlightSquares(event["squares"], board);
+      highlightSquares(event["squares"], board, table?.mySide);
       highlightActions(event["actions"], actionPanel);
       highlightHand(event["handTiles"], infoPanel);
       highlightBoardTiles(event["boardTiles"], board);
@@ -218,15 +218,6 @@ window.addEventListener("DOMContentLoaded", () => {
       // the prompt's text isn't shown; what to do next is in the highlights
       CHOICE_ID = parseInt(event.choiceId);
 
-      // ring the strip of whoever the game is waiting on: us if this prompt wants a
-      // choice, otherwise the opponent
-      if (table && table.mySide) {
-        const opponent = table.mySide === "north" ? "south" : "north";
-        const waitingOn = CHOICE_ID > 0 ? table.mySide : opponent;
-        for (const hand of infoPanel.querySelectorAll(".hand")) {
-          hand.classList.toggle("waiting", hand.classList.contains(waitingOn));
-        }
-      }
     } else if (event.type === "MATCH_CHANGE") {
       alert(event.message);
     }
