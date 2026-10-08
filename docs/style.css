@@ -257,8 +257,12 @@ the unused, discarded and unknown tiles
   font-weight: bold;
 }
 
-/* the other box displays unused, discard, and hidden tiles */
+/* the other box displays unused, discard, and hidden tiles; ruled off from the hands */
 .other {
+  flex: 1;
+  border-top: 5px solid black;
+  border-bottom: 5px solid black;
+
   font-size: 3.5vmin;
 
   display: flex;
