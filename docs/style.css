@@ -671,11 +671,14 @@ the ones that aren't tiles (↕ ✓ 🚩) get a shell
   color: black;
   -webkit-text-stroke: var(--bold) currentColor;
 }
-/* ↕ always in the same corner of its square */
+/* ↕ always in the same corner of its square, and the other options keep clear of it */
 .cell-options .option[data-name="↕"] {
   position: absolute;
   top: 0.4vmin;
   right: 0.4vmin;
+}
+.cell-options:has(.option[data-name="↕"]) {
+  padding-right: calc(0.4vmin + 0.78 * 5vmin + 0.6vmin);
 }
 
 /*
