@@ -5,9 +5,9 @@
   /* a target square that can be clicked gets a ring */
   --ring: 0.4vmin;
 
-  /* a tile that can be clicked is drawn bolder; a picked one is also lifted */
+  /* a tile that can be clicked is drawn bolder; a picked one is also underlined */
   --bold: 0.022em;
-  --lift: -1.5vmin;
+  --picked-bar: 0.7vmin;
 }
 
 body {
@@ -211,7 +211,7 @@ a {
 /* top-level grid containing the board, log, action panel, player info, etc. */
 .container {
   display: grid;
-  grid-template-columns: 1fr 82vmin 1fr;
+  grid-template-columns: minmax(0, 1fr) 82vmin minmax(0, 1fr);
   grid-template-rows: 82vmin 1fr;
   cursor: default;
 
@@ -391,7 +391,7 @@ button.outlined-button:disabled {
 /*
 selection; red and blue only ever say whose piece it is
   - a tile that can be clicked (a piece, in hand, on an exchange, an ability) is
-    drawn bolder, and a picked one is also lifted
+    drawn bolder, and a picked one also gets a bar under it
   - a button in a shell that can be clicked gets a black shell
   - a target square that can be clicked gets a ring (see .cell.highlight)
 */
@@ -413,10 +413,22 @@ selection; red and blue only ever say whose piece it is
 .cell.chosen-start .piece,
 .cell.chosen-target .piece {
   -webkit-text-stroke: var(--bold) currentColor;
-  transform: translateY(var(--lift));
+}
+.chosen-action::after,
+.cell.chosen-start .piece::after,
+.cell.chosen-target .piece::after {
+  content: "";
+  position: absolute;
+  left: 15%;
+  right: 15%;
+  bottom: calc(-1.5 * var(--picked-bar));
+  height: var(--picked-bar);
+  background-color: currentColor;
 }
 .piece {
   display: inline-block;
+  position: relative;
+  line-height: 1;
 }
 /* a button's name stays plain text when its tile is bolded */
 .action-name {
