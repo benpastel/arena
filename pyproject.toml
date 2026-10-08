@@ -1,0 +1,20 @@
+[project]
+name = "arena"
+version = "0.1.0"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "pydantic==2.10.5",
+    "websockets==10.4",
+]
+
+[dependency-groups]
+dev = [
+    "black==23.12.0",
+    "mypy==1.14.1",
+    "playwright",
+    "pyflakes",
+    "pytest==7.2.1",
+]
+
+[tool.uv]
+package = false
