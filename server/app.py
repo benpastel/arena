@@ -4,6 +4,7 @@ import asyncio
 import json
 import os
 import signal
+from http import HTTPStatus
 
 from websockets.exceptions import ConnectionClosed
 from websockets.server import WebSocketServerProtocol, serve
@@ -46,6 +47,13 @@ async def handler(websocket: WebSocketServerProtocol) -> None:
             await LOBBY.disconnect(user, websocket)
 
 
+async def health_check(path: str, request_headers: object) -> tuple | None:
+    # plain HTTP probe for render's health check; anything else proceeds to the websocket handshake
+    if path == "/healthz":
+        return HTTPStatus.OK, [], b"OK\n"
+    return None
+
+
 async def main() -> None:
     # render sends SIGTERM when shutting down an instance; listen & exit gracefully
     loop = asyncio.get_running_loop()
@@ -56,7 +64,7 @@ async def main() -> None:
     print(f"Serving websocket server on port {port}.")
 
     reaper = asyncio.create_task(LOBBY.reap_forever())
-    async with serve(handler, "", port):
+    async with serve(handler, "", port, process_request=health_check):
         await stop
     reaper.cancel()
 
