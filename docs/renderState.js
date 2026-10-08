@@ -11,6 +11,7 @@ import {
   SOUTH_PLAYER,
   HIDDEN_TILE,
   TOOLTIPS,
+  ACTION_NAMES,
 } from "./constants.js";
 
 
@@ -46,6 +47,13 @@ function setTooltip(element, text) {
 }
 
 
+function addActionName(element, name) {
+  const nameElement = document.createElement("span");
+  nameElement.classList.add("action-name");
+  nameElement.textContent = ACTION_NAMES[name];
+  element.append(nameElement);
+}
+
 function createActionPanel(action_panel, tiles) {
   // delete old action panel contents
   for (const element of action_panel.querySelectorAll("div")) {
@@ -58,6 +66,7 @@ function createActionPanel(action_panel, tiles) {
     element.dataset.name = name;
     element.classList = "outlined-button";
     action_panel.append(element);
+    addActionName(element, name);
     setTooltip(element, TOOLTIPS[name]);
   }
   const sep1 = document.createElement('div');
@@ -69,6 +78,7 @@ function createActionPanel(action_panel, tiles) {
     element.dataset.name = name;
     element.classList = "tile-button";
     action_panel.append(element);
+    addActionName(element, name);
     setTooltip(element, TOOLTIPS[name]);
   }
   const sep2 = document.createElement('div');
@@ -80,6 +90,7 @@ function createActionPanel(action_panel, tiles) {
     element.dataset.name = name;
     element.classList = "outlined-button";
     action_panel.append(element);
+    addActionName(element, name);
     setTooltip(element, TOOLTIPS[name]);
   }
   return action_panel;

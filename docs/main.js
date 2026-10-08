@@ -258,7 +258,8 @@ function sendSelection(board, actionPanel, infoPanel, net) {
   // send all clicks on the action panel
   // and let the server decide if they are valid actions or responses
   actionPanel.addEventListener("click", ({ target }) => {
-    const button = target.dataset.name;
+    // the name under a button is part of it; its tooltip isn't
+    const button = target.closest(".tooltiptext") ? undefined : target.closest("[data-name]")?.dataset.name;
     if (button === undefined) {
       return;
     }

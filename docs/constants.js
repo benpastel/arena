@@ -46,6 +46,13 @@ const ALL_TILES = [
   ["🀩", "TRICKSTER"],
   ["🀗", "SPIDER"],
 ];
+// names shown under the action panel buttons
+const ACTION_NAMES = {
+  "↕": "MOVE",
+  ...Object.fromEntries(ALL_TILES),
+  "👍": "ACCEPT",
+  "🚩": "CHALLENGE",
+};
 // must match python TILES_PER_GAME
 const TILES_PER_GAME = 5;
 const OTHER_ACTIONS = {
@@ -133,6 +140,7 @@ export {
   HIDDEN_TILE,
   TOOLTIPS,
   ALL_TILES,
+  ACTION_NAMES,
   TILES_PER_GAME,
 };
 
