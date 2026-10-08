@@ -73,7 +73,7 @@ async def handler(websocket: WebSocketServerProtocol) -> None:
 
 
 async def main() -> None:
-    # heroku sends SIGTERM when shutting down a dyno; listen & exit gracefully
+    # render sends SIGTERM when shutting down an instance; listen & exit gracefully
     loop = asyncio.get_running_loop()
     stop = loop.create_future()
     loop.add_signal_handler(signal.SIGTERM, stop.set_result, None)
