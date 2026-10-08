@@ -8,6 +8,7 @@ from server.constants import (
     Square,
     Response,
     OutEventType,
+    ActionAndTarget,
 )
 from server.seat import Seat
 
@@ -70,6 +71,7 @@ async def _send_highlights(
     actions: list[Action | Response],
     hand_tiles: list[Tile],
     board_tiles: list[Tile],
+    targets: dict[Action, list[Square]] | None = None,
 ):
     event = {
         "type": OutEventType.HIGHLIGHT_CHANGE,
@@ -77,6 +79,10 @@ async def _send_highlights(
         "actions": actions,
         "handTiles": hand_tiles,
         "boardTiles": board_tiles,
+        # every square each action could target, for drawing the options on the board
+        "targets": {
+            action.value: squares for action, squares in (targets or {}).items()
+        },
     }
     await seat.send(event)
 
@@ -88,12 +94,23 @@ async def _highlighted(
     actions: list[Action | Response] = [],
     hand_tiles: list[Tile] = [],
     board_tiles: list[Tile] = [],
+    targets: dict[Action, list[Square]] | None = None,
 ):
     """Sends a list of highlighted options to the player.  Clears highlights when done."""
-    await _send_highlights(seat, squares, actions, hand_tiles, board_tiles)
+    await _send_highlights(seat, squares, actions, hand_tiles, board_tiles, targets)
     yield
     # clear highlights in UI by highlighting empty lists
     await _send_highlights(seat, [], [], [], [])
+
+
+def _parse_action(data: dict) -> Action | None:
+    """The action named by a clicked button, if any."""
+    for kind in (Tile, OtherAction):
+        try:
+            return cast(Action, kind(data["button"]))
+        except (KeyError, ValueError):
+            pass
+    return None
 
 
 async def choose_action_or_square(
@@ -101,11 +118,17 @@ async def choose_action_or_square(
     possible_squares: list[Square],
     prompt: str,
     seat: Seat,
-) -> Action | Square:
+    targets: dict[Action, list[Square]] | None = None,
+) -> Action | Square | ActionAndTarget:
+    """
+    If `targets` is given, the player may also pick an action and its target in one
+    click, which returns them together.
+    """
     async with _highlighted(
         seat,
         actions=cast(list[Action | Response], possible_actions),
         squares=possible_squares,
+        targets=targets,
     ):
         # loop until we get a valid action or square
         while True:
@@ -113,6 +136,13 @@ async def choose_action_or_square(
                 prompt,
                 seat,
             )
+            # try parsing as an action and its target together
+            if targets and "row" in data:
+                action = _parse_action(data)
+                square = Square(row=data.get("row", -1), col=data.get("column", -1))
+                if action in targets and square in targets[action]:
+                    return ActionAndTarget(action, square)
+
             # try parsing as a square
             square = Square(row=data.get("row", -1), col=data.get("column", -1))
             if square in possible_squares:

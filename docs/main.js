@@ -15,7 +15,6 @@ import {renderSelection} from "./renderSelection.js";
 
 import {
   highlightSquares,
-  highlightActions,
   highlightHand,
   highlightBoardTiles,
 } from "./renderHighlights.js";
@@ -84,8 +83,11 @@ window.addEventListener("DOMContentLoaded", () => {
   const toast = document.querySelector(".toast");
 
   // the latest picks / claim, redrawn whenever the board is
+  // and the latest highlights, whose actions and targets are drawn on the board too
   let selection = null;
-  window.addEventListener("resize", () => renderSelection(board, actionPanel, selection));
+  let highlight = null;
+  const redrawSelection = () => renderSelection(board, selection, highlight);
+  window.addEventListener("resize", redrawSelection);
 
   let welcomed = false;
   let table = null;
@@ -201,20 +203,22 @@ window.addEventListener("DOMContentLoaded", () => {
       renderWebs(board, player_view);
       renderHand(player_view);
       renderOther(player_view);
-      renderSelection(board, actionPanel, selection);
+      redrawSelection();
     } else if (event.type === "SELECTION_CHANGE") {
       // update the UI with changes to the current (partially) selected moves.
       // the server should call this again with null selections to clear the highlights.
-      const {player, start, action, target} = event;
-      selection = player || start || action || target ? {player, start, action, target} : null;
-      renderSelection(board, actionPanel, selection);
+      const {player, start, action, target, reflect} = event;
+      selection = player || start || action || target ? {player, start, action, target, reflect} : null;
+      redrawSelection();
     } else if (event.type === "HIGHLIGHT_CHANGE") {
-      // highlight possible squares, actions, responses, or tiles in hand
+      // highlight possible squares or tiles; actions and responses are drawn on the
+      // board, and the action panel below it is only for reference
       // the server should call this again with empty lists to clear the highlights
+      highlight = event;
       highlightSquares(event["squares"], board, table?.mySide);
-      highlightActions(event["actions"], actionPanel);
       highlightHand(event["handTiles"], infoPanel);
       highlightBoardTiles(event["boardTiles"], board);
+      redrawSelection();
     } else if (event.type === "PROMPT") {
       prompt.textContent = event.prompt;
       CHOICE_ID = parseInt(event.choiceId);
@@ -224,14 +228,29 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  sendSelection(board, actionPanel, infoPanel, net);
+  sendSelection(board, infoPanel, net);
 
   net.connect();
 });
 
-function sendSelection(board, actionPanel, infoPanel, net) {
+function sendSelection(board, infoPanel, net) {
   // send all clicks on the board
   board.addEventListener("click", ({ target }) => {
+    // an ability or response drawn on the board; one in a square also picks that square
+    const option = target.closest(".option");
+    if (option) {
+      const data = {button: option.dataset.name};
+      const optionCell = option.closest(".cell");
+      if (optionCell) {
+        data.row = parseInt(optionCell.dataset.row);
+        data.column = parseInt(optionCell.dataset.column);
+      }
+      net.send({choiceId: CHOICE_ID, data});
+      return;
+    }
+    if (target.closest(".claim-note")) {
+      return;
+    }
 
     // send both the square's (row, column)
     // and the tile if it exists
@@ -254,20 +273,6 @@ function sendSelection(board, actionPanel, infoPanel, net) {
     net.send({
       choiceId: CHOICE_ID,
       data
-    });
-  });
-
-  // send all clicks on the action panel
-  // and let the server decide if they are valid actions or responses
-  actionPanel.addEventListener("click", ({ target }) => {
-    // the name under a button is part of it; its tooltip isn't
-    const button = target.closest(".tooltiptext") ? undefined : target.closest("[data-name]")?.dataset.name;
-    if (button === undefined) {
-      return;
-    }
-    net.send({
-      choiceId: CHOICE_ID,
-      data: {button}
     });
   });
 

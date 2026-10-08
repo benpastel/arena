@@ -132,6 +132,13 @@ class OtherAction(str, Enum):
 Action = Tile | OtherAction
 
 
+class ActionAndTarget(NamedTuple):
+    """An action and its target, chosen together in one click."""
+
+    action: Action
+    target: Square
+
+
 class GameResult(str, Enum):
     ONGOING = "Ongoing"
     NORTH_WINS = "North Player Wins!"

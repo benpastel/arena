@@ -12,7 +12,6 @@ const PLAYERS = [NORTH_PLAYER, SOUTH_PLAYER];
 // must match css classes
 const HIGHLIGHT = "highlight"; // squares, actions, or tiles the player can select right now
 const CHOSEN_START = "chosen-start"; // the piece picked mid-turn
-const CHOSEN_ACTION = "chosen-action"; // the ability picked mid-turn
 const CHOSEN_TARGET = "chosen-target"; // a square picked on its own, e.g. the tile to lose
 
 const TILES = {
@@ -132,7 +131,6 @@ export {
   PLAYERS,
   HIGHLIGHT,
   CHOSEN_START,
-  CHOSEN_ACTION,
   CHOSEN_TARGET,
   TILES,
   OTHER_ACTIONS,

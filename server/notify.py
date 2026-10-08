@@ -3,7 +3,7 @@ from typing import Optional
 
 from server.seat import Seat
 from server.state import State
-from server.constants import Player, Square, Action, OutEventType, other_player
+from server.constants import Player, Square, Action, Tile, OutEventType, other_player
 from server.agents import Agent
 
 
@@ -31,6 +31,7 @@ async def broadcast_selection_changed(
     action: Optional[Action],
     target: Optional[Square],
     players: dict[Player, Agent],
+    reflect: Optional[Tile] = None,
 ) -> None:
     """
     Notify both players a selection changed.  See `notify_selection_changed` for details.
@@ -38,7 +39,7 @@ async def broadcast_selection_changed(
     async with asyncio.TaskGroup() as tg:
         for agent in players.values():
             coroutine = notify_selection_changed(
-                selecting_player, start, action, target, agent.seat
+                selecting_player, start, action, target, agent.seat, reflect
             )
             tg.create_task(coroutine)
 
@@ -49,6 +50,7 @@ async def notify_selection_changed(
     action: Optional[Action],
     target: Optional[Square],
     seat: Seat,
+    reflect: Optional[Tile] = None,
 ) -> None:
     """
     Notify one player that the selected action has changed.
@@ -61,6 +63,8 @@ async def notify_selection_changed(
 
     The game removes the selection from both players after the action is resolved
     by calling this with all None.
+
+    `reflect` is the tile the defender claims to reflect the action with, if they did.
     """
     event = {
         "type": OutEventType.SELECTION_CHANGE.value,
@@ -68,6 +72,7 @@ async def notify_selection_changed(
         "start": start,
         "action": action,
         "target": target,
+        "reflect": reflect,
     }
     await seat.send(event)
 

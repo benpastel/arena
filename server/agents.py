@@ -1,6 +1,13 @@
 import random
 
-from server.constants import Action, Square, Tile, Response, OtherAction
+from server.constants import (
+    Action,
+    ActionAndTarget,
+    Square,
+    Tile,
+    Response,
+    OtherAction,
+)
 from server.seat import Seat, DummySeat
 from server.choices import (
     choose_action_or_square,
@@ -24,12 +31,14 @@ class Human:
         possible_squares: list[Square],
         prompt: str,
         true_action_hint: Action | None,
-    ) -> Action | Square:
+        targets: dict[Action, list[Square]] | None = None,
+    ) -> Action | Square | ActionAndTarget:
         return await choose_action_or_square(
             possible_actions,
             possible_squares,
             prompt,
             self.seat,
+            targets,
         )
 
     async def choose_square_or_hand(
@@ -86,6 +95,7 @@ class RandomBot:
         possible_squares: list[Square],
         prompt: str,
         true_action_hint: Action | None,
+        targets: dict[Action, list[Square]] | None = None,
     ) -> Action | Square:
         # if there's a true, nonmove action, always take it
         if true_action_hint and true_action_hint in possible_actions:

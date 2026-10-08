@@ -477,32 +477,24 @@ button.outlined-button:disabled {
 }
 /*
 selection; red and blue only ever say whose piece it is
-  - a tile that can be clicked (a piece, in hand, on an exchange, an ability) is
-    drawn bolder, and a picked one also gets a bar under it
-  - a button in a shell that can be clicked gets a black shell
-  - a target square that can be clicked gets a ring (see .cell.highlight)
+  - a tile that can be clicked (a piece, in hand, on an exchange) is drawn bolder,
+    and a picked one also gets a bar under it
+  - abilities and responses are drawn on the board as options (see .option); the
+    action panel under the board is only for reference
+  - a target square that can be clicked on its own (a smite) gets a ring
 */
-.tile-button.highlight,
 .hand-tile.highlight,
 .board-tile.highlight,
 .cell.highlight.own-piece .piece {
   -webkit-text-stroke: var(--bold) currentColor;
 }
-.tile-button.highlight,
 .bottomRow .board-tile.highlight {
   color: black;
 }
-.outlined-button.highlight {
-  color: black;
-  border-color: black;
-  box-shadow: inset 0 0 0 1px black;
-}
-.chosen-action,
 .cell.chosen-start .piece,
 .cell.chosen-target .piece {
   -webkit-text-stroke: var(--bold) currentColor;
 }
-.chosen-action::after,
 .cell.chosen-start .piece::after,
 .cell.chosen-target .piece::after {
   content: "";
@@ -621,13 +613,76 @@ selection; red and blue only ever say whose piece it is
 .claim-line circle {
   fill: currentColor;
 }
-.claim-badge {
+/* the claimed ability (and any reflect) written beside the claim's line */
+.claim-note {
   position: absolute;
-  top: 0.5vmin;
-  right: 0.8vmin;
+  display: flex;
+  align-items: center;
+  gap: 1vmin;
+  white-space: nowrap;
+}
+/* placed at a point beside the line, running away from it */
+.claim-note.above {
+  transform: translate(-50%, -100%);
+}
+.claim-note.right {
+  transform: translate(0, -50%);
+}
+.claim-note.left {
+  transform: translate(-100%, -50%);
+}
+.claim-note.below {
+  transform: translate(-50%, 0);
+}
+.claim-note .claimed {
+  font-size: 6vmin;
+  line-height: 6vmin;
+}
+
+/*
+options: an ability or response that can be clicked, drawn as a small black glyph;
+the ones that aren't tiles (↕ ✓ 🚩) get a shell
+*/
+.cell-options {
+  position: absolute;
+  inset: 0;
+  padding: 0.6vmin;
+
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
+  gap: 0.6vmin;
+
+  pointer-events: none;
+}
+/* over a piece they run along the bottom; on a special square along the top */
+.cell.north .cell-options,
+.cell.south .cell-options {
+  align-content: flex-end;
+}
+.cell.special .cell-options {
+  align-content: flex-start;
+}
+.option {
+  pointer-events: auto;
+  cursor: pointer;
   font-size: 5vmin;
   line-height: 5vmin;
-  pointer-events: none;
+  color: black;
+  background-color: white;
+  -webkit-text-stroke: var(--bold) currentColor;
+}
+.option.shell {
+  box-sizing: border-box;
+  min-width: 4.4vmin;
+  padding: 0 0.6vmin;
+  font-size: 3.4vmin;
+  line-height: 4.8vmin;
+  text-align: center;
+  border: 1px solid black;
+  border-radius: var(--shell-radius);
+  -webkit-text-stroke: 0;
 }
 
 .north {

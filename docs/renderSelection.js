@@ -1,24 +1,31 @@
 "use strict";
 
-// Shows what's been picked this turn, and the claim on the table.
+// Draws the choices of a turn on the board.
 //
-// While a player is still choosing, their picks (the piece, the ability) get a thick
-// ring.  A finished claim is drawn for both players instead: a line from the piece
-// to its target in the claimant's colour, with the claimed ability's glyph on the
-// piece.  A target on its own (the tile a player is about to lose) is a pick.
+//  - Once a piece is picked, every square it can reach shows a small glyph for each
+//    ability that can target it; clicking one picks the ability and the target at once.
+//  - A finished claim is a line from the piece to its target in the claimant's colour,
+//    annotated with the claimed ability.  A reflect is added to the note, and so are
+//    the responses (✓, 🚩, reflect) when it's this player's turn to respond.
+//  - A target picked on its own (the tile a player is about to lose) is a pick.
 
 import {
   CHOSEN_START,
-  CHOSEN_ACTION,
   CHOSEN_TARGET,
+  ACTION_NAMES,
+  OTHER_ACTIONS,
+  RESPONSES,
 } from "./constants.js";
 
 import {findCell} from "./renderState.js";
 
 const SVG = "http://www.w3.org/2000/svg";
 
+// how far the claim's note sits off its line, as a fraction of the board's width
+const NOTE_OFFSET = 0.025;
 
-function cellCenter(board, square) {
+
+function pieceCenter(board, square) {
   // on a special square the piece sits in the top half, so anchor on the piece
   const [row, col] = square;
   const element = findCell(board, row, col);
@@ -27,80 +34,151 @@ function cellCenter(board, square) {
   return [cell.left + cell.width / 2 - origin.left, cell.top + cell.height / 2 - origin.top];
 }
 
-function drawClaimLine(board, start, target, player) {
-  const svg = document.createElementNS(SVG, "svg");
-  svg.classList.add("claim-line", player);
-  const [x1, y1] = cellCenter(board, start);
-  const [x2, y2] = cellCenter(board, target);
-
-  const line = document.createElementNS(SVG, "line");
-  line.setAttribute("x1", x1);
-  line.setAttribute("y1", y1);
-  line.setAttribute("x2", x2);
-  line.setAttribute("y2", y2);
-  svg.append(line);
-
-  const end = document.createElementNS(SVG, "circle");
-  end.setAttribute("cx", x2);
-  end.setAttribute("cy", y2);
-  end.setAttribute("r", Math.min(window.innerWidth, window.innerHeight) * 0.015);
-  svg.append(end);
-
-  board.append(svg);
+function option(name) {
+  // a clickable glyph for an ability or a response; ↕ ✓ 🚩 get a shell, tiles are their own
+  const element = document.createElement("span");
+  element.classList.add("option");
+  if (name in OTHER_ACTIONS || name in RESPONSES) {
+    element.classList.add("shell");
+  }
+  element.dataset.name = name;
+  element.title = ACTION_NAMES[name];
+  element.textContent = name;
+  return element;
 }
 
-function addClaimBadge(board, start, action, player) {
-  const [row, col] = start;
-  const badge = document.createElement("span");
-  badge.classList.add("claim-badge", player);
-  badge.textContent = action;
-  findCell(board, row, col).append(badge);
+function drawTargets(board, targets) {
+  for (const [action, squares] of Object.entries(targets)) {
+    for (const [row, col] of squares) {
+      const cell = findCell(board, row, col);
+      let options = cell.querySelector(".cell-options");
+      if (!options) {
+        options = document.createElement("div");
+        options.classList.add("cell-options");
+        cell.append(options);
+      }
+      options.append(option(action));
+    }
+  }
 }
 
-function clearSelection(board, actionPanel) {
+function drawClaim(board, selection, responses) {
+  const {player, start, action, target, reflect} = selection;
+  const [x1, y1] = pieceCenter(board, start);
+  const [x2, y2] = pieceCenter(board, target);
+  const width = board.getBoundingClientRect().width;
+
+  // the note sits beside the middle of the line, on its upper (or right) side, running
+  // away from the line; with no line (a claim on its own square) it sits above the piece
+  let noteX = (x1 + x2) / 2;
+  let noteY = (y1 + y2) / 2;
+  let anchor = "above";
+  const length = Math.hypot(x2 - x1, y2 - y1);
+  if (length > 0) {
+    const svg = document.createElementNS(SVG, "svg");
+    svg.classList.add("claim-line", player);
+    const line = document.createElementNS(SVG, "line");
+    line.setAttribute("x1", x1);
+    line.setAttribute("y1", y1);
+    line.setAttribute("x2", x2);
+    line.setAttribute("y2", y2);
+    svg.append(line);
+    const end = document.createElementNS(SVG, "circle");
+    end.setAttribute("cx", x2);
+    end.setAttribute("cy", y2);
+    end.setAttribute("r", width * 0.012);
+    svg.append(end);
+    board.append(svg);
+
+    let [nx, ny] = [-(y2 - y1) / length, (x2 - x1) / length];
+    if (ny > 0 || (ny === 0 && nx < 0)) {
+      [nx, ny] = [-nx, -ny];
+    }
+    noteX += nx * width * NOTE_OFFSET;
+    noteY += ny * width * NOTE_OFFSET;
+    if (Math.abs(nx) > Math.abs(ny)) {
+      anchor = nx > 0 ? "right" : "left";
+    }
+  } else {
+    noteY -= width * 0.08;
+  }
+
+  const note = document.createElement("div");
+  note.classList.add("claim-note", anchor);
+  note.style.left = `${noteX}px`;
+  note.style.top = `${noteY}px`;
+
+  const claimed = document.createElement("span");
+  claimed.classList.add("claimed", player);
+  claimed.textContent = action;
+  claimed.title = ACTION_NAMES[action];
+  note.append(claimed);
+
+  if (reflect) {
+    const reflected = document.createElement("span");
+    reflected.classList.add("claimed", player === "north" ? "south" : "north");
+    reflected.textContent = reflect;
+    reflected.title = ACTION_NAMES[reflect];
+    note.append(reflected);
+  }
+
+  for (const response of responses) {
+    note.append(option(response));
+  }
+  board.append(note);
+  keepOnBoard(board, note, noteX, noteY, x1, y1, x2, y2);
+}
+
+function keepOnBoard(board, note, noteX, noteY, x1, y1, x2, y2) {
+  // a note that would run off the board goes on the other side of its line instead
+  const bounds = board.getBoundingClientRect();
+  const rect = note.getBoundingClientRect();
+  const flips = {right: "left", left: "right", above: "below"};
+  const off =
+    rect.left < bounds.left || rect.right > bounds.right ||
+    rect.top < bounds.top || rect.bottom > bounds.bottom;
+  const anchor = ["right", "left", "above"].find((a) => note.classList.contains(a));
+  if (!off || !anchor) {
+    return;
+  }
+  // mirror the note's point through the line's middle
+  const midX = (x1 + x2) / 2;
+  const midY = (y1 + y2) / 2;
+  note.classList.replace(anchor, flips[anchor]);
+  note.style.left = `${2 * midX - noteX}px`;
+  note.style.top = `${anchor === "above" && x1 === x2 && y1 === y2 ? midY + (midY - noteY) : 2 * midY - noteY}px`;
+}
+
+function clearSelection(board) {
   for (const element of board.querySelectorAll(`.${CHOSEN_START}, .${CHOSEN_TARGET}`)) {
     element.classList.remove(CHOSEN_START, CHOSEN_TARGET);
   }
-  for (const element of board.querySelectorAll(".claim-line, .claim-badge")) {
+  for (const element of board.querySelectorAll(".claim-line, .claim-note, .cell-options")) {
     element.remove();
-  }
-  for (const element of actionPanel.querySelectorAll(`.${CHOSEN_ACTION}`)) {
-    element.classList.remove(CHOSEN_ACTION);
   }
 }
 
-function renderSelection(board, actionPanel, selection) {
-  clearSelection(board, actionPanel);
-  if (!selection) {
-    return;
-  }
-  const {player, start, action, target} = selection;
+function renderSelection(board, selection, highlight) {
+  clearSelection(board);
+  const targets = highlight?.targets ?? {};
+  const actions = highlight?.actions ?? [];
 
-  if (start && action && target) {
-    // a finished claim
-    if (start[0] !== target[0] || start[1] !== target[1]) {
-      drawClaimLine(board, start, target, player);
-    }
-    addClaimBadge(board, start, action, player);
+  if (selection && selection.start && selection.action && selection.target) {
+    // a finished claim, with the responses to it if they're ours to make
+    const responding = actions.some((name) => name in RESPONSES);
+    drawClaim(board, selection, responding ? actions : []);
     return;
   }
 
-  // picks still being made
-  if (start) {
-    const [row, col] = start;
+  if (selection?.start) {
+    const [row, col] = selection.start;
     findCell(board, row, col).classList.add(CHOSEN_START);
   }
-  if (action) {
-    for (const element of actionPanel.querySelectorAll("[data-name]")) {
-      if (element.dataset.name === action) {
-        element.classList.add(CHOSEN_ACTION);
-      }
-    }
-  }
-  if (target) {
-    const [row, col] = target;
+  if (selection?.target) {
+    const [row, col] = selection.target;
     findCell(board, row, col).classList.add(CHOSEN_TARGET);
   }
+  drawTargets(board, targets);
 }
 
 export {renderSelection};

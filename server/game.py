@@ -19,6 +19,7 @@ from server.constants import (
     Tile,
     OtherAction,
     Response,
+    ActionAndTarget,
     other_player,
 )
 from server.choices import send_prompt
@@ -316,10 +317,21 @@ async def _select_action(
             possible_squares = possible_starts + possible_targets
             prompt = "Select a target, or a different action or tile."
 
+        # until an action is chosen, offer every action and target pair at once
         choice = await current_agent.choose_action_or_square(
-            possible_actions, possible_squares, prompt, true_action_hint=None
+            possible_actions,
+            possible_squares,
+            prompt,
+            true_action_hint=None,
+            targets=None if chosen_action else actions_and_targets,
         )
-        if choice in possible_targets:
+        if isinstance(choice, ActionAndTarget):
+            # they chose an action and its target in one click
+            await broadcast_selection_changed(
+                state.current_player, start, choice.action, choice.target, players
+            )
+            return start, choice.action, choice.target
+        elif choice in possible_targets:
             # they chose a target
             # we should now have all 3 selected
             assert chosen_action is not None
@@ -659,7 +671,9 @@ async def _play_one_turn(state: State, players: dict[Player, Agent]) -> None:
             # the response was to reflect
             # which the original player may challenge
             reflect = state.log(LogKind.REFLECT, state.other_player, response)
-            await _show_log_keeping_selection(state, players, start, action, target)
+            await _show_log_keeping_selection(
+                state, players, start, action, target, reflect=response
+            )
             reflect_response = await _select_reflect_response(response, state, players)
             target_tile = state.tile_at(target)
 
@@ -711,6 +725,7 @@ async def _show_log_keeping_selection(
     start: Square,
     action: Action,
     target: Square,
+    reflect: Optional[Tile] = None,
 ) -> None:
     """
     Show both players the state (for the latest log), then the selection again, since
@@ -718,7 +733,7 @@ async def _show_log_keeping_selection(
     """
     await broadcast_state_changed(state, players)
     await broadcast_selection_changed(
-        state.current_player, start, action, target, players
+        state.current_player, start, action, target, players, reflect
     )
 
 
