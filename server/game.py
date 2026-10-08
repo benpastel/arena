@@ -10,7 +10,7 @@ from server.actions import (
     grapple_end_square,
     path,
 )
-from server.state import new_state, State
+from server.state import new_state, State, LogKind, LogEvent
 from server.constants import (
     Player,
     Square,
@@ -45,9 +45,7 @@ async def _resolve_bonus(
     for _ in range(state.bonus_reveal):
         revealed += state.reveal_unused()
 
-    state.log(
-        f"{state.name(player)} starts turn on bonus square: +${state.bonus_amount}, revealed {revealed} unused tiles"
-    )
+    state.log(LogKind.BONUS, player, coins={player: state.bonus_amount}, count=revealed)
     state.coins[player] += state.bonus_amount
     await broadcast_state_changed(state, players)
 
@@ -72,7 +70,7 @@ async def _move_x2(
     )
     assert isinstance(choice, Tile)
     state.x2_tile = choice
-    state.log(f"{state.name(player)} moved ×2 to {choice}")
+    state.log(LogKind.X2, player, choice)
 
     await broadcast_state_changed(state, players)
 
@@ -117,7 +115,7 @@ async def _resolve_exchange(
         # shuffle to hide which tile they placed
         shuffle(state.exchange_tiles[exchange_index])
 
-    state.log(f"{state.name(player)} may have exchanged tiles.")
+    state.log(LogKind.EXCHANGE, player)
 
 
 async def _resolve_smite(
@@ -127,9 +125,7 @@ async def _resolve_smite(
     target: Square,
 ) -> None:
     state.coins[player] -= state.smite_cost
-    state.log(
-        f"{state.name(player)} smites ⚡ {target.format_for_log()} for ${state.smite_cost}"
-    )
+    state.log(LogKind.SMITE, player, coins={player: -state.smite_cost})
 
     await _lose_tile(target, state, players)
     await clear_selection(players)
@@ -167,9 +163,7 @@ async def _check_web(
             enemy_webs.remove(square)
 
     if state.skip_next_turn[moving_player] and not already_skipping:
-        state.log(
-            f"{state.name(moving_player)} is tangled in WEB 🕸️ and will skip their next turn."
-        )
+        state.log(LogKind.WEB, moving_player)
 
 
 async def _resolve_action(
@@ -178,27 +172,28 @@ async def _resolve_action(
     target: Square,
     state: State,
     players: dict[Player, Agent],
+    logged: LogEvent,
     reflect: bool = False,
 ) -> None:
-    if state.x2_tile == action:
-        repeats = 2
-        x2_msg = "2X "
-    else:
-        repeats = 1
-        x2_msg = ""
+    """
+    Resolve the action, recording its coin changes on `logged`, the log event of the
+    claim, reflect, or move that caused it.
+    """
+    repeats = 2 if state.x2_tile == action else 1
 
     # `hits` is a possibly-empty list of tiles hit by the action
+    coins_before = dict(state.coins)
     if reflect:
         hits = reflect_action(start, action, target, state)
-        state.log(f"{state.name(state.other_player)} reflects {x2_msg}{action}")
     else:
         hits = take_action(start, action, target, state)
-        state.log(f"{state.name(state.current_player)} uses {x2_msg}{action}")
+    logged.coins = {
+        player: state.coins[player] - coins_before[player]
+        for player in Player
+        if state.coins[player] != coins_before[player]
+    }
 
-    for repeat in range(repeats):
-        if repeats > 1 and hits:
-            state.log(f"{repeat + 1} / {repeats} - ")
-
+    for _ in range(repeats):
         for hit in hits:
             await _lose_tile(hit, state, players)
 
@@ -471,11 +466,8 @@ async def _lose_tile(
         state.tiles_on_board[player].append(replacement)
         state.positions[player].append(square)
         state.tiles_on_board_revealed[player].append(False)
-        state.log(
-            f"{state.name(player)} lost {tile} on {square.format_for_log()} and replaced it from hand."
-        )
-    else:
-        state.log(f"{state.name(player)} lost {tile} on {square.format_for_log()}.")
+
+    state.log(LogKind.LOSE, player, tile)
 
     state.score_point(other_player(player))
     await clear_selection(players)
@@ -595,8 +587,10 @@ async def _play_one_turn(state: State, players: dict[Player, Agent]) -> None:
     or display that state to the players.
     """
 
+    state.new_log_turn(state.current_player)
+
     if state.skip_next_turn[state.current_player]:
-        state.log(f"{state.name(state.current_player)} skips their turn.")
+        state.log(LogKind.SKIP, state.current_player)
         state.skip_next_turn[state.current_player] = False
         await broadcast_state_changed(state, players)
         return
@@ -625,78 +619,79 @@ async def _play_one_turn(state: State, players: dict[Player, Agent]) -> None:
             # the player didn't claim a tile
             # i.e. they moved or smited
             # so no possibility of challenge
-            await _resolve_action(start, action, target, state, players)
+            moved = state.log(LogKind.MOVE, state.current_player, action)
+            await _resolve_action(start, action, target, state, players, moved)
 
             # the move may push the current player's coins up to the smite cost
             await _maybe_smite(state, players)
             continue
+
+        # show the claim in the log while the opponent responds
+        claim = state.log(LogKind.CLAIM, state.current_player, action)
+        await _show_log_keeping_selection(state, players, start, action, target)
 
         # ask opponent to accept, challenge, or reflect as appropriate
         response = await _select_response(start, action, target, state, players)
 
         if response == Response.ACCEPT:
             # other player allows the action to proceed
-            await _resolve_action(start, action, target, state, players)
+            await _resolve_action(start, action, target, state, players, claim)
 
         elif response == Response.CHALLENGE:
+            state.log(LogKind.CHALLENGE, state.other_player)
             state.reveal_at(start)
             start_tile = state.tile_at(start)
-            msg = f"{state.name(state.current_player)} reveals a {start_tile}."
+            state.log(LogKind.REVEAL, state.current_player, start_tile)
             if action == start_tile:
                 # challenge fails
                 # original action succeeds
-                state.log(
-                    msg
-                    + f" Challenge fails!  First the {action} happens, then {state.name(state.other_player)} will choose a tile to lose."
-                )
-                await _resolve_action(start, action, target, state, players)
+                await _resolve_action(start, action, target, state, players, claim)
                 await _lose_tile(state.other_player, state, players)
             else:
                 # challenge succeeds
                 # original action fails
-                state.log(msg + " Challenge succeeds!")
+                claim.cancelled = True
                 await clear_selection(players)
                 await _lose_tile(state.current_player, state, players)
         else:
             assert action == response
             # the response was to reflect
             # which the original player may challenge
+            reflect = state.log(LogKind.REFLECT, state.other_player, response)
+            await _show_log_keeping_selection(state, players, start, action, target)
             reflect_response = await _select_reflect_response(response, state, players)
             target_tile = state.tile_at(target)
-            reveal_msg = f"{state.name(state.other_player)} reveals a {target_tile}."
 
             if reflect_response == Response.ACCEPT:
                 # reflect succeeds
                 # original action fails
-                state.log(f"{action} reflected.")
+                claim.cancelled = True
                 await clear_selection(players)
                 await _resolve_action(
-                    start, action, target, state, players, reflect=True
+                    start, action, target, state, players, reflect, reflect=True
                 )
             elif target_tile == response:
                 # challenge fails
                 # reflect succeeds
                 # original action fails
+                state.log(LogKind.CHALLENGE, state.current_player)
                 state.reveal_at(target)
-                state.log(
-                    reveal_msg
-                    + f" Challenge fails!  First the {response} is reflected, then {state.name(state.current_player)} will choose a tile to lose."
-                )
+                state.log(LogKind.REVEAL, state.other_player, target_tile)
+                claim.cancelled = True
                 await clear_selection(players)
                 await _resolve_action(
-                    start, action, target, state, players, reflect=True
+                    start, action, target, state, players, reflect, reflect=True
                 )
                 await _lose_tile(state.current_player, state, players)
             else:
+                state.log(LogKind.CHALLENGE, state.current_player)
                 state.reveal_at(target)
+                state.log(LogKind.REVEAL, state.other_player, target_tile)
                 # challenge succeeds
                 # reflect fails
                 # original action succeeds
-                state.log(
-                    reveal_msg
-                    + f" Challenge succeeds!  First the {action} happens, then {state.name(state.other_player)} will choose a tile to lose."
-                )
-                await _resolve_action(start, action, target, state, players)
+                reflect.cancelled = True
+                await _resolve_action(start, action, target, state, players, claim)
                 await _lose_tile(state.other_player, state, players)
 
         # the action may push the current player's coins above the smite cost
@@ -704,19 +699,37 @@ async def _play_one_turn(state: State, players: dict[Player, Agent]) -> None:
         await _maybe_smite(state, players)
 
         if state.go_again:
-            state.log(f"{state.name(state.current_player)} can move again.")
+            state.log(LogKind.AGAIN, state.current_player)
 
         await broadcast_state_changed(state, players)
 
 
-def _game_over_message(state: State) -> str:
+async def _show_log_keeping_selection(
+    state: State,
+    players: dict[Player, Agent],
+    start: Square,
+    action: Action,
+    target: Square,
+) -> None:
+    """
+    Show both players the state (for the latest log), then the selection again, since
+    redrawing the state redraws the action panel and loses the chosen action.
+    """
+    await broadcast_state_changed(state, players)
+    await broadcast_selection_changed(
+        state.current_player, start, action, target, players
+    )
+
+
+def _log_game_over(state: State) -> None:
+    state.new_log_turn(None)
     result = state.game_result()
     if result == GameResult.NORTH_WINS:
-        return f"Game over!  {state.name(Player.N)} wins!"
+        state.log(LogKind.WIN, Player.N)
     elif result == GameResult.SOUTH_WINS:
-        return f"Game over!  {state.name(Player.S)} wins!"
+        state.log(LogKind.WIN, Player.S)
     else:
-        return f"Game over!  {result}!"
+        state.log(LogKind.DRAW)
 
 
 async def play_one_game(
@@ -735,7 +748,6 @@ async def play_one_game(
     """
     # initialize a new game
     state = new_state(match_score, tiles, first_player, names)
-    state.log("New game!")
     await broadcast_state_changed(state, players)
 
     while state.game_result() == GameResult.ONGOING:
@@ -747,7 +759,7 @@ async def play_one_game(
 
         await broadcast_state_changed(state, players)
 
-    state.log(_game_over_message(state))
+    _log_game_over(state)
     await broadcast_state_changed(state, players)
     return state.game_score
 

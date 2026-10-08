@@ -198,11 +198,104 @@ function renderBoard(board, player_view, action_panel) {
   }
 }
 
-function renderLog(panel, player_view) {
-  panel.innerHTML = '';
-  for (const line of player_view.public_log) {
-    panel.innerHTML += `<p>${line}</p>`;
+// how each kind of log event reads, after the name of the player it's about;
+// must match python LogKind
+const LOG_WORDS = {
+  reflect: "reflects",
+  reveal: "reveals",
+  lose: "loses",
+  exchange: "may have exchanged",
+  web: "caught in web",
+  skip: "skips turn",
+  again: "goes again",
+  x2: "×2 →",
+  win: "wins",
+  draw: "draw",
+};
+
+function logItem(glyph, name) {
+  // a glyph with its small name beside it
+  const item = document.createElement("span");
+  item.className = "log-item";
+  const glyphElement = document.createElement("span");
+  glyphElement.className = "log-glyph";
+  glyphElement.textContent = glyph;
+  const nameElement = document.createElement("span");
+  nameElement.className = "log-name";
+  nameElement.textContent = name;
+  item.append(glyphElement, nameElement);
+  return item;
+}
+
+function logEventItem(event) {
+  switch (event.kind) {
+    case "challenge":
+      return logItem("🚩", ACTION_NAMES["🚩"]);
+    case "smite":
+      return logItem("⚡", "SMITE");
+    case "bonus":
+      return logItem("$" + "🔎".repeat(event.count), "BONUS");
+    default:
+      return event.action ? logItem(event.action, ACTION_NAMES[event.action]) : null;
   }
+}
+
+function renderLogEvent(turnElement, event, names, showName) {
+  const who = document.createElement("span");
+  who.className = "log-who";
+  if (event.player && showName) {
+    who.classList.add(event.player);
+    who.textContent = names[event.player];
+    who.title = names[event.player];
+  }
+
+  const what = document.createElement("span");
+  what.className = "log-what";
+  what.classList.toggle("cancelled", event.cancelled);
+  if (event.kind in LOG_WORDS) {
+    what.append(LOG_WORDS[event.kind]);
+  }
+  const item = logEventItem(event);
+  if (item) {
+    what.append(item);
+  }
+
+  const coins = document.createElement("span");
+  coins.className = "log-coins";
+  for (const player of PLAYERS) {
+    const delta = event.coins[player];
+    if (delta) {
+      const element = document.createElement("span");
+      element.className = player;
+      element.textContent = `${delta > 0 ? "+" : "−"}$${Math.abs(delta)}`;
+      coins.append(element);
+    }
+  }
+
+  turnElement.append(who, what, coins);
+}
+
+function renderLog(panel, player_view) {
+  // one block per turn; every turn but the latest is faded
+  const turns = player_view.public_log.filter((turn) => turn.events.length > 0);
+  const latest = turns.findLastIndex((turn) => turn.player !== null);
+
+  const list = document.createElement("div");
+  list.className = "log-list";
+  turns.forEach((turn, t) => {
+    const turnElement = document.createElement("div");
+    turnElement.className = "log-turn";
+    turnElement.classList.toggle("old", t < latest);
+    let previous = null;
+    for (const event of turn.events) {
+      // a player's name shows once for a run of their events
+      renderLogEvent(turnElement, event, player_view.names, event.player !== previous);
+      previous = event.player;
+    }
+    list.append(turnElement);
+  });
+
+  panel.replaceChildren(list);
   // scroll the log down to the bottom, so the latest line is visible
   panel.scrollTop = panel.scrollHeight;
 }

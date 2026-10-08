@@ -1,5 +1,5 @@
+from enum import Enum
 from random import shuffle
-from html import escape
 
 from pydantic import BaseModel, computed_field
 
@@ -8,6 +8,7 @@ from server.constants import (
     Square,
     GameResult,
     Tile,
+    Action,
     other_player,
 )
 from server.config import (
@@ -20,6 +21,48 @@ from server.config import (
     choose_tiles_in_game,
     NEGATIVE_COINS_OK,
 )
+
+
+class LogKind(str, Enum):
+    """What a log event records.  Must match the javascript in renderState.js."""
+
+    CLAIM = "claim"  # claimed a tile's action; `action` is the tile
+    MOVE = "move"  # used an action that isn't a claim
+    REFLECT = "reflect"  # claimed a tile to reflect the opponent's claim
+    CHALLENGE = "challenge"
+    REVEAL = "reveal"  # a challenged tile was revealed; `action` is the tile
+    LOSE = "lose"  # lost a tile on board; `action` is the tile
+    SMITE = "smite"
+    BONUS = (
+        "bonus"  # started the turn on the bonus square; `count` unused tiles revealed
+    )
+    EXCHANGE = "exchange"  # may have exchanged with an exchange square
+    WEB = "web"  # caught in a web
+    SKIP = "skip"  # skipped their turn
+    AGAIN = "again"  # goes again
+    X2 = "x2"  # moved the x2 to `action`
+    WIN = "win"
+    DRAW = "draw"
+
+
+class LogEvent(BaseModel):
+    """One public event, done by (or happening to) `player`."""
+
+    kind: LogKind
+    player: Player | None = None
+    action: Action | None = None
+    # a claim or reflect that was caught as a bluff, or reflected, so didn't happen
+    cancelled: bool = False
+    # how each player's coins changed
+    coins: dict[Player, int] = {}
+    count: int = 0
+
+
+class LogTurn(BaseModel):
+    """The events of one turn, or of the end of the game when `player` is None."""
+
+    player: Player | None
+    events: list[LogEvent] = []
 
 
 class State(BaseModel):
@@ -72,10 +115,8 @@ class State(BaseModel):
     skip_next_turn: dict[Player, bool]
     go_again: bool  # when a spider exchanges, the current player may go again
 
-    # human-readable event log of public information
-    # TODO: nested indentation?
-    # TODO: tag with player so we can color-code them?
-    public_log: list[str]
+    # log of public information, grouped by turn
+    public_log: list[LogTurn]
 
     # current player is the player whose turn it currently is; other_player is the other
     # redundant attributes for easier communication with frontend
@@ -196,12 +237,30 @@ class State(BaseModel):
         """All squares with a web on board, regardless of player"""
         return self.webs[Player.N] + self.webs[Player.S]
 
-    def log(self, msg: str) -> None:
-        self.public_log.append(msg)
+    def new_log_turn(self, player: Player | None) -> None:
+        """Start grouping log events under a new turn."""
+        self.public_log.append(LogTurn(player=player))
 
-    def name(self, player: Player) -> str:
-        """The player's name for the log, which is rendered as html, in their colour."""
-        return f'<span class="{player.value}">{escape(self.names[player])}</span>'
+    def log(
+        self,
+        kind: LogKind,
+        player: Player | None = None,
+        action: Action | None = None,
+        coins: dict[Player, int] | None = None,
+        count: int = 0,
+    ) -> LogEvent:
+        """
+        Log an event in the current turn.
+
+        Returns the event, which can still be updated (e.g. cancelled) as the turn goes on.
+        """
+        if not self.public_log:
+            self.new_log_turn(self.current_player)
+        event = LogEvent(
+            kind=kind, player=player, action=action, coins=coins or {}, count=count
+        )
+        self.public_log[-1].events.append(event)
+        return event
 
     def game_result(self) -> GameResult:
         """
