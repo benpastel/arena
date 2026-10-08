@@ -616,6 +616,10 @@ async def _play_one_turn(state: State, players: dict[Player, Agent]) -> None:
     while state.go_again:
         state.go_again = False
 
+        # a smite may already have decided the game, leaving a player with no tiles to move
+        if state.game_result() != GameResult.ONGOING:
+            return
+
         # current player chooses their move
         start, action, target = await _select_action(state, players)
         if not action in Tile:
@@ -624,6 +628,9 @@ async def _play_one_turn(state: State, players: dict[Player, Agent]) -> None:
             # i.e. they moved or smited
             # so no possibility of challenge
             await _resolve_action(start, action, target, state, players)
+
+            # the move may push the current player's coins up to the smite cost
+            await _maybe_smite(state, players)
             continue
 
         # ask opponent to accept, challenge, or reflect as appropriate
