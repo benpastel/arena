@@ -11,11 +11,7 @@ import {
   renderWebs,
 } from "./renderState.js";
 
-import {
-  markChosenStart,
-  markChosenAction,
-  markChosenTarget,
-} from "./renderSelection.js";
+import {renderSelection} from "./renderSelection.js";
 
 import {
   highlightSquares,
@@ -85,6 +81,10 @@ window.addEventListener("DOMContentLoaded", () => {
   const nameInput = lobby.querySelector(".name-input");
   const netbar = document.querySelector(".netbar");
   const toast = document.querySelector(".toast");
+
+  // the latest picks / claim, redrawn whenever the board is
+  let selection = null;
+  window.addEventListener("resize", () => renderSelection(board, actionPanel, selection));
 
   let welcomed = false;
   let table = null;
@@ -200,12 +200,13 @@ window.addEventListener("DOMContentLoaded", () => {
       renderWebs(board, player_view);
       renderHand(player_view);
       renderOther(player_view);
+      renderSelection(board, actionPanel, selection);
     } else if (event.type === "SELECTION_CHANGE") {
       // update the UI with changes to the current (partially) selected moves.
       // the server should call this again with null selections to clear the highlights.
-      markChosenStart(board, event["start"], event["player"]);
-      markChosenAction(actionPanel, event["action"]);
-      markChosenTarget(board, event["target"], event["player"]);
+      const {player, start, action, target} = event;
+      selection = player || start || action || target ? {player, start, action, target} : null;
+      renderSelection(board, actionPanel, selection);
     } else if (event.type === "HIGHLIGHT_CHANGE") {
       // highlight possible squares, actions, responses, or tiles in hand
       // the server should call this again with empty lists to clear the highlights
@@ -216,6 +217,16 @@ window.addEventListener("DOMContentLoaded", () => {
     } else if (event.type === "PROMPT") {
       // the prompt's text isn't shown; what to do next is in the highlights
       CHOICE_ID = parseInt(event.choiceId);
+
+      // ring the strip of whoever the game is waiting on: us if this prompt wants a
+      // choice, otherwise the opponent
+      if (table && table.mySide) {
+        const opponent = table.mySide === "north" ? "south" : "north";
+        const waitingOn = CHOICE_ID > 0 ? table.mySide : opponent;
+        for (const hand of infoPanel.querySelectorAll(".hand")) {
+          hand.classList.toggle("waiting", hand.classList.contains(waitingOn));
+        }
+      }
     } else if (event.type === "MATCH_CHANGE") {
       alert(event.message);
     }
