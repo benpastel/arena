@@ -7,7 +7,6 @@ const COLUMNS = 5;
 // must match css classes and python enums
 const NORTH_PLAYER = "north";
 const SOUTH_PLAYER = "south";
-const SOLO_MODE = "solo";
 const PLAYERS = [NORTH_PLAYER, SOUTH_PLAYER];
 
 // must match css classes
@@ -31,6 +30,24 @@ const TILES = {
   "🀌": "🀌", // thief
 };
 const HIDDEN_TILE = "🀫";
+
+// every tile that can be chosen for a game, in order; must match python ALL_TILES
+const ALL_TILES = [
+  ["🀥", "FLOWER"],
+  ["🀨", "HARVESTER"],
+  ["🀐", "BIRD"],
+  ["🀒", "KNIVES"],
+  ["🀌", "THIEF"],
+  ["🀙", "FIREBALL"],
+  ["🀇", "BACKSTABBER"],
+  ["🀛", "GRENADES"],
+  ["🀍", "HOOK"],
+  ["🀎", "RAM"],
+  ["🀩", "TRICKSTER"],
+  ["🀗", "SPIDER"],
+];
+// must match python TILES_PER_GAME
+const TILES_PER_GAME = 5;
 const OTHER_ACTIONS = {
   "↕": "↕", // move
 };
@@ -105,7 +122,6 @@ export {
   COLUMNS,
   NORTH_PLAYER,
   SOUTH_PLAYER,
-  SOLO_MODE,
   PLAYERS,
   HIGHLIGHT,
   CHOSEN_START,
@@ -116,5 +132,7 @@ export {
   RESPONSES,
   HIDDEN_TILE,
   TOOLTIPS,
+  ALL_TILES,
+  TILES_PER_GAME,
 };
 

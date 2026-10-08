@@ -1,9 +1,5 @@
-import json
 from typing import cast
-from weakref import WeakKeyDictionary
 from contextlib import asynccontextmanager
-
-from websockets.server import WebSocketServerProtocol
 
 from server.constants import (
     Tile,
@@ -13,22 +9,18 @@ from server.constants import (
     Response,
     OutEventType,
 )
+from server.seat import Seat
 
 # Generally incoming messages are invalid unless we've prompted for them.
-# websockets keeps incoming messages in a FIFO queue, but generally all messages
+# The seat keeps incoming messages in a FIFO queue, but generally all messages
 # are invalid unless we've prompted for something specific.
 #
-# For each websocket, we use an incrementing count as an ID
+# For each seat, we use an incrementing count as an ID
 # All messages with other choice ids are ignored, so we can ignore messages from
 # before our prompt.
-#
-# Weak references so we don't keep old websockets alive.
-NEXT_CHOICE_ID: WeakKeyDictionary[WebSocketServerProtocol, int] = WeakKeyDictionary()
 
 
-async def send_prompt(
-    prompt: str, websocket: WebSocketServerProtocol, choice_id: int = 0
-) -> None:
+async def send_prompt(prompt: str, seat: Seat, choice_id: int = 0) -> None:
     """
     Update the player's prompt.
 
@@ -44,11 +36,11 @@ async def send_prompt(
     else:
         prompt = f"⌛⌛⌛<br>{prompt}<br>⌛⌛⌛"
 
-    event = {"type": "PROMPT", "choiceId": choice_id, "prompt": prompt}
-    await websocket.send(json.dumps(event))
+    event = {"type": OutEventType.PROMPT, "choiceId": choice_id, "prompt": prompt}
+    await seat.send(event)
 
 
-async def _get_choice(prompt: str, websocket: WebSocketServerProtocol) -> dict:
+async def _get_choice(prompt: str, seat: Seat) -> dict:
     """
     Prompts the player for a choice
     and returns the data from their response
@@ -57,32 +49,30 @@ async def _get_choice(prompt: str, websocket: WebSocketServerProtocol) -> dict:
 
     # increment choice id
     # we use this to ignore old messages
-    expected_choice_id = NEXT_CHOICE_ID.get(websocket, 1)
-    NEXT_CHOICE_ID[websocket] = expected_choice_id + 1
-    await send_prompt(prompt, websocket, expected_choice_id)
+    expected_choice_id = seat.next_choice_id
+    seat.next_choice_id += 1
+    await send_prompt(prompt, seat, expected_choice_id)
 
-    # the websocket queue may have accumulated stale messages since we last recieved
+    # the queue may have accumulated stale messages since we last recieved
     # wait in a loop to throw away any stale messages
     while True:
-        message = await websocket.recv()
-        event = json.loads(message)
-        if "choiceId" not in event:
+        event = await seat.recv()
+        try:
+            choice_id = int(event["choiceId"])
+            data = event["data"]
+            assert isinstance(data, dict)
+        except Exception:
             print(f"Ignored {event=}")
             continue
-        choice_id = int(event["choiceId"])
 
         if expected_choice_id == choice_id:
-            return event["data"]
-        elif choice_id < expected_choice_id:
-            print(f"Ignored {choice_id=}; {expected_choice_id=}")
+            return data
         else:
-            assert (
-                False
-            ), f"{choice_id=} should never be greater than {expected_choice_id=}"
+            print(f"Ignored {choice_id=}; {expected_choice_id=}")
 
 
 async def _send_highlights(
-    websocket: WebSocketServerProtocol,
+    seat: Seat,
     squares: list[Square],
     actions: list[Action | Response],
     hand_tiles: list[Tile],
@@ -95,32 +85,32 @@ async def _send_highlights(
         "handTiles": hand_tiles,
         "boardTiles": board_tiles,
     }
-    await websocket.send(json.dumps(event))
+    await seat.send(event)
 
 
 @asynccontextmanager
 async def _highlighted(
-    websocket: WebSocketServerProtocol,
+    seat: Seat,
     squares: list[Square] = [],
     actions: list[Action | Response] = [],
     hand_tiles: list[Tile] = [],
     board_tiles: list[Tile] = [],
 ):
     """Sends a list of highlighted options to the player.  Clears highlights when done."""
-    await _send_highlights(websocket, squares, actions, hand_tiles, board_tiles)
+    await _send_highlights(seat, squares, actions, hand_tiles, board_tiles)
     yield
     # clear highlights in UI by highlighting empty lists
-    await _send_highlights(websocket, [], [], [], [])
+    await _send_highlights(seat, [], [], [], [])
 
 
 async def choose_action_or_square(
     possible_actions: list[Action],
     possible_squares: list[Square],
     prompt: str,
-    websocket: WebSocketServerProtocol,
+    seat: Seat,
 ) -> Action | Square:
     async with _highlighted(
-        websocket,
+        seat,
         actions=cast(list[Action | Response], possible_actions),
         squares=possible_squares,
     ):
@@ -128,7 +118,7 @@ async def choose_action_or_square(
         while True:
             data = await _get_choice(
                 prompt,
-                websocket,
+                seat,
             )
             # try parsing as a square
             square = Square(row=data.get("row", -1), col=data.get("column", -1))
@@ -161,16 +151,16 @@ async def choose_square_or_hand(
     possible_squares: list[Square],
     possible_hand_tiles: list[Tile],
     prompt: str,
-    websocket: WebSocketServerProtocol,
+    seat: Seat,
 ) -> Square | Tile:
     async with _highlighted(
-        websocket, squares=possible_squares, hand_tiles=possible_hand_tiles
+        seat, squares=possible_squares, hand_tiles=possible_hand_tiles
     ):
         # loop until we get a valid square or hand tile
         while True:
             data = await _get_choice(
                 prompt,
-                websocket,
+                seat,
             )
             # try parsing as a square
             square = Square(row=data.get("row", -1), col=data.get("column", -1))
@@ -194,16 +184,16 @@ async def choose_square_or_hand(
 async def choose_response(
     possible_responses: list[Response | Tile],
     prompt: str,
-    websocket: WebSocketServerProtocol,
+    seat: Seat,
 ) -> Response | Tile:
     async with _highlighted(
-        websocket, actions=cast(list[Action | Response], possible_responses)
+        seat, actions=cast(list[Action | Response], possible_responses)
     ):
         # loop until we get a valid response
         while True:
             data = await _get_choice(
                 prompt,
-                websocket,
+                seat,
             )
             # try parsing as a Response
             try:
@@ -228,14 +218,14 @@ async def choose_response(
 async def choose_exchange(
     choices: list[Tile],
     prompt: str,
-    websocket: WebSocketServerProtocol,
+    seat: Seat,
 ) -> Tile:
-    async with _highlighted(websocket, board_tiles=choices):
+    async with _highlighted(seat, board_tiles=choices):
         # loop until we get a valid response
         while True:
             data = await _get_choice(
                 prompt,
-                websocket,
+                seat,
             )
             # try parsing as a Tile
             try:

@@ -3,7 +3,6 @@ Board start positions and randomization.
 """
 
 import random
-from typing import Literal
 from server.constants import Square, Player, COLUMNS, ROWS, Tile
 
 # how much extra $ do you get from sitting on the bonus square, randomized per game
@@ -39,6 +38,12 @@ POSSIBLE_TILES = [
     Tile.HOOK,
     Tile.RAM,
 ]
+# every tile that can be chosen for a game, in the order they are listed
+ALL_TILES = POSSIBLE_TILES + [Tile.TRICKSTER, Tile.SPIDER]
+
+# how many tile types are in each game; there are 3 copies of each
+TILES_PER_GAME = 5
+
 # a good starting set for new players
 DEFAULT_TILES = [
     Tile.FIREBALL,
@@ -46,14 +51,6 @@ DEFAULT_TILES = [
     Tile.HOOK,
     Tile.KNIVES,
     Tile.BACKSTABBER,
-]
-# set featuring the newest tiles
-NEW_TILES = [
-    Tile.SPIDER,
-    Tile.FIREBALL,
-    Tile.HOOK,
-    Tile.THIEF,
-    Tile.HARVESTER,
 ]
 
 
@@ -108,17 +105,13 @@ def choose_start_positions() -> dict[Player, list[Square]]:
     }
 
 
-def choose_tiles_in_game(tileset: Literal["random", "default", "new"]) -> list[Tile]:
-    if tileset == "random":
+def choose_tiles_in_game(tiles: list[Tile] | None) -> list[Tile]:
+    if tiles is None:
         # choose 5 tiles at random
         # preserve the original ordering, which is ordered in increasing complexity
         # for a better learning curve when first reading the tooltips
-        random_indices = random.sample(range(len(POSSIBLE_TILES)), 5)
+        random_indices = random.sample(range(len(POSSIBLE_TILES)), TILES_PER_GAME)
         random_indices = sorted(random_indices)
         return [POSSIBLE_TILES[i] for i in random_indices]
-    elif tileset == "default":
-        return DEFAULT_TILES
-    elif tileset == "new":
-        return NEW_TILES
     else:
-        raise ValueError(f"Invalid tileset: {tileset}")
+        return tiles

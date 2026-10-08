@@ -1,9 +1,7 @@
 import asyncio
-import json
 from typing import Optional
 
-from websockets.server import WebSocketServerProtocol
-
+from server.seat import Seat
 from server.state import State
 from server.constants import Player, Square, Action, OutEventType, other_player
 from server.agents import Agent
@@ -17,9 +15,7 @@ async def broadcast_state_changed(state: State, players: dict[Player, Agent]) ->
                 "type": OutEventType.STATE_CHANGE.value,
                 "playerView": state.player_view(player).dict(),
             }
-            message = json.dumps(event)
-            coroutine = agent.websocket.send(message)
-            tg.create_task(coroutine)
+            tg.create_task(agent.seat.send(event))
 
 
 async def clear_selection(players: dict[Player, Agent]) -> None:
@@ -42,7 +38,7 @@ async def broadcast_selection_changed(
     async with asyncio.TaskGroup() as tg:
         for agent in players.values():
             coroutine = notify_selection_changed(
-                selecting_player, start, action, target, agent.websocket
+                selecting_player, start, action, target, agent.seat
             )
             tg.create_task(coroutine)
 
@@ -52,7 +48,7 @@ async def notify_selection_changed(
     start: Optional[Square],
     action: Optional[Action],
     target: Optional[Square],
-    websocket: WebSocketServerProtocol,
+    seat: Seat,
 ) -> None:
     """
     Notify one player that the selected action has changed.
@@ -73,8 +69,7 @@ async def notify_selection_changed(
         "action": action,
         "target": target,
     }
-    message = json.dumps(event)
-    await websocket.send(message)
+    await seat.send(event)
 
 
 async def broadcast_game_over(
@@ -95,6 +90,4 @@ async def broadcast_game_over(
                 "type": OutEventType.MATCH_CHANGE.value,
                 "message": msg,
             }
-            message = json.dumps(event)
-            coroutine = agent.websocket.send(message)
-            tg.create_task(coroutine)
+            tg.create_task(agent.seat.send(event))

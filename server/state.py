@@ -1,5 +1,5 @@
 from random import shuffle
-from typing import Literal
+from html import escape
 
 from pydantic import BaseModel, computed_field
 
@@ -83,6 +83,9 @@ class State(BaseModel):
     other_player: Player
 
     match_score: dict[Player, int]
+
+    # each player's display name, for the log
+    names: dict[Player, str]
 
     # position of the exchange squares that allow swapping tiles
     exchange_positions: list[Square]
@@ -196,6 +199,10 @@ class State(BaseModel):
     def log(self, msg: str) -> None:
         self.public_log.append(msg)
 
+    def name(self, player: Player) -> str:
+        """The player's name for the log, which is rendered as html, in their colour."""
+        return f'<span class="{player.value}">{escape(self.names[player])}</span>'
+
     def game_result(self) -> GameResult:
         """
         See if anyone has won the game.
@@ -276,6 +283,7 @@ class State(BaseModel):
             skip_next_turn=self.skip_next_turn,
             go_again=self.go_again,
             match_score=self.match_score,
+            names=self.names,
             game_score=self.game_score,
             bonus_position=self.bonus_position,
             bonus_amount=self.bonus_amount,
@@ -379,19 +387,22 @@ class State(BaseModel):
 
 def new_state(
     match_score: dict[Player, int],
-    tileset: Literal["random", "default", "new"],
+    tile_set: list[Tile] | None,
+    first_player: Player,
+    names: dict[Player, str],
 ) -> State:
     """
     Return a new state with the tiles randomly dealt.
+
+    `tile_set` is the set of tiles in use, or None to randomize it along with everything else.
     """
-    # if the tileset is not default, randomize everything
-    randomize = tileset != "default"
+    randomize = tile_set is None
 
     start_coins_per_player = choose_start_coins(randomize)
     smite_cost = choose_smite_cost(randomize)
     bonus_amount = choose_bonus_amount(randomize)
     bonus_reveal = choose_bonus_reveal(randomize)
-    tiles_in_game = choose_tiles_in_game(tileset)
+    tiles_in_game = choose_tiles_in_game(tile_set)
     start_positions = choose_start_positions()
     bonus_position, exchange_positions = bonus_and_exchange_positions()
 
@@ -436,10 +447,10 @@ def new_state(
         skip_next_turn={Player.N: False, Player.S: False},
         go_again=False,
         public_log=[],
-        # south player goes first
-        current_player=Player.S,
-        other_player=Player.N,
+        current_player=first_player,
+        other_player=other_player(first_player),
         match_score=match_score,
+        names=names,
         exchange_positions=exchange_positions,
         bonus_position=bonus_position,
         bonus_amount=bonus_amount,

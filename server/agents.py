@@ -1,8 +1,7 @@
-from websockets.server import WebSocketServerProtocol
-from typing import Iterable, AsyncIterable
 import random
 
 from server.constants import Action, Square, Tile, Response, OtherAction
+from server.seat import Seat, DummySeat
 from server.choices import (
     choose_action_or_square,
     choose_square_or_hand,
@@ -13,11 +12,11 @@ from server.choices import (
 
 class Human:
     """
-    Makes all choices by prompting a player over the websocket, and waiting for their response.
+    Makes all choices by prompting a player through their seat, and waiting for their response.
     """
 
-    def __init__(self, websocket: WebSocketServerProtocol):
-        self.websocket = websocket
+    def __init__(self, seat: Seat):
+        self.seat = seat
 
     async def choose_action_or_square(
         self,
@@ -30,7 +29,7 @@ class Human:
             possible_actions,
             possible_squares,
             prompt,
-            self.websocket,
+            self.seat,
         )
 
     async def choose_square_or_hand(
@@ -43,7 +42,7 @@ class Human:
             possible_squares,
             possible_hand_tiles,
             prompt,
-            self.websocket,
+            self.seat,
         )
 
     async def choose_response(
@@ -55,7 +54,7 @@ class Human:
         return await choose_response(
             possible_responses,
             prompt,
-            self.websocket,
+            self.seat,
         )
 
     async def choose_exchange(
@@ -66,31 +65,8 @@ class Human:
         return await choose_exchange(
             choices,
             prompt,
-            self.websocket,
+            self.seat,
         )
-
-
-class DummyWebsocket(WebSocketServerProtocol):
-    """
-    Implements the websocket send interface by doing nothing.
-
-    This simplifies the game loop; we can always send notifications on the websocket
-    without checking if it's a human or bot.
-    """
-
-    # always open
-    open: bool = True
-
-    def __init__(self):
-        pass
-
-    async def send(
-        self, message: str | bytes | Iterable[str | bytes] | AsyncIterable[str | bytes]
-    ) -> None:
-        pass
-
-    async def recv(self) -> str:
-        raise NotImplementedError("DummyWebsocket should not receive messages")
 
 
 class RandomBot:
@@ -100,7 +76,7 @@ class RandomBot:
     """
 
     def __init__(self):
-        self.websocket = DummyWebsocket()
+        self.seat = DummySeat()
         self.truth_prob = 2 / 3
         self.challenge_prob = 1 / 4
 
@@ -111,7 +87,6 @@ class RandomBot:
         prompt: str,
         true_action_hint: Action | None,
     ) -> Action | Square:
-
         # if there's a true, nonmove action, always take it
         if true_action_hint and true_action_hint in possible_actions:
             return true_action_hint
@@ -144,7 +119,6 @@ class RandomBot:
         prompt: str,
         true_response_hint: Tile | None,
     ) -> Response | Tile:
-
         # if there's a true Tile response reflecting an attack, always choose it
         if true_response_hint in possible_responses:
             return true_response_hint

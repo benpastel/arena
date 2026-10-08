@@ -1,10 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>Arena In Progress</title>
+    <title>Liar's Arena</title>
+    <meta charset="utf-8">
     <link rel="stylesheet" href="style.css">
   </head>
-  <body>
+  <body class="at-lobby">
+    <div class="lobby screen">
+      <div class="lobby-head">
+        <h1>Liar's Arena</h1>
+        <a href="how-to-play.html" target="_blank" rel="noreferrer">how to play</a>
+      </div>
+      <input class="name-input" maxlength="20" spellcheck="false" autocomplete="off" placeholder="your name" aria-label="Your name">
+      <button class="box-button new-table" disabled>new table</button>
+      <div class="table-list"></div>
+    </div>
+    <div class="room screen"></div>
     <div class="container">
       <div class="player-info grid-element">
         <div class="hand north">
@@ -26,10 +37,12 @@
         </div>
       </div>
       <div class="board grid-element"></div>
-      <div class="log grid-element">Connecting...</div>
-      <div class="prompt grid-element">Connecting...</div>
+      <div class="log grid-element"></div>
+      <div class="prompt grid-element"></div>
       <div class="actions grid-element"></div>
     </div>
+    <div class="netbar" hidden></div>
+    <div class="toast" hidden></div>
     <script src="main.js" type="module"></script>
   </body>
 </html>

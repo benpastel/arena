@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Liar's Arena</title>
+<style>
+  body {
+    background-color: white;
+    color: black;
+    font-family: 'Courier New';
+    font-size: 18px;
+    margin: 0;
+    padding: 16px;
+  }
+  main {
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  h1 {
+    font-size: 28px;
+    font-weight: bold;
+    text-align: center;
+    margin: 0;
+    padding: 12px;
+    border: 5px solid black;
+    border-bottom-width: 0;
+  }
+  .block {
+    border: 5px solid black;
+    border-bottom-width: 0;
+    padding: 12px;
+  }
+  .block:last-child {
+    border-bottom-width: 5px;
+  }
+  p, ul {
+    margin: 0 0 10px 0;
+  }
+  p:last-child, ul:last-child {
+    margin-bottom: 0;
+  }
+  ul {
+    padding-left: 24px;
+  }
+  .tile {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-top: 1px solid grey;
+  }
+  .tile:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+  .tile:last-child {
+    padding-bottom: 0;
+  }
+  .glyph {
+    font-size: 48px;
+    line-height: 48px;
+    width: 56px;
+    text-align: center;
+  }
+  .text {
+    flex: 1;
+    min-width: 180px;
+  }
+  .name {
+    font-weight: bold;
+  }
+  .board {
+    display: grid;
+    background-color: gray;
+    border: 1px solid gray;
+    padding: 4px;
+    width: max-content;
+  }
+  .board.n3 { grid-template-columns: repeat(3, 32px); }
+  .board.n5 { grid-template-columns: repeat(5, 32px); }
+  .board div {
+    box-sizing: border-box;
+    height: 32px;
+    border: 1px solid darkgrey;
+    background-color: white;
+    text-align: center;
+    line-height: 30px;
+    font-size: 18px;
+  }
+  .board .me {
+    font-size: 24px;
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Liar's Arena</h1>
+
+  <div class="block">
+    <p>Players move tiles around the board to gain money and kill enemy tiles. Each tile has a special ability, but tile identities are hidden from the opponent.</p>
+    <p>Each turn, each player chooses one of their tiles and chooses an ability for it to use, and the opponent can accept or challenge.</p>
+    <p>Each game uses 5 types of tiles, with 3 copies each.</p>
+  </div>
+
+  <div class="block">
+    <div class="tile">
+      <div class="glyph">🀥</div>
+      <div class="text">
+        <p><span class="name">FLOWER</span><br>gain $3<br>move to an X:</p>
+        <div class="board n3">
+          <div>X</div><div>X</div><div>X</div>
+          <div>X</div><div class="me">🀥</div><div>X</div>
+          <div>X</div><div>X</div><div>X</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tile">
+      <div class="glyph">🀨</div>
+      <div class="text">
+        <p><span class="name">HARVESTER</span><br>gain $4<br>move forward 1</p>
+      </div>
+    </div>
+
+    <div class="tile">
+      <div class="glyph">🀐</div>
+      <div class="text">
+        <p><span class="name">BIRD</span><br>gain $2<br>🔎 reveal 1 unused tile<br>move to an X:</p>
+        <div class="board n5">
+          <div></div><div></div><div>X</div><div></div><div></div>
+          <div></div><div>X</div><div>X</div><div>X</div><div></div>
+          <div>X</div><div>X</div><div class="me">🀐</div><div>X</div><div>X</div>
+          <div></div><div>X</div><div>X</div><div>X</div><div></div>
+          <div></div><div></div><div>X</div><div></div><div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tile">
+      <div class="glyph">🀒</div>
+      <div class="text">
+        <p><span class="name">KNIVES</span><br>pay the amount shown to kill:</p>
+        <div class="board n5">
+          <div></div><div></div><div>5</div><div></div><div></div>
+          <div></div><div>5</div><div>1</div><div>5</div><div></div>
+          <div>5</div><div>1</div><div class="me">🀒</div><div>1</div><div>5</div>
+          <div></div><div>5</div><div>1</div><div>5</div><div></div>
+          <div></div><div></div><div>5</div><div></div><div></div>
+        </div>
+        <p style="margin-top: 10px">reflected by KNIVES</p>
+      </div>
+    </div>
+
+    <div class="tile">
+      <div class="glyph">🀌</div>
+      <div class="text">
+        <p><span class="name">THIEF</span><br>steal $4<br>swap places with target:</p>
+        <div class="board n3">
+          <div>X</div><div>X</div><div>X</div>
+          <div>X</div><div class="me">🀌</div><div>X</div>
+          <div>X</div><div>X</div><div>X</div>
+        </div>
+        <p style="margin-top: 10px">reflected by THIEF</p>
+      </div>
+    </div>
+
+    <div class="tile">
+      <div class="glyph">🀙</div>
+      <div class="text">
+        <p><span class="name">FIREBALL</span><br>pay $3<br>shoot along a straight or diagonal line, exploding 3x3 at impact<br>direct hits reflected by FIREBALL</p>
+      </div>
+    </div>
+
+    <div class="tile">
+      <div class="glyph">🀇</div>
+      <div class="text">
+        <p><span class="name">BACKSTABBER</span><br>pay $3, kill behind you<br>reflected by BACKSTABBER<br>OR<br>move 2, gain $1</p>
+      </div>
+    </div>
+
+    <div class="tile">
+      <div class="glyph">🀛</div>
+      <div class="text">
+        <p><span class="name">GRENADES</span><br>pay $3<br>roll a grenade to the X if unobstructed and explode a 3x3 square:</p>
+        <div class="board n5">
+          <div></div><div></div><div>X</div><div></div><div></div>
+          <div></div><div></div><div></div><div></div><div></div>
+          <div>X</div><div></div><div class="me">🀛</div><div></div><div>X</div>
+          <div></div><div></div><div></div><div></div><div></div>
+          <div></div><div></div><div>X</div><div></div><div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tile">
+      <div class="glyph">🀍</div>
+      <div class="text">
+        <p><span class="name">HOOK</span><br>steal $2<br>grab an enemy along a straight or diagonal line and pull them adjacent<br>reflected by HOOK</p>
+      </div>
+    </div>
+
+    <div class="tile">
+      <div class="glyph">🀎</div>
+      <div class="text">
+        <p><span class="name">RAM</span><br>pay $3, move 1 cardinal<br>then knockback: all tiles adjacent to where you end up get pushed back 1<br>or die if they can't move:</p>
+        <div class="board n3">
+          <div>↖</div><div>↑</div><div>↗</div>
+          <div>←</div><div class="me">🀎</div><div>→</div>
+          <div>↙</div><div>↓</div><div>↘</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tile">
+      <div class="glyph">🀩</div>
+      <div class="text">
+        <p><span class="name">TRICKSTER</span><br>gain $1<br>move knight-like<br>if you land on an enemy, switch identities and bump them to a random adjacent unoccupied square</p>
+      </div>
+    </div>
+
+    <div class="tile">
+      <div class="glyph">🀗</div>
+      <div class="text">
+        <p><span class="name">SPIDER</span><br>move 2, gain $0<br>after exchange, gain a turn<br>lays webs<br>enemy crossing web loses a turn<br>webs block fireballs<br>fireballs &amp; grenades destroy webs</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="tile">
+      <div class="glyph">↕</div>
+      <div class="text">
+        <p><span class="name">MOVE</span><br>instead of claiming an ability, players can always move 1 square, gain $1</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="block">
+    <p>After each action, opponents can:</p>
+    <div class="tile">
+      <div class="glyph">👍</div>
+      <div class="text">
+        <p><span class="name">ACCEPT</span><br>allow the claimed ability to proceed</p>
+      </div>
+    </div>
+    <div class="tile">
+      <div class="glyph">🚩</div>
+      <div class="text">
+        <p><span class="name">CHALLENGE</span><br>reveal the tile!</p>
+        <ul>
+          <li>if it has the claimed ability, the challenger loses a tile, and the action proceeds.</li>
+          <li>if it doesn't have the claimed ability, the current player loses a tile, and action is blocked.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="tile">
+      <div class="glyph"></div>
+      <div class="text">
+        <p><span class="name">REFLECT</span><br>certain abilities can be reflected by certain defending tiles. This can also be challenged by the original player.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="block">
+    <p>When a player reaches $10 coins, they immediately ⚡ SMITE: pay $10 to kill any enemy tile.</p>
+    <p>When a tile is killed, the owning player replaces it with a tile from their hand, if they have any. When a player's 4th tile is killed, they lose and the game is over.</p>
+  </div>
+
+  <div class="block">
+    <p>There are two types of special board locations:</p>
+    <ul>
+      <li>EXCHANGE squares have two face-down tiles. When a player moves onto them, they look at the face-down tiles and optionally exchange one with their current tile.</li>
+      <li>If a player starts their turn occupying the BONUS square, they get bonus money and 🔎 reveal tile(s) unused this game.</li>
+    </ul>
+    <p>In randomized mode, the set of starting tiles is randomized, along with the effect of the bonus square and the smite cost.</p>
+  </div>
+</main>
+</body>
+</html>

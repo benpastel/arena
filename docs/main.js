@@ -1,18 +1,12 @@
 // this websocket client runs in the player's browser
-// it initializes the board, listens for moves, and sends moves to the server
-
-import {
-  NORTH_PLAYER,
-  SOUTH_PLAYER,
-  SOLO_MODE,
-} from "./constants.js";
+// it shows the lobby and table room, then the board: it listens for moves, and sends
+// moves to the server
 
 import {
   createBoard,
   renderBoard,
   renderLog,
   renderHand,
-  createActionPanel,
   renderOther,
   renderWebs,
 } from "./renderState.js";
@@ -30,6 +24,10 @@ import {
   highlightBoardTiles,
 } from "./renderHighlights.js";
 
+import {renderLobby, renderRoom} from "./lobby.js";
+
+import {Net} from "./net.js";
+
 
 // This counter identifies the most recent input request we've received from the server
 // we include it in all outgoing changes so that the server can ignore anything stale.
@@ -37,80 +35,194 @@ import {
 // 0 means we aren't waiting for any input.
 let CHOICE_ID = 0;
 
-function joinGame(prompt, websocket) {
-  websocket.addEventListener("open", () => {
-    // send an "join" event informing the server which player we are
-    // based on hardcoded url ?player=north or ?player=south, or ?player=solo
-    // and ?tiles=random, ?tiles=default, or ?tiles=new
-    const params = new URLSearchParams(window.location.search);
-    const player = params.get("player").toLowerCase();
-    const tiles = params.get("tiles").toLowerCase();
-    if (! (player === NORTH_PLAYER || player === SOUTH_PLAYER || player === SOLO_MODE)) {
-      const msg = `⚠️⚠️⚠️<br>Set your url to ?player=${NORTH_PLAYER} or ?player=${SOUTH_PLAYER} or ?player=${SOLO_MODE}<br>⚠️⚠️⚠️`;
-      prompt.innerHTML = msg;
-      console.log(params);
-      throw new Error(msg);
-    }
-    if (! (tiles === "random" || tiles === "default" || tiles === "new")) {
-      const msg = `⚠️⚠️⚠️<br>Set your url to ?tiles=random, ?tiles=default, or ?tiles=new<br>⚠️⚠️⚠️`;
-      prompt.innerHTML = msg;
-      console.log(params);
-      throw new Error(msg);
-    }
-    const event = {
-      type: "join",
-      player,
-      tiles
-    };
-    websocket.send(JSON.stringify(event));
-  });
-}
+// remembered across visits, so a refresh puts you back in your seat
+const ID_KEY = "arena.playerId";
+const NAME_KEY = "arena.name";
 
-function getWebSocketServer() {
-  if (window.location.host === "localhost:8000") {
-    return "ws://localhost:8001/";
-  } else if (window.location.host === "benpastel.github.io" || window.location.host === "benpastel.com") {
-    // github pages => render
-    return "wss://arena-wsbg.onrender.com";
-  } else {
-    throw new Error(`Unsupported host: ${window.location.host}`);
+function load(key) {
+  try {
+    return window.localStorage.getItem(key) ?? "";
+  } catch {
+    return "";
   }
 }
 
+function save(key, value) {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // private windows may refuse; we just won't remember
+  }
+}
+
+// the table in the url, which we join once we have a name
+function hashTable() {
+  const match = window.location.hash.match(/^#\/t\/([a-z0-9]+)/i);
+  return match ? match[1] : null;
+}
+
+function setHash(hash) {
+  if (window.location.hash !== hash) {
+    window.history.replaceState(null, "", hash);
+  }
+}
+
+// which screen is showing: "lobby", "room", or "game"
+function showScreen(screen) {
+  document.body.className = `at-${screen}`;
+}
+
 window.addEventListener("DOMContentLoaded", () => {
-  // Initialize the UI.
   const board = document.querySelector(".board");
   createBoard(board);
 
   const prompt = document.querySelector(".prompt");
-  prompt.innerHTML = "⌛⌛⌛<br>Waiting for other player to join<br>⌛⌛⌛";
-
   const infoPanel = document.querySelector(".player-info");
-
-  // Open the WebSocket connection and register event handlers.
-  const websocket = new WebSocket(getWebSocketServer());
-
   const actionPanel = document.querySelector(".actions");
-  joinGame(prompt, websocket);
+  const log = document.querySelector(".log");
 
-  sendSelection(board, actionPanel, infoPanel, websocket);
+  const lobby = document.querySelector(".lobby");
+  const room = document.querySelector(".room");
+  const nameInput = lobby.querySelector(".name-input");
+  const netbar = document.querySelector(".netbar");
+  const toast = document.querySelector(".toast");
 
-  receiveSelection(board, actionPanel, websocket);
+  let welcomed = false;
+  let table = null;
+  let tables = [];
+  let wantTable = hashTable();
 
-  receiveMoves(board, actionPanel, websocket);
+  const named = () => nameInput.value.trim().length > 0;
 
-  receivePrompt(prompt, websocket);
+  const net = new Net(
+    () => ({type: "hello", playerId: load(ID_KEY) || null, name: load(NAME_KEY)}),
+    onMessage,
+    onStatus,
+  );
 
-  receiveHighlights(board, actionPanel, infoPanel, websocket);
+  const actions = {
+    join: (tableId) => net.send({type: "joinTable", tableId}),
+    leave: () => net.send({type: "leaveTable"}),
+    sit: (side) => net.send({type: "sit", side}),
+    addBot: (side) => net.send({type: "addBot", side}),
+    removeBot: (side) => net.send({type: "removeBot", side}),
+    setTiles: (random, tiles) => net.send({type: "setTiles", random, tiles}),
+    start: () => net.send({type: "start"}),
+  };
 
-  receiveGameOver(websocket);
+  function maybeJoin() {
+    if (welcomed && wantTable && named() && (!table || table.id !== wantTable)) {
+      actions.join(wantTable);
+    }
+  }
+
+  nameInput.value = load(NAME_KEY);
+  nameInput.addEventListener("input", () => {
+    const name = nameInput.value.trim();
+    save(NAME_KEY, name);
+    net.send({type: "setName", name});
+    renderLobby(lobby, tables, named(), actions);
+  });
+  // a pasted table link joins once the name is entered, not on its first letter
+  nameInput.addEventListener("change", maybeJoin);
+  lobby.querySelector(".new-table").addEventListener("click", () => net.send({type: "createTable"}));
+
+  window.addEventListener("hashchange", () => {
+    wantTable = hashTable();
+    maybeJoin();
+  });
+
+  function onStatus(status) {
+    netbar.hidden = status === "open" || !welcomed;
+    netbar.textContent = status === "replaced" ? "open in another tab" : "reconnecting…";
+  }
+
+  function onMessage(event) {
+    switch (event.type) {
+      case "welcome":
+        welcomed = true;
+        save(ID_KEY, event.playerId);
+        if (document.activeElement !== nameInput) {
+          nameInput.value = event.name;
+        }
+        maybeJoin();
+        break;
+      case "lobby":
+        tables = event.tables;
+        if (!table) {
+          if (!wantTable) {
+            setHash("#/");
+          }
+          renderLobby(lobby, tables, named(), actions);
+          showScreen("lobby");
+          if (!named()) {
+            nameInput.focus();
+          }
+        }
+        break;
+      case "table":
+        table = event.table;
+        wantTable = table.id;
+        setHash(`#/t/${table.id}`);
+        if (table.playing) {
+          showScreen("game");
+        } else {
+          renderRoom(room, table, actions);
+          showScreen("room");
+        }
+        break;
+      case "left":
+        table = null;
+        wantTable = null;
+        setHash("#/");
+        break;
+      case "error":
+        toast.textContent = event.message;
+        toast.hidden = false;
+        window.setTimeout(() => { toast.hidden = true; }, 2600);
+        break;
+      default:
+        handleGameEvent(event);
+    }
+  }
+
+  function handleGameEvent(event) {
+    if (event.type === "STATE_CHANGE") {
+      // update the UI with changes to the persistent game state
+      const player_view = event["playerView"];
+
+      renderBoard(board, player_view, actionPanel);
+      renderLog(log, player_view);
+      renderWebs(board, player_view);
+      renderHand(player_view);
+      renderOther(player_view);
+    } else if (event.type === "SELECTION_CHANGE") {
+      // update the UI with changes to the current (partially) selected moves.
+      // the server should call this again with null selections to clear the highlights.
+      markChosenStart(board, event["start"], event["player"]);
+      markChosenAction(actionPanel, event["action"]);
+      markChosenTarget(board, event["target"], event["player"]);
+    } else if (event.type === "HIGHLIGHT_CHANGE") {
+      // highlight possible squares, actions, responses, or tiles in hand
+      // the server should call this again with empty lists to clear the highlights
+      highlightSquares(event["squares"], board);
+      highlightActions(event["actions"], actionPanel);
+      highlightHand(event["handTiles"], infoPanel);
+      highlightBoardTiles(event["boardTiles"], board);
+    } else if (event.type === "PROMPT") {
+      prompt.innerHTML = event.prompt;
+      CHOICE_ID = parseInt(event.choiceId);
+    } else if (event.type === "MATCH_CHANGE") {
+      alert(event.message);
+    }
+  }
+
+  sendSelection(board, actionPanel, infoPanel, net);
+
+  net.connect();
 });
 
-function showMessage(message) {
-  window.setTimeout(() => window.alert(message), 50);
-}
-
-function sendSelection(board, actionPanel, infoPanel, websocket) {
+function sendSelection(board, actionPanel, infoPanel, net) {
   // send all clicks on the board
   board.addEventListener("click", ({ target }) => {
 
@@ -132,12 +244,10 @@ function sendSelection(board, actionPanel, infoPanel, websocket) {
       data.boardTile = boardTile;
     }
 
-    websocket.send(
-      JSON.stringify({
-        choiceId: CHOICE_ID,
-        data
-      })
-    );
+    net.send({
+      choiceId: CHOICE_ID,
+      data
+    });
   });
 
   // send all clicks on the action panel
@@ -147,12 +257,10 @@ function sendSelection(board, actionPanel, infoPanel, websocket) {
     if (button === undefined) {
       return;
     }
-    websocket.send(
-      JSON.stringify({
-        choiceId: CHOICE_ID,
-        data: {button}
-      })
-    );
+    net.send({
+      choiceId: CHOICE_ID,
+      data: {button}
+    });
   });
 
   // send all clicks in the hand
@@ -164,89 +272,9 @@ function sendSelection(board, actionPanel, infoPanel, websocket) {
     if (handTile === undefined) {
       return;
     }
-    websocket.send(
-      JSON.stringify({
-        choiceId: CHOICE_ID,
-        data: {handTile}
-      })
-    );
+    net.send({
+      choiceId: CHOICE_ID,
+      data: {handTile}
+    });
   });
 }
-
-function receiveSelection(board, actionPanel, websocket) {
-  // update the UI with changes to the current (partially) selected moves.
-  // the server should call this again with null selections to clear the highlights.
-  websocket.addEventListener("message", ({ data }) => {
-    const event = JSON.parse(data);
-
-    if (event.type === "SELECTION_CHANGE") {
-      const player = event["player"];
-      const start = event["start"];
-      const action = event["action"];
-      const target = event["target"];
-
-      markChosenStart(board, start, player);
-      markChosenAction(actionPanel, action);
-      markChosenTarget(board, target, player);
-    }
-  });
-}
-
-function receiveHighlights(board, actionPanel, infoPanel, websocket) {
-  // highlight possible squares, actions, responses, or tiles in hand
-  // the server should call this again with empty lists to clear the highlights
-  websocket.addEventListener("message", ({ data }) => {
-    const event = JSON.parse(data);
-
-    if (event.type === "HIGHLIGHT_CHANGE") {
-      const squares = event["squares"];
-      const actions = event["actions"];
-      const handTiles = event["handTiles"];
-      const boardTiles = event["boardTiles"];
-
-      highlightSquares(squares, board);
-      highlightActions(actions, actionPanel);
-      highlightHand(handTiles, infoPanel);
-      highlightBoardTiles(boardTiles, board);
-    }
-  });
-}
-
-function receiveMoves(board, actionPanel, websocket) {
-  // update the UI with changes to the persistent game state
-  const log = document.querySelector(".log");
-
-  websocket.addEventListener("message", ({ data }) => {
-    const event = JSON.parse(data);
-
-    if (event.type === "STATE_CHANGE") {
-      const player_view = event["playerView"];
-
-      renderBoard(board, player_view, actionPanel);
-      renderLog(log, player_view);
-      renderWebs(board, player_view);
-      renderHand(player_view);
-      renderOther(player_view);
-    }
-  });
-}
-
-function receivePrompt(prompt, websocket) {
-  websocket.addEventListener("message", ({ data }) => {
-    const event = JSON.parse(data);
-    if (event.type === "PROMPT") {
-      prompt.innerHTML = event.prompt;
-      CHOICE_ID = parseInt(event.choiceId);
-    }
-  });
-}
-
-function receiveGameOver(websocket) {
-  websocket.addEventListener("message", ({ data }) => {
-    const event = JSON.parse(data);
-    if (event.type === "MATCH_CHANGE") {
-      alert(event.message);
-    }
-  });
-}
-

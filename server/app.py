@@ -5,71 +5,45 @@ import json
 import os
 import signal
 
+from websockets.exceptions import ConnectionClosed
 from websockets.server import WebSocketServerProtocol, serve
 
-from server.constants import Player
-from server.game import play_one_match
-from server.agents import Agent, Human, RandomBot
+from server.lobby import Lobby, User
 
 
-# URL player parameter for playing against the AI
-SOLO_PLAYER = "solo"
-
-# PVP_PLAYERS is a dict from joined players (NORTH or SOUTH) to the human agent.
-# At most 1 PVP game at a time (see `handler` docstring for explanation)
-PVP_PLAYERS: dict[Player, Agent] = {}
+LOBBY = Lobby()
 
 
 async def handler(websocket: WebSocketServerProtocol) -> None:
     """
-    Supports:
-        - any number of solo games (player vs AI)
-        - at most 1 PVP game (2 human players)
+    One browser tab's connection.
 
-    When a new websocket connects, it could be:
-        - a player creating a solo game
-        - the first player joining a PVP game
-        - the second player joining a PVP game
-
-    If the first player joins a PVP game, just register their websocket and then wait forever;
-    the actual game will run in the second player's handler.
-
-    2nd player to connect determines the starting tileset.
-
-    Consumes a single message from the websocket queue containing the Player
-    (north, south, or solo).  Future messages are handled inside the game task.
-
-    `play_one_match` makes a best effort to close the websocket when a player disconnects;
-    if it fails, we rely on the default timeouts in the `serve` caller to close the connection.
+    The first message must be a hello identifying the user; every message after that
+    is a lobby request or a click in their game.  When the socket closes the user
+    keeps their seat, so they can reconnect into it.
     """
-    assert isinstance(websocket, WebSocketServerProtocol)
-    message = await websocket.recv()
-    event = json.loads(message)
-    tileset = event["tiles"]
-    assert event["type"] == "join"
-    assert tileset in ["random", "default", "new"]
-
-    if event["player"] == SOLO_PLAYER:
-        # in solo mode, the player is south and the AI is north
-        players: dict[Player, Agent] = {
-            Player.S: Human(websocket),
-            Player.N: RandomBot(),
-        }
-        await play_one_match(players, tileset)
-        return
-
-    # in pvp, the player is the one specified in the url
-    # overwrite the existing websocket/agent if it exists
-    player = Player(event["player"])
-    PVP_PLAYERS[player] = Human(websocket)
-
-    if len(PVP_PLAYERS) == 2 and all(w.websocket.open for w in PVP_PLAYERS.values()):
-        print(f"{player} connected; starting match")
-        await play_one_match(PVP_PLAYERS, tileset)
-        return
-    else:
-        print(f"{player} waiting for other player")
-        await websocket.wait_closed()
+    user: User | None = None
+    try:
+        async for message in websocket:
+            try:
+                event = json.loads(message)
+                if user is None:
+                    if event.get("type") == "hello":
+                        user = await LOBBY.hello(
+                            websocket, event.get("playerId"), event.get("name")
+                        )
+                    continue
+                await LOBBY.handle(user, event)
+            except ConnectionClosed:
+                raise
+            except Exception as e:
+                # a malformed message shouldn't drop the connection
+                print(f"Ignored {message=}: {e!r}")
+    except ConnectionClosed:
+        pass
+    finally:
+        if user is not None:
+            await LOBBY.disconnect(user, websocket)
 
 
 async def main() -> None:
@@ -81,9 +55,11 @@ async def main() -> None:
     port = int(os.environ.get("PORT", "8001"))
     print(f"Serving websocket server on port {port}.")
 
+    reaper = asyncio.create_task(LOBBY.reap_forever())
     async with serve(handler, "", port):
         await stop
+    reaper.cancel()
 
 
 if __name__ == "__main__":
-    asyncio.run(main(), debug=True)
+    asyncio.run(main())

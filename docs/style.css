@@ -1,10 +1,205 @@
 body {
   background-color: white;
+  color: black;
+  margin: 0;
+  font-family: 'Courier New';
+  font-size: 20px;
+}
+body.at-game {
   justify-content: center;
   align-items: center;
-  margin: 0;
   overflow: hidden;
   position: fixed;
+}
+
+/* only the current screen shows */
+body:not(.at-lobby) .lobby,
+body:not(.at-room) .room,
+body:not(.at-game) .container {
+  display: none;
+}
+
+/* the lobby and table room: a single plain column */
+.screen {
+  box-sizing: border-box;
+  width: min(600px, 100%);
+  margin: 0 auto;
+  padding: 40px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.lobby-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.lobby-head h1 {
+  margin: 0;
+  font-size: 40px;
+}
+a {
+  color: black;
+}
+.box-button,
+.name-input {
+  font-family: inherit;
+  font-size: inherit;
+  color: black;
+  background-color: white;
+  border: 3px solid black;
+  border-radius: 0;
+  padding: 8px 16px;
+}
+.box-button {
+  cursor: pointer;
+}
+.box-button:disabled {
+  color: grey;
+  border-color: grey;
+  cursor: default;
+}
+.box-button.on {
+  color: white;
+  background-color: black;
+}
+.box-button.on:disabled {
+  background-color: grey;
+}
+.name-input {
+  font-size: 30px;
+  border-width: 5px;
+  outline: none;
+}
+.name-input:focus {
+  border-color: darkgreen;
+}
+.new-table {
+  align-self: flex-start;
+}
+.table-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.table-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  border-width: 5px;
+  text-align: left;
+}
+.table-row:disabled .seat-name {
+  color: grey;
+}
+.table-tiles {
+  font-size: 40px;
+  line-height: 40px;
+}
+
+/* the table room: north's seat, the tiles, south's seat */
+.seat {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 70px;
+  padding: 0 16px;
+  border: 5px solid black;
+}
+.seat .seat-name {
+  font-size: 36px;
+  flex: 1;
+}
+.seat-name.gone {
+  opacity: 0.35;
+}
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.picker-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.tile-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.tile-grid.off {
+  opacity: 0.3;
+}
+.tile-grid .tile-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 0;
+  color: grey;
+  border: 1px solid grey;
+}
+.tile-choice.chosen {
+  color: black;
+  border: 3px solid black;
+  font-weight: bold;
+}
+.tile-choice:disabled {
+  cursor: default;
+}
+.tile-choice:not(:disabled):hover {
+  color: darkgreen;
+}
+/* a tooltip opens over the controls above; it mustn't hold itself open or take their clicks */
+.picker .tooltiptext {
+  pointer-events: none;
+}
+.tile-glyph {
+  font-size: 50px;
+  line-height: 56px;
+}
+.tile-name {
+  font-size: 13px;
+}
+.room-buttons {
+  display: flex;
+  gap: 16px;
+}
+.link-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.link-row code {
+  font-family: inherit;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+/* connection trouble and server errors */
+.netbar,
+.toast {
+  position: fixed;
+  left: 0;
+  right: 0;
+  text-align: center;
+  background-color: black;
+  color: white;
+  padding: 6px;
+  z-index: 10;
+}
+.netbar {
+  top: 0;
+}
+.toast {
+  bottom: 0;
+}
+.netbar[hidden],
+.toast[hidden] {
+  display: none;
 }
 
 /* top-level grid containing the board, log, action panel, player info, etc. */

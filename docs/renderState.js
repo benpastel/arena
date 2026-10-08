@@ -277,4 +277,4 @@ function renderOther(player_view) {
 }
 
 
-export {createBoard, renderBoard, renderLog, renderHand, createActionPanel, findCell, renderOther, renderWebs};
+export {createBoard, renderBoard, renderLog, renderHand, createActionPanel, findCell, renderOther, renderWebs, setTooltip};
