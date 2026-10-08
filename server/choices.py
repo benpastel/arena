@@ -26,16 +26,9 @@ async def send_prompt(prompt: str, seat: Seat, choice_id: int = 0) -> None:
 
     If we need them to make a choice, choice_id should be set to an incrementing ID
     so that we can ignore old clicks from before this prompt.
-    We add alert emoji around the prompt.
 
-    If we don't need them to make a choice, we keep choice_id = 0.  We add
-    hourglass emoji around the prompt.
+    If we don't need them to make a choice, we keep choice_id = 0.
     """
-    if choice_id > 0:
-        prompt = f"⚠️⚠️⚠️<br>{prompt}<br>⚠️⚠️⚠️"
-    else:
-        prompt = f"⌛⌛⌛<br>{prompt}<br>⌛⌛⌛"
-
     event = {"type": OutEventType.PROMPT, "choiceId": choice_id, "prompt": prompt}
     await seat.send(event)
 

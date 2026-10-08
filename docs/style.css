@@ -301,25 +301,52 @@ the unused, discarded and unknown tiles
 the log is a list of text notes on the right side of the screen
 explaining what happened in previous turns
 */
-.log {
+/* the right column: the log, and under it the prompt */
+.side {
   grid-column: 3 / 4;
   grid-row: 1 / 2;
-  overflow-y:auto;
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  border-bottom-width: 0;
+}
+.prompt {
+  flex: none;
+  height: 16vmin;
+  padding: 0 1.5vmin;
+  border-top: 5px solid black;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 2.6vmin;
+  font-style: italic;
+}
+
+.log {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+
+  /* the log is sized to its own width (cqi), so a row keeps to one line at any size */
+  container-type: inline-size;
 
   font-size: 2vmin;
   line-height: 2.1vmin;
   cursor: text;
-  border-bottom-width: 0;
 }
 /* a grid of who, what, and coins, shared by every turn so the columns line up */
 .log-list {
   display: grid;
-  grid-template-columns: fit-content(10ch) 1fr auto;
-  column-gap: 2vmin;
-  padding: 0 1.5vmin;
+  grid-template-columns: fit-content(8ch) 1fr auto;
+  column-gap: 4.3cqi;
+  padding: 0 3.2cqi;
   text-align: left;
-  font-size: 2.2vmin;
-  line-height: 2.6vmin;
+  font-size: 4.7cqi;
+  line-height: 5.6cqi;
 }
 /* each turn is a block of rows, ruled off from the one before */
 .log-turn {
@@ -327,8 +354,8 @@ explaining what happened in previous turns
   display: grid;
   grid-template-columns: subgrid;
   align-items: center;
-  row-gap: 0.6vmin;
-  padding: 1.2vmin 0;
+  row-gap: 1.3cqi;
+  padding: 2.6cqi 0;
   border-top: 1px solid black;
 }
 .log-turn:first-child {
@@ -338,6 +365,8 @@ explaining what happened in previous turns
   opacity: 0.4;
 }
 .log-who {
+  /* long names are cut short, but the column never collapses */
+  min-width: 3ch;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -345,19 +374,19 @@ explaining what happened in previous turns
 .log-what {
   display: flex;
   align-items: center;
-  gap: 1vmin;
+  gap: 2.1cqi;
 }
 .log-item {
   display: inline-flex;
   align-items: center;
-  gap: 0.6vmin;
+  gap: 1.3cqi;
 }
 .log-glyph {
-  font-size: 4.5vmin;
-  line-height: 4.5vmin;
+  font-size: 9.6cqi;
+  line-height: 9.6cqi;
 }
 .log-name {
-  font-size: 1.6vmin;
+  font-size: 3.4cqi;
 }
 /* a claim that didn't happen: a bluff caught, or an attack reflected */
 .log-what.cancelled {
@@ -366,7 +395,7 @@ explaining what happened in previous turns
 }
 .log-coins {
   display: flex;
-  gap: 1vmin;
+  gap: 2.1cqi;
   justify-content: flex-end;
 }
 
@@ -459,7 +488,8 @@ selection; red and blue only ever say whose piece it is
 .cell.highlight.own-piece .piece {
   -webkit-text-stroke: var(--bold) currentColor;
 }
-.tile-button.highlight {
+.tile-button.highlight,
+.bottomRow .board-tile.highlight {
   color: black;
 }
 .outlined-button.highlight {
