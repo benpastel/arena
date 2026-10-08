@@ -42,13 +42,13 @@ def path(start: Square, target: Square) -> list[Square]:
         excludes start
         includes target (if different from start)
     """
-    # find the direction target is from start
-    row_change = 1 if target.row > start.row else -1 if target.row < start.row else 0
-    col_change = 1 if target.col > start.col else -1 if target.col < start.col else 0
-
     # step towards the target, updating start until we reach the target
+    # the direction is recomputed each step, so a target off the straight and diagonal
+    # lines (e.g. a knight move) is reached by going diagonally, then straight
     path = []
     while start != target:
+        row_change = (target.row > start.row) - (target.row < start.row)
+        col_change = (target.col > start.col) - (target.col < start.col)
         start = Square(start.row + row_change, start.col + col_change)
         path.append(start)
     return path

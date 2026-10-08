@@ -236,7 +236,7 @@ function sendSelection(board, actionPanel, infoPanel, net) {
     // send both the square's (row, column)
     // and the tile if it exists
     // and let the server decide if it's a valid start, target, or exchange tile
-    const boardTile = target.dataset.tileName;
+    const boardTile = target.closest("[data-tile-name]")?.dataset.tileName;
     const cell = target.closest(".cell");
     const row = parseInt(cell.dataset.row);
     const column = parseInt(cell.dataset.column);

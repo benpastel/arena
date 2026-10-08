@@ -499,7 +499,8 @@ async def _select_response(
     elif action == Tile.KNIVES:
         # Tile.KNIVES reflects Tile.KNIVES
         possible_responses.append(Tile.KNIVES)
-    elif action == Tile.BACKSTABBER:
+    elif action == Tile.BACKSTABBER and player_at_target == state.other_player:
+        # only the kill can be reflected; moving onto an empty square has no defender
         # Tile.BACKSTABBER reflects Tile.BACKSTABBER
         possible_responses.append(Tile.BACKSTABBER)
     elif action == Tile.FIREBALL and player_at_target == state.other_player:

@@ -1,5 +1,5 @@
 from server.state import Square
-from server.actions import _all_distances, _fireball_targets
+from server.actions import _all_distances, _fireball_targets, path
 
 
 def test_all_distances():
@@ -72,3 +72,14 @@ def test_fireball_targets():
             Square(3, 0),
         ]
     )
+
+
+def test_path():
+    # straight and diagonal lines
+    assert path(Square(0, 0), Square(0, 2)) == [Square(0, 1), Square(0, 2)]
+    assert path(Square(2, 2), Square(0, 0)) == [Square(1, 1), Square(0, 0)]
+    assert path(Square(1, 1), Square(1, 1)) == []
+
+    # off the lines (a knight move, or two steps round a corner): diagonal, then straight
+    assert path(Square(0, 0), Square(1, 2)) == [Square(1, 1), Square(1, 2)]
+    assert path(Square(4, 4), Square(2, 3)) == [Square(3, 3), Square(2, 3)]
