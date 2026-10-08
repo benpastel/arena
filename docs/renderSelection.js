@@ -35,15 +35,23 @@ function pieceCenter(board, square) {
 }
 
 function option(name) {
-  // a clickable glyph for an ability or a response; ↕ ✓ 🚩 get a shell, tiles are their own
+  // a clickable glyph for an ability or a response; tiles are their own glyph, and
+  // ↕ ✓ 🚩 sit in a shell drawn to match a tile's frame
   const element = document.createElement("span");
   element.classList.add("option");
-  if (name in OTHER_ACTIONS || name in RESPONSES) {
-    element.classList.add("shell");
-  }
   element.dataset.name = name;
   element.title = ACTION_NAMES[name];
-  element.textContent = name;
+  if (name in OTHER_ACTIONS || name in RESPONSES) {
+    element.classList.add("shell");
+    const symbol = document.createElement("span");
+    symbol.classList.add("symbol");
+    const text = document.createElement("span");
+    text.textContent = name;
+    symbol.append(text);
+    element.append(symbol);
+  } else {
+    element.textContent = name;
+  }
   return element;
 }
 
@@ -122,6 +130,13 @@ function drawClaim(board, selection, responses) {
     note.append(reflected);
   }
 
+  if (responses.length > 0) {
+    // the claim, then a break, then the answers to it
+    const separator = document.createElement("span");
+    separator.classList.add("note-separator");
+    separator.textContent = "—";
+    note.append(separator);
+  }
   for (const response of responses) {
     note.append(option(response));
   }
