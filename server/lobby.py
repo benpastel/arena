@@ -5,8 +5,9 @@ A user is identified by an id their browser keeps in localStorage, so a refresh 
 dropped connection reattaches them to the same seat, mid-game included.
 
 A table has two seats, NORTH and SOUTH, each empty, a user, or the bot.  The host
-picks the tiles and starts the match; the match then runs until the server stops.
-Nothing waits on a missing player: the game just pauses at their next choice.
+picks the tiles and starts the match; the match then runs until either player quits,
+which closes the table.  A missing player is simply waited for: the game pauses at
+their next choice.
 
 Everything is in memory, so a server restart ends every table.
 """
@@ -164,6 +165,8 @@ class Lobby:
             await self._join_table(user, event.get("tableId"))
         elif kind == "leaveTable":
             await self._leave_table(user)
+        elif kind == "quit":
+            await self._quit(user)
         elif kind == "sit":
             await self._sit(user, Player(event.get("side")))
         elif kind == "addBot":
@@ -252,7 +255,7 @@ class Lobby:
         user.table_id = None
         if table is not None:
             if table.playing:
-                # nobody leaves a match; the game waits for them
+                # a match is only left by quitting it; otherwise the game waits for them
                 user.table_id = table.id
                 return
             side = table.side_of(user.id)
@@ -268,6 +271,27 @@ class Lobby:
 
         if not quiet:
             await self._send(user, {"type": "left"})
+        await self._push_lobby()
+
+    async def _quit(self, user: User) -> None:
+        """End the match for both players, close the table, and send everyone to the lobby."""
+        table = self._table_of(user)
+        if table is None or not table.playing:
+            return
+        assert table.task is not None
+        table.task.cancel()
+        del self.tables[table.id]
+
+        for user_id in table.humans():
+            seated = self.users.get(user_id)
+            if seated is None:
+                continue
+            seated.table_id = None
+            if seated is not user:
+                await self._send(
+                    seated, {"type": "error", "message": f"{user.name} quit."}
+                )
+            await self._send(seated, {"type": "left"})
         await self._push_lobby()
 
     async def _sit(self, user: User, side: Player) -> None:

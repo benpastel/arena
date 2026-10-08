@@ -260,6 +260,12 @@ a {
   font-weight: light;
 }
 
+.quit {
+  font-size: 2vh;
+  padding: 0.3vh 1.5vh;
+  margin: 1vh 0;
+}
+
 /*
 the log is a list of text notes on the right side of the screen
 explaining what happened in previous turns

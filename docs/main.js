@@ -126,6 +126,11 @@ window.addEventListener("DOMContentLoaded", () => {
   // a pasted table link joins once the name is entered, not on its first letter
   nameInput.addEventListener("change", maybeJoin);
   lobby.querySelector(".new-table").addEventListener("click", () => net.send({type: "createTable"}));
+  document.querySelector(".quit").addEventListener("click", () => {
+    if (window.confirm("End this match for both players?")) {
+      net.send({type: "quit"});
+    }
+  });
 
   window.addEventListener("hashchange", () => {
     wantTable = hashTable();
