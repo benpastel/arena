@@ -104,43 +104,25 @@ function findCell(board, row, col) {
   return columnElement.querySelectorAll(".cell")[row];
 }
 
-function addSpecialBottomRow(cell, contents) {
-  // convert board cell to two rows and add exchange tiles or bonus to the bottom row
-  //
-  // `contents`: array to set inner html of the new elements
-  // also set the tileName to those contents if they are tiles
-  cell.classList.add('special');
-
-  const topRow = document.createElement("div");
-  topRow.classList = 'specialRow topRow';
-  cell.append(topRow);
-
-  // put an empty div in the top row to hold the vertical space
-  const empty = document.createElement("div");
-  empty.innerHTML = '​';
-  topRow.append(empty);
-
-  const bottomRow = document.createElement("div");
-  bottomRow.classList = 'specialRow bottomRow';
-  cell.append(bottomRow);
-
+function addSquareMarks(cell, kind, contents) {
+  // a special square keeps its piece where every square has it, full size and centred,
+  // and marks itself in the bottom corners: the bonus on the left, or the exchange
+  // tiles one in each corner
+  cell.classList.add('special', kind);
+  const marks = document.createElement("div");
+  marks.classList.add("cell-marks");
   for (const content of contents) {
-    const element = document.createElement("div");
-    element.innerHTML = content;
+    const element = document.createElement("span");
+    element.textContent = content;
     if (content in TILES || content === HIDDEN_TILE) {
       element.dataset.tileName = content;
       element.classList.add('board-tile');
+    } else {
+      element.classList.add('bonus');
     }
-    // shrink font size if content is too long
-    if (content.length >= 8) {
-      element.style.fontSize = '3vmin';
-    } else if (content.length >= 6) {
-      element.style.fontSize = '4vmin';
-    } else if (content.length >= 3) {
-      element.style.fontSize = '5vmin';
-    }
-    bottomRow.append(element);
+    marks.append(element);
   }
+  cell.append(marks);
 }
 
 function renderBoard(board, player_view, action_panel) {
@@ -150,7 +132,7 @@ function renderBoard(board, player_view, action_panel) {
   // set board empty
   for (const cell of board.querySelectorAll(".cell")) {
     cell.innerHTML = "";
-    cell.classList.remove(NORTH_PLAYER, SOUTH_PLAYER, 'board-tile', 'special');
+    cell.classList.remove(NORTH_PLAYER, SOUTH_PLAYER, 'board-tile', 'special', 'bonus', 'exchange');
   }
 
   // create the bonus square
@@ -158,13 +140,13 @@ function renderBoard(board, player_view, action_panel) {
   const bonusCell = findCell(board, bonusRow, bonusCol);
   const bonusText = '$'.repeat(player_view.bonus_amount) + '🔎'.repeat(player_view.bonus_reveal)
 
-  addSpecialBottomRow(bonusCell, [bonusText]);
+  addSquareMarks(bonusCell, 'bonus', [bonusText]);
 
   // create the exchange tile squares
   for (let p = 0; p < player_view.exchange_positions.length; p++) {
     const [exchangeRow, exchangeCol] = player_view.exchange_positions[p];
     const exchangeCell = findCell(board, exchangeRow, exchangeCol);
-    addSpecialBottomRow(exchangeCell, player_view.exchange_tiles[p]);
+    addSquareMarks(exchangeCell, 'exchange', player_view.exchange_tiles[p]);
   }
 
   // set player tiles
@@ -177,23 +159,16 @@ function renderBoard(board, player_view, action_panel) {
       const [row, col] = positions[t];
       const cell = findCell(board, row, col);
 
-      let container;
-      if (cell.classList.contains("special")) {
-        // put the tile in the top row
-        // also annotate the tile for exchanges
-        container = cell.querySelector('.topRow');
-        container.dataset.tileName = char;
-        container.classList.add('board-tile');
-      } else {
-        // put the tile directly in the cell
-        container = cell;
-      }
       const piece = document.createElement("span");
       piece.classList.add("piece");
       piece.textContent = char;
-      container.innerHTML = "";
-      container.append(piece);
-      container.classList.add(player);
+      if (cell.classList.contains("exchange")) {
+        // on an exchange square the piece is one of the tiles to choose between
+        piece.dataset.tileName = char;
+        piece.classList.add('board-tile');
+      }
+      cell.prepend(piece);
+      cell.classList.add(player);
     }
   }
 }

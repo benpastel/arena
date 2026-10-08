@@ -12,7 +12,7 @@ function highlightSquares(squares, board, mySide) {
   for (const element of board.querySelectorAll(".cell")) {
     // default unhighlighted
     element.classList.remove(HIGHLIGHT, "own-piece");
-    if (mySide && (element.classList.contains(mySide) || element.querySelector(`.topRow.${mySide}`))) {
+    if (mySide && element.classList.contains(mySide)) {
       element.classList.add("own-piece");
     }
 

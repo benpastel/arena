@@ -488,7 +488,7 @@ selection; red and blue only ever say whose piece it is
 .cell.highlight.own-piece .piece {
   -webkit-text-stroke: var(--bold) currentColor;
 }
-.bottomRow .board-tile.highlight {
+.cell-marks .board-tile.highlight {
   color: black;
 }
 .cell.chosen-start .piece,
@@ -508,7 +508,10 @@ selection; red and blue only ever say whose piece it is
 .piece {
   display: inline-block;
   position: relative;
+  font-size: 12vmin;
   line-height: 1;
+  /* the font draws the tile a little low in its box; lift it to the square's middle */
+  top: -0.058em;
 }
 /* a button's name stays plain text when its tile is bolded */
 .action-name {
@@ -570,29 +573,41 @@ selection; red and blue only ever say whose piece it is
   background-color: white;
   position: relative;
 
-  line-height: 14vmin;
-  font-size: 14vmin;
+  /* the piece sits in the middle, a little smaller than the square so what's drawn in
+     the corners (options, exchange tiles, bonus) mostly clears it */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .cell.highlight:not(.own-piece) {
   box-shadow: inset 0 0 0 var(--ring) black;
 }
-.cell.special {
-  font-size: 7vmin;
-  line-height: 7vmin;
-}
-.specialRow {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-evenly;
-  color: grey;
-}
 .board-tile {
   font-weight: light;
 }
-/* your own tile on an exchange square: ring just the tile, not the whole row */
-.topRow.board-tile {
-  width: fit-content;
-  margin: 0 auto;
+/*
+what makes a square special sits in its bottom-left corner: the bonus, or an
+exchange's two tiles side by side
+*/
+.cell-marks {
+  position: absolute;
+  left: 0.4vmin;
+  bottom: 0.4vmin;
+
+  display: flex;
+  align-items: flex-end;
+  gap: 0.4vmin;
+
+  line-height: 1;
+  pointer-events: none;
+  color: grey;
+}
+.cell-marks .board-tile {
+  font-size: 3.6vmin;
+  pointer-events: auto;
+}
+.cell-marks .bonus {
+  font-size: 3vmin;
 }
 
 /* a finished claim: a line from the piece to its target, the ability on the piece */
@@ -643,26 +658,25 @@ selection; red and blue only ever say whose piece it is
 options: an ability or response that can be clicked, drawn as a small black glyph;
 the ones that aren't tiles (↕ ✓ 🚩) get a shell
 */
+/* in every square they sit in a row in the top-right corner, ↕ rightmost */
 .cell-options {
+  --option-size: 4.2vmin;
+  --option-gap: 0.4vmin;
+
   position: absolute;
   inset: 0;
-  padding: 0.6vmin;
+  padding: var(--option-gap);
 
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
-  align-content: center;
-  gap: 0.6vmin;
+  justify-content: flex-end;
+  align-content: flex-start;
+  gap: var(--option-gap);
 
   pointer-events: none;
 }
-/* over a piece they run along the bottom; on a special square along the top */
-.cell.north .cell-options,
-.cell.south .cell-options {
-  align-content: flex-end;
-}
-.cell.special .cell-options {
-  align-content: flex-start;
+.cell-options .option {
+  font-size: var(--option-size);
 }
 .option {
   pointer-events: auto;
@@ -671,15 +685,7 @@ the ones that aren't tiles (↕ ✓ 🚩) get a shell
   color: black;
   -webkit-text-stroke: var(--bold) currentColor;
 }
-/* ↕ always in the same corner of its square, and the other options keep clear of it */
-.cell-options .option[data-name="↕"] {
-  position: absolute;
-  top: 0.4vmin;
-  right: 0.4vmin;
-}
-.cell-options:has(.option[data-name="↕"]) {
-  padding-right: calc(0.4vmin + 0.78 * 5vmin + 0.6vmin);
-}
+
 
 /*
 the face of a tile glyph, where this font draws it in the glyph's box (measured):

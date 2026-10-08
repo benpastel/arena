@@ -15,6 +15,7 @@ import {
   ACTION_NAMES,
   OTHER_ACTIONS,
   RESPONSES,
+  ALL_TILES,
 } from "./constants.js";
 
 import {findCell} from "./renderState.js";
@@ -26,10 +27,8 @@ const NOTE_OFFSET = 0.025;
 
 
 function pieceCenter(board, square) {
-  // on a special square the piece sits in the top half, so anchor on the piece
   const [row, col] = square;
-  const element = findCell(board, row, col);
-  const cell = (element.querySelector(".topRow") || element).getBoundingClientRect();
+  const cell = findCell(board, row, col).getBoundingClientRect();
   const origin = board.getBoundingClientRect();
   return [cell.left + cell.width / 2 - origin.left, cell.top + cell.height / 2 - origin.top];
 }
@@ -55,18 +54,32 @@ function option(name) {
   return element;
 }
 
+// options in a square are always in the same order: the tiles as listed, then ↕ last
+const TILE_ORDER = ALL_TILES.map(([tile]) => tile);
+function optionOrder(action) {
+  const index = TILE_ORDER.indexOf(action);
+  return index === -1 ? TILE_ORDER.length : index;
+}
+
 function drawTargets(board, targets) {
+  const bySquare = new Map();
   for (const [action, squares] of Object.entries(targets)) {
     for (const [row, col] of squares) {
-      const cell = findCell(board, row, col);
-      let options = cell.querySelector(".cell-options");
-      if (!options) {
-        options = document.createElement("div");
-        options.classList.add("cell-options");
-        cell.append(options);
+      const key = `${row},${col}`;
+      if (!bySquare.has(key)) {
+        bySquare.set(key, {row, col, actions: []});
       }
+      bySquare.get(key).actions.push(action);
+    }
+  }
+  for (const {row, col, actions} of bySquare.values()) {
+    const options = document.createElement("div");
+    options.classList.add("cell-options");
+    actions.sort((a, b) => optionOrder(a) - optionOrder(b));
+    for (const action of actions) {
       options.append(option(action));
     }
+    findCell(board, row, col).append(options);
   }
 }
 
