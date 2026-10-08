@@ -205,7 +205,7 @@ a {
 .container {
   display: grid;
   grid-template-columns: 1fr 82vmin 1fr;
-  grid-template-rows: 50vmin 12vmin 20vmin 2fr;
+  grid-template-rows: 82vmin 1fr;
   cursor: default;
 
   font-family: 'Courier New';
@@ -220,20 +220,36 @@ a {
   border: 5px solid black;
 }
 
-/* the player-info box displays coins and tiles in hand */
+/*
+the player-info column runs beside the board: each player's coins and hand level
+with their own back row (north at the top, south at the bottom), and between them
+the unused, discarded and unknown tiles
+*/
 .player-info {
   grid-column: 1 / 2;
   grid-row: 1 / 2;
 
   display: flex;
-  justify-content: center;
   flex-direction: column;
-  align-items: center;
+  justify-content: space-between;
 
-  font-size: 10vh;
   border-bottom-width: 0;
 }
+.hand {
+  /* the height of one board row */
+  height: 15.4vmin;
+  margin: 2% 0;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2vmin;
+}
+.coins {
+  font-size: 6vmin;
+}
 .hand-tile {
+  font-size: 9vmin;
   font-weight: light;
 }
 .hand-tile.highlight {
@@ -243,17 +259,12 @@ a {
 
 /* the other box displays unused, discard, and hidden tiles */
 .other {
-  grid-column: 1 / 2;
-  grid-row: 2 / 4;
-
-  font-size: 4.5vh;
+  font-size: 3.5vmin;
 
   display: flex;
   justify-content: center;
   flex-direction: column;
   align-items: center;
-
-  border-bottom-width: 0;
 
   color: grey;
   font-weight: light;
@@ -262,7 +273,7 @@ a {
 /* the bottom row: quit in a narrow cell, then the action panel */
 .bottom-row {
   grid-column: 1 / 4;
-  grid-row: 4 / 5;
+  grid-row: 2 / 3;
   display: flex;
 }
 .quit-panel {
@@ -284,28 +295,12 @@ explaining what happened in previous turns
 */
 .log {
   grid-column: 3 / 4;
-  grid-row: 1 / 3;
+  grid-row: 1 / 2;
   overflow-y:auto;
 
   font-size: 2vmin;
   line-height: 2.1vmin;
   cursor: text;
-  border-bottom-width: 0;
-}
-
-/*
-the prompt is a text string under the log
-explaining what the player should do next
-*/
-.prompt {
-  grid-column: 3 / 4;
-  grid-row: 3 / 4;
-  font-size: 3vh;
-  font-style: italic;
-  overflow-y: auto;
-
-  align-items: center;
-  overflow-x: auto;
   border-bottom-width: 0;
 }
 
@@ -432,7 +427,7 @@ button.outlined-button:disabled {
 /* the board is a 5x5 display with the tiles on board */
 .board {
   grid-column: 2 / 3;
-  grid-row: 1 / 4;
+  grid-row: 1 / 2;
   aspect-ratio: 1;
 
   background-color: gray;

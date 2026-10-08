@@ -76,7 +76,6 @@ window.addEventListener("DOMContentLoaded", () => {
   const board = document.querySelector(".board");
   createBoard(board);
 
-  const prompt = document.querySelector(".prompt");
   const infoPanel = document.querySelector(".player-info");
   const actionPanel = document.querySelector(".actions");
   const log = document.querySelector(".log");
@@ -215,7 +214,7 @@ window.addEventListener("DOMContentLoaded", () => {
       highlightHand(event["handTiles"], infoPanel);
       highlightBoardTiles(event["boardTiles"], board);
     } else if (event.type === "PROMPT") {
-      prompt.innerHTML = event.prompt;
+      // the prompt's text isn't shown; what to do next is in the highlights
       CHOICE_ID = parseInt(event.choiceId);
     } else if (event.type === "MATCH_CHANGE") {
       alert(event.message);
