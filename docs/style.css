@@ -292,6 +292,64 @@ explaining what happened in previous turns
   cursor: text;
   border-bottom-width: 0;
 }
+/* a grid of who, what, and coins, shared by every turn so the columns line up */
+.log-list {
+  display: grid;
+  grid-template-columns: fit-content(10ch) 1fr auto;
+  column-gap: 2vmin;
+  padding: 0 1.5vmin;
+  text-align: left;
+  font-size: 2.2vmin;
+  line-height: 2.6vmin;
+}
+/* each turn is a block of rows, ruled off from the one before */
+.log-turn {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  align-items: center;
+  row-gap: 0.6vmin;
+  padding: 1.2vmin 0;
+  border-top: 1px solid black;
+}
+.log-turn:first-child {
+  border-top: none;
+}
+.log-turn.old {
+  opacity: 0.4;
+}
+.log-who {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.log-what {
+  display: flex;
+  align-items: center;
+  gap: 1vmin;
+}
+.log-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6vmin;
+}
+.log-glyph {
+  font-size: 4.5vmin;
+  line-height: 4.5vmin;
+}
+.log-name {
+  font-size: 1.6vmin;
+}
+/* a claim that didn't happen: a bluff caught, or an attack reflected */
+.log-what.cancelled {
+  color: grey;
+  text-decoration: line-through;
+}
+.log-coins {
+  display: flex;
+  gap: 1vmin;
+  justify-content: flex-end;
+}
 
 /*
 the prompt is a text string under the log
