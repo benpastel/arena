@@ -56,14 +56,15 @@ a {
   gap: 3vmin;
 }
 
-/* outside the game, a button that can be pressed has a thick black shell */
+/* outside the game, everything sits in the same light tile outline as the game's
+   buttons; one that can be pressed is drawn in black, one that can't in grey */
 .screen .outlined-button:not(:disabled) {
   color: black;
-  border: 3px solid black;
 }
+/* a toggle that's on gets a black outline (inset, so nothing shifts) */
 .outlined-button.on {
-  color: white;
-  background-color: black;
+  border-color: black;
+  box-shadow: inset 0 0 0 2px black;
 }
 
 /* the name field is a shell too, with its name under it */
@@ -78,7 +79,7 @@ a {
   line-height: 6.5vmin;
   padding: 0 2vmin;
   color: black;
-  border: 3px solid black;
+  border: 1px solid grey;
   border-radius: var(--shell-radius);
   outline: none;
 }
@@ -116,7 +117,8 @@ a {
   gap: 3vmin;
   min-height: 70px;
   padding: 3vmin 16px;
-  border: 5px solid black;
+  border: 1px solid grey;
+  border-radius: var(--shell-radius);
 }
 .seat .seat-name {
   font-size: 36px;
