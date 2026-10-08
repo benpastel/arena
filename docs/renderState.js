@@ -47,10 +47,11 @@ function setTooltip(element, text) {
 }
 
 
-function addActionName(element, name) {
+function addName(element, text) {
+  // the small name under a button, shared by the game and the lobby
   const nameElement = document.createElement("span");
   nameElement.classList.add("action-name");
-  nameElement.textContent = ACTION_NAMES[name];
+  nameElement.textContent = text;
   element.append(nameElement);
 }
 
@@ -66,7 +67,7 @@ function createActionPanel(action_panel, tiles) {
     element.dataset.name = name;
     element.classList = "outlined-button";
     action_panel.append(element);
-    addActionName(element, name);
+    addName(element, ACTION_NAMES[name]);
     setTooltip(element, TOOLTIPS[name]);
   }
   const sep1 = document.createElement('div');
@@ -78,7 +79,7 @@ function createActionPanel(action_panel, tiles) {
     element.dataset.name = name;
     element.classList = "tile-button";
     action_panel.append(element);
-    addActionName(element, name);
+    addName(element, ACTION_NAMES[name]);
     setTooltip(element, TOOLTIPS[name]);
   }
   const sep2 = document.createElement('div');
@@ -90,7 +91,7 @@ function createActionPanel(action_panel, tiles) {
     element.dataset.name = name;
     element.classList = "outlined-button";
     action_panel.append(element);
-    addActionName(element, name);
+    addName(element, ACTION_NAMES[name]);
     setTooltip(element, TOOLTIPS[name]);
   }
   return action_panel;
@@ -288,4 +289,4 @@ function renderOther(player_view) {
 }
 
 
-export {createBoard, renderBoard, renderLog, renderHand, createActionPanel, findCell, renderOther, renderWebs, setTooltip};
+export {createBoard, renderBoard, renderLog, renderHand, createActionPanel, findCell, renderOther, renderWebs, setTooltip, addName};

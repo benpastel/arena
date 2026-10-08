@@ -24,7 +24,7 @@ import {
   highlightBoardTiles,
 } from "./renderHighlights.js";
 
-import {renderLobby, renderRoom} from "./lobby.js";
+import {setUpLobby, renderLobby, renderRoom} from "./lobby.js";
 
 import {Net} from "./net.js";
 
@@ -125,7 +125,7 @@ window.addEventListener("DOMContentLoaded", () => {
   });
   // a pasted table link joins once the name is entered, not on its first letter
   nameInput.addEventListener("change", maybeJoin);
-  lobby.querySelector(".new-table").addEventListener("click", () => net.send({type: "createTable"}));
+  setUpLobby(lobby, () => net.send({type: "createTable"}));
   document.querySelector(".quit").addEventListener("click", () => {
     if (window.confirm("End this match for both players?")) {
       net.send({type: "quit"});

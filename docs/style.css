@@ -1,3 +1,8 @@
+:root {
+  /* the slightly rounded corner of a tile, shared by every button shell */
+  --shell-radius: 0.4vmin;
+}
+
 body {
   background-color: white;
   color: black;
@@ -19,7 +24,7 @@ body:not(.at-game) .container {
   display: none;
 }
 
-/* the lobby and table room: a single plain column */
+/* the lobby and table room: a single plain column, built from the game's buttons */
 .screen {
   box-sizing: border-box;
   width: min(600px, 100%);
@@ -27,7 +32,7 @@ body:not(.at-game) .container {
   padding: 40px 16px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 5vmin;
 }
 .lobby-head {
   display: flex;
@@ -43,70 +48,74 @@ body:not(.at-game) .container {
 a {
   color: black;
 }
-.box-button,
-.name-input {
-  font-family: inherit;
-  font-size: inherit;
+
+/* a row of buttons, with room underneath for their names */
+.button-row {
+  display: flex;
+  align-items: center;
+  gap: 3vmin;
+}
+
+/* outside the game, a button that can be pressed has a thick black shell */
+.screen .outlined-button:not(:disabled) {
   color: black;
-  background-color: white;
   border: 3px solid black;
-  border-radius: 0;
-  padding: 8px 16px;
 }
-.box-button {
-  cursor: pointer;
-}
-.box-button:disabled {
-  color: grey;
-  border-color: grey;
-  cursor: default;
-}
-.box-button.on {
+.outlined-button.on {
   color: white;
   background-color: black;
 }
-.box-button.on:disabled {
-  background-color: grey;
+
+/* the name field is a shell too, with its name under it */
+.name-field {
+  position: relative;
 }
 .name-input {
-  font-size: 30px;
-  border-width: 5px;
+  box-sizing: border-box;
+  width: 100%;
+  font-family: inherit;
+  font-size: 5vmin;
+  line-height: 6.5vmin;
+  padding: 0 2vmin;
+  color: black;
+  border: 3px solid black;
+  border-radius: var(--shell-radius);
   outline: none;
 }
 .name-input:focus {
   border-color: darkgreen;
 }
-.new-table {
-  align-self: flex-start;
-}
+
+/* each open table is one wide button: who's there and the tiles */
 .table-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 5vmin;
 }
-.table-row {
+.screen .table-row {
+  box-sizing: border-box;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  border-width: 5px;
-  text-align: left;
+  width: 100%;
+  padding: 1vmin 2vmin;
+  font-size: 5vmin;
 }
 .table-row:disabled .seat-name {
   color: grey;
 }
 .table-tiles {
-  font-size: 40px;
-  line-height: 40px;
+  line-height: 6.5vmin;
 }
 
 /* the table room: north's seat, the tiles, south's seat */
 .seat {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 3vmin;
   min-height: 70px;
-  padding: 0 16px;
+  padding: 3vmin 16px;
   border: 5px solid black;
 }
 .seat .seat-name {
@@ -119,32 +128,28 @@ a {
 .picker {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-.picker-head {
-  display: flex;
-  align-items: center;
-  gap: 16px;
+  gap: 5vmin;
 }
 .tile-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(6, 1fr);
+  row-gap: 5vmin;
+  justify-items: center;
 }
 .tile-grid.off {
   opacity: 0.3;
 }
-.tile-grid .tile-choice {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 6px 0;
-  color: grey;
-  border: 1px solid grey;
+/* tiles in the picker are drawn like the game's tile buttons */
+.tile-choice {
+  font-family: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  color: lightgrey;
+  cursor: pointer;
 }
 .tile-choice.chosen {
   color: black;
-  border: 3px solid black;
   font-weight: bold;
 }
 .tile-choice:disabled {
@@ -157,21 +162,13 @@ a {
 .picker .tooltiptext {
   pointer-events: none;
 }
-.tile-glyph {
-  font-size: 50px;
-  line-height: 56px;
-}
-.tile-name {
-  font-size: 13px;
-}
-.room-buttons {
-  display: flex;
-  gap: 16px;
+.tile-count {
+  font-size: 3vmin;
 }
 .link-row {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 3vmin;
 }
 .link-row code {
   font-family: inherit;
@@ -351,14 +348,26 @@ currently available actions are highlighted
   white-space: nowrap;
 }
 .outlined-button {
-  font-size: 200%;
-  border-radius: 8%;
+  border-radius: var(--shell-radius);
   border: 1px solid grey;
-  width: 5vmin;
+  box-sizing: content-box;
+  min-width: 5vmin;
   line-height: 6.5vmin;
   font-size: 5vmin;
+  font-family: inherit;
+  text-align: center;
+  color: inherit;
+  background-color: white;
+  padding: 0;
   vertical-align: middle;
   /* TODO the emoji aren't quite vertically centered in the box */
+}
+button.outlined-button {
+  cursor: pointer;
+}
+button.outlined-button:disabled {
+  color: grey;
+  cursor: default;
 }
 /* One of the buttons has x2 written above in purple */
 .x2:before {
