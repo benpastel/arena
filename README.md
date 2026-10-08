@@ -23,7 +23,7 @@ Each game uses 5 types of tiles, with 3 copies each.  The tile abilities are:
  - 🀎 RAM: pay $3, move 1 cardinal direction, then knockback all adjacent tiles.  They die if they can't move.
 
 After each action, opponents can:
- - 👍 ACCEPT: allow the claimed ability to proceed
+ - ✓ ACCEPT: allow the claimed ability to proceed
  - 🚩 CHALLENGE: reveal the tile!
      - if it has the claimed ability, the challenger loses a tile, and the action proceeds.
      - if it doesn't have the claimed ability, the current player loses a tile, and action is blocked.

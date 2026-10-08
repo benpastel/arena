@@ -142,7 +142,7 @@ class GameResult(str, Enum):
 
 
 class Response(str, Enum):
-    ACCEPT = "👍"
+    ACCEPT = "✓"
     CHALLENGE = "🚩"
 
     def __str__(self) -> str:

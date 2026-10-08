@@ -50,7 +50,7 @@ const ALL_TILES = [
 const ACTION_NAMES = {
   "↕": "MOVE",
   ...Object.fromEntries(ALL_TILES),
-  "👍": "ACCEPT",
+  "✓": "ACCEPT",
   "🚩": "CHALLENGE",
 };
 // must match python TILES_PER_GAME
@@ -59,7 +59,7 @@ const OTHER_ACTIONS = {
   "↕": "↕", // move
 };
 const RESPONSES = {
-  "👍": "👍", // accept
+  "✓": "✓", // accept
   "🚩": "🚩", // challenge
 };
 
@@ -120,7 +120,7 @@ const TOOLTIPS = {
     + "enemy crossing web loses a turn<br>"
     + "webs block fireballs<br>"
     + "fireballs & grenades destroy webs",
-  "👍": "ACCEPT",
+  "✓": "ACCEPT",
   "🚩": "CHALLENGE"
 }
 
