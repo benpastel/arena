@@ -255,7 +255,7 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
 }
 
 /* ------------------------------------------------------------------- left */
-.left {
+.sidebar {
   grid-column: 1;
   grid-row: 1 / 4;
   min-height: 0;
@@ -577,6 +577,10 @@ selection; colour only ever says whose piece it is
 .claim-note.right { transform: translate(0, -50%); }
 .claim-note.left { transform: translate(-100%, -50%); }
 .claim-note.below { transform: translate(-50%, 0); }
+.claim-note.above-right { transform: translate(0, -100%); }
+.claim-note.above-left { transform: translate(-100%, -100%); }
+.claim-note.below-left { transform: translate(-100%, 0); }
+.claim-note.below-right { transform: translate(0, 0); }
 .claim-note .claimed,
 .claim-note .option {
   font-size: 7.3cqmin;

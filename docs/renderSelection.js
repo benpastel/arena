@@ -117,8 +117,11 @@ function drawClaim(board, selection, responses) {
     }
     noteX += nx * width * NOTE_OFFSET;
     noteY += ny * width * NOTE_OFFSET;
-    if (Math.abs(nx) > Math.abs(ny)) {
+    if (Math.abs(nx) > 2 * Math.abs(ny)) {
       anchor = nx > 0 ? "right" : "left";
+    } else if (Math.abs(nx) * 2 > Math.abs(ny)) {
+      // beside a slanted line, the note hangs from its corner so it stays clear of it
+      anchor = nx > 0 ? "above-right" : "above-left";
     }
   } else {
     noteY -= width * 0.08;
@@ -161,11 +164,14 @@ function keepOnBoard(board, note, noteX, noteY, x1, y1, x2, y2) {
   // a note that would run off the board goes on the other side of its line instead
   const bounds = board.getBoundingClientRect();
   const rect = note.getBoundingClientRect();
-  const flips = {right: "left", left: "right", above: "below"};
+  const flips = {
+    right: "left", left: "right", above: "below",
+    "above-right": "below-left", "above-left": "below-right",
+  };
   const off =
     rect.left < bounds.left || rect.right > bounds.right ||
     rect.top < bounds.top || rect.bottom > bounds.bottom;
-  const anchor = ["right", "left", "above"].find((a) => note.classList.contains(a));
+  const anchor = Object.keys(flips).find((a) => note.classList.contains(a));
   if (!off || !anchor) {
     return;
   }
