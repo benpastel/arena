@@ -128,6 +128,10 @@ class State(BaseModel):
     # each player's display name, for the log
     names: dict[Player, str]
 
+    # a square whose tile just died, left empty while its player chooses the
+    # replacement from their hand
+    vacant: dict[Player, Square] = {}
+
     # position of the exchange squares that allow swapping tiles
     exchange_positions: list[Square]
 
@@ -343,6 +347,7 @@ class State(BaseModel):
             go_again=self.go_again,
             match_score=self.match_score,
             names=self.names,
+            vacant=self.vacant,
             game_score=self.game_score,
             bonus_position=self.bonus_position,
             bonus_amount=self.bonus_amount,

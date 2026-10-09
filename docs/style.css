@@ -290,41 +290,50 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
 .smite-cost .option.shell::before {
   border-width: var(--frame-width, 0.02em);
 }
+/* each kind of tile has its own fixed share of the column, so one filling up never
+   moves the others */
 .acc {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.acc-row {
+  flex: 1;
+  min-height: 0;
+  padding: 12px 18px;
   border-top: 1px solid var(--line);
-  padding: 10px 18px;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 6px 10px;
-  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 .acc-label {
-  font-size: 12px;
+  font-size: 14px;
   font-style: italic;
   color: var(--muted);
 }
 .acc-tiles {
-  font-size: 24px;
+  font-size: 28px;
   line-height: 1;
   color: #7a756b;
-  word-break: break-all;
+}
+/* a dying tile, on its way from the board to the graveyard */
+.ghost {
+  position: fixed;
+  z-index: 10;
+  line-height: 1;
+  pointer-events: none;
 }
 /* a narrow column stacks each label over its tiles */
 @container (max-width: 200px) {
-  .in-play, .smite-cost, .acc, .quit {
+  .in-play, .smite-cost, .acc-row, .quit {
     padding-left: 12px;
     padding-right: 12px;
-  }
-  .acc {
-    grid-template-columns: 1fr;
-    gap: 2px;
-  }
-  .acc-tiles {
-    margin-bottom: 6px;
   }
 }
 .quit {
   margin-top: auto;
+  flex-shrink: 0;
   height: var(--strip);
   padding: 0 18px;
   display: flex;
@@ -444,6 +453,31 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
 }
 .board-tile {
   font-weight: normal;
+}
+/* an empty tile, dashed, where a tile died and its replacement will go */
+.vacancy {
+  display: inline-block;
+  position: relative;
+  top: -0.058em;
+  width: 0.78em;
+  height: 1em;
+  font-size: 14.6cqmin;
+  animation: vacancy 1.4s ease-in-out infinite alternate;
+}
+.vacancy::before {
+  content: "";
+  position: absolute;
+  left: 0.0475em;
+  top: 0.104em;
+  width: 0.685em;
+  height: 0.908em;
+  box-sizing: border-box;
+  border: 0.02em dashed currentColor;
+  border-radius: 0.055em;
+}
+@keyframes vacancy {
+  from { opacity: 1; }
+  to { opacity: 0.35; }
 }
 /*
 what makes a square special sits in its bottom-left corner: the bonus, or an
@@ -729,7 +763,7 @@ the same place
   width: 88vw;
   height: 88vh;
   overflow-y: auto;
-  padding: 5vh 5vw;
+  padding: max(5vh, 64px) 5vw 5vh;
   box-sizing: border-box;
   background-color: white;
   border: 1.5px solid #bdb5a6;
@@ -744,14 +778,16 @@ the same place
   font-size: 40px;
   -webkit-text-stroke: 0;
 }
+/* columns rather than a grid, so a tile with two boards doesn't open a gap beside it */
 .rules-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 4vh 4vw;
+  columns: 460px;
+  column-gap: 4vw;
 }
 .rule {
+  break-inside: avoid;
+  margin-bottom: 4vh;
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto 1fr auto;
   grid-template-rows: auto 1fr;
   column-gap: 18px;
   align-items: start;
@@ -771,6 +807,81 @@ the same place
   font-size: 18px;
   line-height: 1.45;
   font-style: italic;
+}
+.rule-text > div + div {
+  margin-top: 4px;
+}
+/* a mini board per use, in the board's own hairlines, jade for you, cinnabar for them */
+.rule-boards {
+  grid-column: 3;
+  grid-row: 1 / 3;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  --you: #2f6b55;
+  --them: #a8452f;
+  --line: #e4dfd5;
+  --frame: #bdb5a6;
+}
+.rule-board {
+  display: grid;
+  grid-template-columns: repeat(5, 28px);
+  grid-template-rows: repeat(5, 28px);
+  border: 1px solid var(--frame);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.rule-square {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.rule-square:nth-child(5n) {
+  border-right: none;
+}
+.rule-square:nth-child(n + 21) {
+  border-bottom: none;
+}
+.rule-square.blast {
+  background-color: color-mix(in srgb, var(--them) 16%, transparent);
+}
+.rule-square.webbed {
+  background-color: color-mix(in srgb, var(--you) 18%, transparent);
+}
+.rule-tile {
+  font-size: 26px;
+  line-height: 1;
+  position: relative;
+  top: -0.058em;
+}
+.rule-tile.you, .rule-dot.you { color: var(--you); }
+.rule-tile.them, .rule-dot.them, .rule-sign { color: var(--them); }
+.rule-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+.rule-dot.trail {
+  width: 4px;
+  height: 4px;
+  color: var(--them);
+  opacity: 0.6;
+}
+.rule-sign {
+  font-size: 15px;
+  line-height: 1;
+}
+/* where the tile set off from: an empty tile, dashed */
+.rule-start {
+  width: 15px;
+  height: 19px;
+  border: 1.5px dashed var(--you);
+  border-radius: 3px;
+  box-sizing: border-box;
 }
 
 /*

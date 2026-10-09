@@ -1,3 +1,5 @@
+import asyncio
+import os
 import random
 
 from server.constants import (
@@ -78,16 +80,22 @@ class Human:
         )
 
 
+# seconds the bot takes over each decision, so a person can follow its turn;
+# set BOT_DELAY=0.01 for fast testing
+BOT_DELAY = float(os.environ.get("BOT_DELAY", "1"))
+
+
 class RandomBot:
     """
     Chooses true actions when possible; otherwise lies with fixed probability.
     Challanges with fixed probability.
     """
 
-    def __init__(self):
+    def __init__(self, delay: float = BOT_DELAY):
         self.seat = DummySeat()
         self.truth_prob = 2 / 3
         self.challenge_prob = 1 / 4
+        self.delay = delay
 
     async def choose_action_or_square(
         self,
@@ -97,6 +105,7 @@ class RandomBot:
         true_action_hint: Action | None,
         targets: dict[Action, list[Square]] | None = None,
     ) -> Action | Square:
+        await asyncio.sleep(self.delay)
         # if there's a true, nonmove action, always take it
         if true_action_hint and true_action_hint in possible_actions:
             return true_action_hint
@@ -119,6 +128,7 @@ class RandomBot:
         possible_hand_tiles: list[Tile],
         prompt: str,
     ) -> Square | Tile:
+        await asyncio.sleep(self.delay)
         # choose randomly
         choices: list[Square | Tile] = possible_squares + possible_hand_tiles
         return random.choice(choices)
@@ -129,6 +139,7 @@ class RandomBot:
         prompt: str,
         true_response_hint: Tile | None,
     ) -> Response | Tile:
+        await asyncio.sleep(self.delay)
         # if there's a true Tile response reflecting an attack, always choose it
         if true_response_hint in possible_responses:
             return true_response_hint
@@ -158,6 +169,7 @@ class RandomBot:
         choices: list[Tile],
         prompt: str,
     ) -> Tile:
+        await asyncio.sleep(self.delay)
         # choose randomly
         return random.choice(choices)
 

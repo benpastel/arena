@@ -14,6 +14,8 @@ import {
 
 import {renderSelection} from "./renderSelection.js";
 
+import {snapshot, animate} from "./animate.js";
+
 import {
   highlightSquares,
   highlightHand,
@@ -115,6 +117,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const redrawSelection = () => renderSelection(board, selection, highlight);
 
   function renderGame(player_view) {
+    const before = snapshot(board);
     renderBoard(board, player_view);
     renderLog(log, player_view);
     renderWebs(board, player_view);
@@ -122,6 +125,7 @@ window.addEventListener("DOMContentLoaded", () => {
     renderOther(player_view);
     renderRules(rules.querySelector(".rules-list"), player_view);
     redrawSelection();
+    animate(before, board, player_view);
   }
 
   // the turn is shown in the strip of whoever the game is waiting on, with the prompt

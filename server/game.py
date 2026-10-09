@@ -370,8 +370,6 @@ async def _lose_tile(
 
     If `player_or_square` is a player, the player chooses one tile on board to lose.
     (E.g. when the player lost a challenge.)
-    We allow the player to cancel and retry that choice when they get to the replacement
-    tile.
     """
 
     # select which tile on board is lost
@@ -397,8 +395,8 @@ async def _lose_tile(
         # i.e. their last tile was already killed by action
         return
 
-    if len(possible_squares) > 1 or len(state.tiles_in_hand[player]) > 0:
-        # current player will need to choose something, so set a waiting prompt for opponent
+    if len(possible_squares) > 1:
+        # current player will need to choose a tile, so set a waiting prompt for opponent
         # and send any state updates so far to both players
         await broadcast_state_changed(state, players)
         await send_prompt(
@@ -418,70 +416,46 @@ async def _lose_tile(
     else:
         square = possible_squares[0]
 
-    # choose replacement tile from hand in a loop
-    # to enable choosing a different square to lose
-    while True:
-        # mark the selected tile with an X for this player
-        await notify_selection_changed(
-            player, start=None, action=None, target=square, seat=agent.seat
-        )
-
-        tile = state.tile_at(square)
-        hand_tiles = state.tiles_in_hand[player]
-
-        if len(hand_tiles) == 0:
-            # the player has no tiles in hand, so no choice
-            replacement = None
-            break
-
-        if len(hand_tiles) == 1:
-            # the player only has one tile in hand, so no choice
-            replacement = hand_tiles[0]
-            break
-
-        if len(possible_squares) == 1:
-            # the player chooses the replacement tile
-            choice = await agent.choose_square_or_hand(
-                possible_squares=[],
-                possible_hand_tiles=hand_tiles,
-                prompt="Choose the replacement tile from your hand.",
-            )
-            replacement = cast(Tile, choice)
-            break
-
-        # otherwise, the player chooses the replacement tile or changes the lost tile
-        choice = await agent.choose_square_or_hand(
-            possible_squares=possible_squares,
-            possible_hand_tiles=hand_tiles,
-            prompt="Choose the replacement tile from your hand, or a different tile to lose.",
-        )
-        if choice in hand_tiles:
-            replacement = cast(Tile, choice)
-            break
-        else:
-            # they changed the lost tile
-            # go around the loop again to choose the replacement
-            assert choice in possible_squares
-            square = cast(Square, choice)
-            continue
-
-    # move the tile from alive to dead
+    # the tile dies as soon as it's known, so both players see it go before any
+    # replacement is chosen
+    tile = state.tile_at(square)
     position_index = state.positions[player].index(square)
     state.tiles_on_board[player].pop(position_index)
     state.positions[player].pop(position_index)
     state.tiles_on_board_revealed[player].pop(position_index)
     state.discard.append(tile)
+    state.log(LogKind.LOSE, player, tile)
+    state.score_point(other_player(player))
 
-    # move the replacement tile if applicable
+    hand_tiles = state.tiles_in_hand[player]
+    replacement: Tile | None
+    if len(hand_tiles) > 1:
+        # the square waits, empty, while they choose which tile fills it
+        state.vacant = {player: square}
+        await clear_selection(players)
+        await broadcast_state_changed(state, players)
+        await send_prompt(
+            "Waiting for opponent to choose a replacement tile.",
+            players[other_player(player)].seat,
+        )
+        choice = await agent.choose_square_or_hand(
+            possible_squares=[],
+            possible_hand_tiles=hand_tiles,
+            prompt="Choose the replacement tile from your hand.",
+        )
+        replacement = cast(Tile, choice)
+        state.vacant = {}
+    elif hand_tiles:
+        replacement = hand_tiles[0]
+    else:
+        replacement = None
+
     if replacement:
         state.tiles_in_hand[player].remove(replacement)
         state.tiles_on_board[player].append(replacement)
         state.positions[player].append(square)
         state.tiles_on_board_revealed[player].append(False)
 
-    state.log(LogKind.LOSE, player, tile)
-
-    state.score_point(other_player(player))
     await clear_selection(players)
     await broadcast_state_changed(state, players)
 

@@ -10,6 +10,7 @@ import {
   HIDDEN_TILE,
   ACTION_NAMES,
   DESCRIPTIONS,
+  DIAGRAMS,
 } from "./constants.js";
 
 
@@ -121,6 +122,13 @@ function renderBoard(board, player_view) {
       cell.prepend(piece);
       cell.classList.add(player);
     }
+  }
+
+  // a square whose tile just died, waiting for its player to fill it from their hand
+  for (const [player, [row, col]] of Object.entries(player_view.vacant || {})) {
+    const vacancy = document.createElement("span");
+    vacancy.className = `vacancy ${player}`;
+    findCell(board, row, col).prepend(vacancy);
   }
 }
 
@@ -282,9 +290,21 @@ function renderWebs(board, player_view) {
 }
 
 function renderOther(player_view) {
-  document.querySelector(".unused-contents").textContent = player_view.unused_tiles.join("");
-  document.querySelector(".discard-contents").textContent = player_view.discard.join("");
-  document.querySelector(".hidden-tiles-contents").textContent = player_view.hidden_tiles.join("");
+  // each tile its own element, so a dying tile can fly to its place in the graveyard
+  for (const [selector, tiles] of [
+    [".graveyard-contents", player_view.discard],
+    [".unused-contents", player_view.unused_tiles],
+    [".hidden-tiles-contents", player_view.hidden_tiles],
+  ]) {
+    const contents = document.querySelector(selector);
+    contents.innerHTML = "";
+    for (const tile of tiles) {
+      const element = document.createElement("span");
+      element.className = "acc-tile";
+      element.textContent = tile;
+      contents.append(element);
+    }
+  }
   document.querySelector(".in-play").textContent = player_view.tiles_in_game.join("");
   document.querySelector(".smite-cost .cost").textContent = `= $${player_view.smite_cost}`;
 }
@@ -302,14 +322,59 @@ function renderRules(list, player_view) {
     const name = document.createElement("span");
     name.className = "rule-name";
     name.textContent = ACTION_NAMES[glyph];
-    const text = document.createElement("span");
+    const text = document.createElement("div");
     text.className = "rule-text";
-    text.textContent = glyph === "⚡"
-      ? `on reaching $${player_view.smite_cost}, pay it to kill any enemy tile`
+    const lines = glyph === "⚡"
+      ? [`on reaching $${player_view.smite_cost}, pay it to kill any enemy tile`]
       : DESCRIPTIONS[glyph];
-    row.append(glyphElement, name, text);
+    for (const line of lines) {
+      const lineElement = document.createElement("div");
+      lineElement.textContent = line;
+      text.append(lineElement);
+    }
+    const boards = document.createElement("div");
+    boards.className = "rule-boards";
+    // moving and smiting aren't a tile's, so any of your tiles stands in
+    const actor = glyph in TILES ? glyph : HIDDEN_TILE;
+    for (const diagram of DIAGRAMS[glyph]) {
+      boards.append(renderDiagram(diagram, actor));
+    }
+    row.append(glyphElement, name, text, boards);
     list.append(row);
   }
+}
+
+function renderDiagram(diagram, actor) {
+  // a mini board from DIAGRAMS: each square's token is its mark, then any suffixes
+  const board = document.createElement("div");
+  board.className = "rule-board";
+  for (const line of diagram) {
+    for (const token of line.split(" ")) {
+      const square = document.createElement("div");
+      square.className = "rule-square";
+      if (token.includes("*")) square.classList.add("blast");
+      if (token.includes("W")) square.classList.add("webbed");
+      const mark = token.replace(/[*W]/g, "");
+      const markElement = document.createElement("span");
+      if (mark === "@") {
+        markElement.className = "rule-tile you";
+        markElement.textContent = actor;
+      } else if (mark === "E") {
+        markElement.className = "rule-tile them";
+        markElement.textContent = HIDDEN_TILE;
+      } else if (mark === "g") {
+        markElement.className = "rule-start";
+      } else if (mark === "o" || mark === "x" || mark === "-") {
+        markElement.className = {o: "rule-dot you", x: "rule-dot them", "-": "rule-dot trail"}[mark];
+      } else if (mark !== ".") {
+        markElement.className = "rule-sign";
+        markElement.textContent = mark;
+      }
+      square.append(markElement);
+      board.append(square);
+    }
+  }
+  return board;
 }
 
 export {createBoard, renderBoard, renderLog, renderHand, findCell, renderOther, renderRules, renderWebs, setTooltip, addName};
