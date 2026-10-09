@@ -562,8 +562,16 @@ selection; colour only ever says whose piece it is
   stroke-width: 0.9cqmin;
   stroke-linecap: round;
 }
-.claim-line circle {
+.claim-line polygon {
   fill: currentColor;
+}
+.claim-line .claim-cross {
+  stroke-width: 1.1cqmin;
+}
+/* white under the cross, so it reads over the tile it lands on */
+.claim-line .claim-halo {
+  stroke: white;
+  stroke-width: 2cqmin;
 }
 /* the claimed ability (and any reflect, and the answers) written beside the line */
 .claim-note {

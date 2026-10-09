@@ -98,17 +98,37 @@ function drawClaim(board, selection, responses) {
   if (length > 0) {
     const svg = document.createElementNS(SVG, "svg");
     svg.classList.add("claim-line", player);
+    // the end says what the claim does there: an arrowhead where the piece moves to,
+    // a cross where it attacks
+    const [ux, uy] = [(x2 - x1) / length, (y2 - y1) / length];
+    const attack = isAttack(board, selection);
+    const head = width * 0.04;
     const line = document.createElementNS(SVG, "line");
     line.setAttribute("x1", x1);
     line.setAttribute("y1", y1);
-    line.setAttribute("x2", x2);
-    line.setAttribute("y2", y2);
+    line.setAttribute("x2", attack ? x2 : x2 - ux * head * 0.8);
+    line.setAttribute("y2", attack ? y2 : y2 - uy * head * 0.8);
     svg.append(line);
-    const end = document.createElementNS(SVG, "circle");
-    end.setAttribute("cx", x2);
-    end.setAttribute("cy", y2);
-    end.setAttribute("r", width * 0.012);
-    svg.append(end);
+    if (attack) {
+      const arm = width * 0.03;
+      for (const halo of [true, false]) {
+        for (const [dx, dy] of [[arm, arm], [arm, -arm]]) {
+          const stroke = document.createElementNS(SVG, "line");
+          stroke.setAttribute("x1", x2 - dx);
+          stroke.setAttribute("y1", y2 - dy);
+          stroke.setAttribute("x2", x2 + dx);
+          stroke.setAttribute("y2", y2 + dy);
+          stroke.classList.add(halo ? "claim-halo" : "claim-cross");
+          svg.append(stroke);
+        }
+      }
+    } else {
+      const arrow = document.createElementNS(SVG, "polygon");
+      const [bx, by] = [x2 - ux * head, y2 - uy * head];
+      const [px, py] = [-uy * head * 0.55, ux * head * 0.55];
+      arrow.setAttribute("points", `${x2},${y2} ${bx + px},${by + py} ${bx - px},${by - py}`);
+      svg.append(arrow);
+    }
     board.append(svg);
 
     let [nx, ny] = [-(y2 - y1) / length, (x2 - x1) / length];
@@ -158,6 +178,19 @@ function drawClaim(board, selection, responses) {
   }
   board.append(note);
   keepOnBoard(board, note, noteX, noteY, x1, y1, x2, y2);
+}
+
+// abilities whose target is something attacked, rather than a square moved to
+const ATTACKS = new Set(["🀒", "🀌", "🀙", "🀛", "🀍"]);
+
+function isAttack(board, {player, action, target}) {
+  // a backstabber kills an enemy behind it, but otherwise moves
+  if (action === "🀇") {
+    const [row, col] = target;
+    const enemy = player === "north" ? "south" : "north";
+    return findCell(board, row, col).classList.contains(enemy);
+  }
+  return ATTACKS.has(action);
 }
 
 function keepOnBoard(board, note, noteX, noteY, x1, y1, x2, y2) {
