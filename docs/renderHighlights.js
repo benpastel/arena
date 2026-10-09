@@ -29,22 +29,10 @@ function highlightSquares(squares, board, mySide) {
   }
 }
 
-function highlightActions(actions, actionPanel) {
-  // highlight action or response icons
-  // pass an empty list to clear highlighting
-  for (const element of actionPanel.querySelectorAll("div")) {
-    if (actions.includes(element.dataset.name)) {
-      element.classList.add(HIGHLIGHT);
-    } else {
-      element.classList.remove(HIGHLIGHT);
-    }
-  }
-}
-
-function highlightHand(handTiles, infoPanel) {
+function highlightHand(handTiles, container) {
   // highlight tiles in hand
   // pass an empty list to clear highlighting
-  for (const element of infoPanel.querySelectorAll('.hand-tile')) {
+  for (const element of container.querySelectorAll('.hand-tile')) {
     if (handTiles.includes(element.dataset.tileName)) {
       element.classList.add(HIGHLIGHT);
     } else {
@@ -65,4 +53,4 @@ function highlightBoardTiles(boardTiles, board) {
   }
 }
 
-export {highlightSquares, highlightActions, highlightHand, highlightBoardTiles};
+export {highlightSquares, highlightHand, highlightBoardTiles};

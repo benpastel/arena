@@ -20,35 +20,39 @@
     </div>
     <div class="room screen"></div>
     <div class="container">
-      <div class="player-info grid-element">
-        <div class="hand north">
-          <div class="coins">$0</div>
+      <div class="left">
+        <div class="in-play" title="what each tile does"></div>
+        <div class="acc">
+          <span class="acc-label">unused</span><span class="acc-tiles unused-contents"></span>
+          <span class="acc-label">discarded</span><span class="acc-tiles discard-contents"></span>
+          <span class="acc-label">unknown to you</span><span class="acc-tiles hidden-tiles-contents"></span>
         </div>
-        <div class="other">
-          <div class="unused">
-            <div class="unused-contents"></div>
-          </div>
-          <div class="discard">
-            <div class="discard-contents"></div>
-          </div>
-          <div class="hidden-tiles">
-            <div class="hidden-tiles-contents"></div>
-          </div>
-        </div>
-        <div class="hand south">
-          <div class="coins">$0</div>
+        <div class="quit">
+          <span class="option shell"><span class="symbol"><span>✕</span></span></span>
+          <span class="quit-name">quit</span>
         </div>
       </div>
-      <div class="board grid-element"></div>
-      <div class="side grid-element">
+      <div class="strip top">
+        <div class="who"><span class="name"></span><span class="turn-note"></span></div>
+        <div class="coins"><span class="amount"></span><span class="of"></span></div>
+        <div class="bar"><span></span></div>
+        <div class="hand-tiles"></div>
+      </div>
+      <div class="board"></div>
+      <div class="strip bottom">
+        <div class="who"><span class="name"></span><span class="turn-note"></span></div>
+        <div class="coins"><span class="amount"></span><span class="of"></span></div>
+        <div class="bar"><span></span></div>
+        <div class="hand-tiles"></div>
+      </div>
+      <div class="side">
         <div class="log"></div>
-        <div class="prompt"></div>
       </div>
-      <div class="bottom-row">
-        <div class="quit-panel grid-element">
-          <div class="outlined-button quit">X<span class="action-name">QUIT</span></div>
-        </div>
-        <div class="actions grid-element"></div>
+    </div>
+    <div class="rules" hidden>
+      <div class="rules-panel">
+        <span class="option shell rules-close"><span class="symbol"><span>✕</span></span></span>
+        <div class="rules-list"></div>
       </div>
     </div>
     <div class="netbar" hidden></div>

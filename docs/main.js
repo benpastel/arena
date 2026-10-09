@@ -8,6 +8,7 @@ import {
   renderLog,
   renderHand,
   renderOther,
+  renderRules,
   renderWebs,
 } from "./renderState.js";
 
@@ -67,14 +68,39 @@ function showScreen(screen) {
   document.body.className = `at-${screen}`;
 }
 
-window.addEventListener("DOMContentLoaded", () => {
-  const board = document.querySelector(".board");
-  createBoard(board);
+// the opponent's side, given ours
+function otherSide(side) {
+  return side === "north" ? "south" : "north";
+}
 
-  const prompt = document.querySelector(".prompt");
-  const infoPanel = document.querySelector(".player-info");
-  const actionPanel = document.querySelector(".actions");
+window.addEventListener("DOMContentLoaded", () => {
+  const container = document.querySelector(".container");
+  const board = document.querySelector(".board");
+  const topStrip = container.querySelector(".strip.top");
+  const bottomStrip = container.querySelector(".strip.bottom");
   const log = document.querySelector(".log");
+  const rules = document.querySelector(".rules");
+
+  // the board and strips are drawn from our side: ours at the bottom, theirs at the top
+  let orientation = null;
+  let lastView = null;
+  function orient(mySide) {
+    const side = mySide || "south";
+    if (side === orientation) {
+      return;
+    }
+    orientation = side;
+    container.classList.toggle("me-north", side === "north");
+    for (const [strip, owner] of [[topStrip, otherSide(side)], [bottomStrip, side]]) {
+      strip.classList.remove("north", "south");
+      strip.classList.add(owner);
+    }
+    createBoard(board, side);
+    if (lastView) {
+      renderGame(lastView);
+    }
+  }
+  orient("south");
 
   const lobby = document.querySelector(".lobby");
   const room = document.querySelector(".room");
@@ -87,6 +113,36 @@ window.addEventListener("DOMContentLoaded", () => {
   let selection = null;
   let highlight = null;
   const redrawSelection = () => renderSelection(board, selection, highlight);
+
+  function renderGame(player_view) {
+    renderBoard(board, player_view);
+    renderLog(log, player_view);
+    renderWebs(board, player_view);
+    renderHand(player_view);
+    renderOther(player_view);
+    renderRules(rules.querySelector(".rules-list"), player_view);
+    redrawSelection();
+  }
+
+  // the turn is shown in the strip of whoever the game is waiting on, with the prompt
+  // written in it
+  function showTurn(promptText, choiceId) {
+    const waiting = "Waiting for opponent to ";
+    let acting = null;
+    let note = "";
+    if (choiceId > 0) {
+      acting = bottomStrip;
+      note = promptText;
+    } else if (promptText.startsWith(waiting)) {
+      acting = topStrip;
+      const rest = promptText.slice(waiting.length);
+      note = rest.charAt(0).toUpperCase() + rest.slice(1);
+    }
+    for (const strip of [topStrip, bottomStrip]) {
+      strip.classList.toggle("acting", strip === acting);
+      strip.querySelector(".turn-note").textContent = strip === acting ? note : "";
+    }
+  }
   window.addEventListener("resize", redrawSelection);
 
   let welcomed = false;
@@ -128,6 +184,22 @@ window.addEventListener("DOMContentLoaded", () => {
   // a pasted table link joins once the name is entered, not on its first letter
   nameInput.addEventListener("change", maybeJoin);
   setUpLobby(lobby, () => net.send({type: "createTable"}));
+  // the reference for the tiles in play: one click opens it over most of the screen
+  const openRules = () => { rules.hidden = false; };
+  const closeRules = () => { rules.hidden = true; };
+  document.querySelector(".in-play").addEventListener("click", openRules);
+  rules.querySelector(".rules-close").addEventListener("click", closeRules);
+  rules.addEventListener("click", ({ target }) => {
+    if (target === rules) {
+      closeRules();
+    }
+  });
+  window.addEventListener("keydown", ({ key }) => {
+    if (key === "Escape") {
+      closeRules();
+    }
+  });
+
   document.querySelector(".quit").addEventListener("click", () => {
     if (window.confirm("End this match for both players?")) {
       net.send({type: "quit"});
@@ -172,6 +244,7 @@ window.addEventListener("DOMContentLoaded", () => {
         wantTable = table.id;
         setHash(`#/t/${table.id}`);
         if (table.playing) {
+          orient(table.mySide);
           showScreen("game");
         } else {
           renderRoom(room, table, actions);
@@ -196,14 +269,8 @@ window.addEventListener("DOMContentLoaded", () => {
   function handleGameEvent(event) {
     if (event.type === "STATE_CHANGE") {
       // update the UI with changes to the persistent game state
-      const player_view = event["playerView"];
-
-      renderBoard(board, player_view, actionPanel);
-      renderLog(log, player_view);
-      renderWebs(board, player_view);
-      renderHand(player_view);
-      renderOther(player_view);
-      redrawSelection();
+      lastView = event["playerView"];
+      renderGame(lastView);
     } else if (event.type === "SELECTION_CHANGE") {
       // update the UI with changes to the current (partially) selected moves.
       // the server should call this again with null selections to clear the highlights.
@@ -216,24 +283,23 @@ window.addEventListener("DOMContentLoaded", () => {
       // the server should call this again with empty lists to clear the highlights
       highlight = event;
       highlightSquares(event["squares"], board, table?.mySide);
-      highlightHand(event["handTiles"], infoPanel);
+      highlightHand(event["handTiles"], container);
       highlightBoardTiles(event["boardTiles"], board);
       redrawSelection();
     } else if (event.type === "PROMPT") {
-      prompt.textContent = event.prompt;
       CHOICE_ID = parseInt(event.choiceId);
-
+      showTurn(event.prompt, CHOICE_ID);
     } else if (event.type === "MATCH_CHANGE") {
       alert(event.message);
     }
   }
 
-  sendSelection(board, infoPanel, net);
+  sendSelection(board, container, net);
 
   net.connect();
 });
 
-function sendSelection(board, infoPanel, net) {
+function sendSelection(board, container, net) {
   // send all clicks on the board
   board.addEventListener("click", ({ target }) => {
     // an ability or response drawn on the board; one in a square also picks that square
@@ -257,6 +323,9 @@ function sendSelection(board, infoPanel, net) {
     // and let the server decide if it's a valid start, target, or exchange tile
     const boardTile = target.closest("[data-tile-name]")?.dataset.tileName;
     const cell = target.closest(".cell");
+    if (!cell) {
+      return;
+    }
     const row = parseInt(cell.dataset.row);
     const column = parseInt(cell.dataset.column);
 
@@ -280,8 +349,8 @@ function sendSelection(board, infoPanel, net) {
   // and let server decide if they are valid replacements for a lost tile
   //
   // clicks on the opponent's tiles are also sent, but they are Tile.HIDDEN so never valid
-  infoPanel.addEventListener("click", ({ target }) => {
-    const handTile = target.dataset.tileName;
+  container.addEventListener("click", ({ target }) => {
+    const handTile = target.closest(".hand-tile")?.dataset.tileName;
     if (handTile === undefined) {
       return;
     }

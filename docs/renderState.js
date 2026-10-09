@@ -3,32 +3,31 @@
 import {
   ROWS,
   COLUMNS,
-  OTHER_ACTIONS,
   TILES,
-  RESPONSES,
   PLAYERS,
   NORTH_PLAYER,
   SOUTH_PLAYER,
   HIDDEN_TILE,
-  TOOLTIPS,
   ACTION_NAMES,
+  DESCRIPTIONS,
 } from "./constants.js";
 
 
-function createBoard(board) {
-  // Generate board.
-  for (let column = 0; column < COLUMNS; column++) {
-    const columnElement = document.createElement("div");
-    columnElement.className = "column";
-    columnElement.dataset.column = column;
-    for (let row = 0; row < ROWS; row++) {
+function createBoard(board, mySide) {
+  // a 5x5 grid of squares, each knowing its own row and column; whoever is south sees
+  // it as stored, and north sees it turned around, so your own side is always at the bottom
+  board.innerHTML = "";
+  const flip = mySide === NORTH_PLAYER;
+  for (let i = 0; i < ROWS; i++) {
+    for (let j = 0; j < COLUMNS; j++) {
+      const row = flip ? ROWS - 1 - i : i;
+      const column = flip ? COLUMNS - 1 - j : j;
       const cellElement = document.createElement("div");
       cellElement.className = "cell";
       cellElement.dataset.row = row;
       cellElement.dataset.column = column;
-      columnElement.append(cellElement);
+      board.append(cellElement);
     }
-    board.append(columnElement);
   }
   return board;
 }
@@ -55,53 +54,8 @@ function addName(element, text) {
   element.append(nameElement);
 }
 
-function createActionPanel(action_panel, tiles) {
-  // delete old action panel contents
-  for (const element of action_panel.querySelectorAll("div")) {
-    action_panel.removeChild(element);
-  }
-
-  for (const name in OTHER_ACTIONS) {
-    const element = document.createElement("div");
-    element.innerHTML = OTHER_ACTIONS[name];
-    element.dataset.name = name;
-    element.classList = "outlined-button";
-    action_panel.append(element);
-    addName(element, ACTION_NAMES[name]);
-    setTooltip(element, TOOLTIPS[name]);
-  }
-  const sep1 = document.createElement('div');
-  sep1.classList = "action-separator";
-  action_panel.append(sep1);
-  for (const name of tiles) {
-    const element = document.createElement("div");
-    element.innerHTML = TILES[name];
-    element.dataset.name = name;
-    element.classList = "tile-button";
-    action_panel.append(element);
-    addName(element, ACTION_NAMES[name]);
-    setTooltip(element, TOOLTIPS[name]);
-  }
-  const sep2 = document.createElement('div');
-  sep2.classList = "action-separator";
-  action_panel.append(sep2);
-  for (const name in RESPONSES) {
-    const element = document.createElement("div");
-    element.innerHTML = RESPONSES[name];
-    element.dataset.name = name;
-    element.classList = "outlined-button";
-    action_panel.append(element);
-    addName(element, ACTION_NAMES[name]);
-    setTooltip(element, TOOLTIPS[name]);
-  }
-  return action_panel;
-}
-
 function findCell(board, row, col) {
-  // input: board element, row index, col index
-  // returns the cell element corresponding to the square
-  const columnElement = board.querySelectorAll(".column")[col];
-  return columnElement.querySelectorAll(".cell")[row];
+  return board.querySelector(`.cell[data-row="${row}"][data-column="${col}"]`);
 }
 
 function addSquareMarks(cell, kind, contents) {
@@ -125,10 +79,7 @@ function addSquareMarks(cell, kind, contents) {
   cell.append(marks);
 }
 
-function renderBoard(board, player_view, action_panel) {
-  const tiles = player_view.tiles_in_game;
-  createActionPanel(action_panel, tiles);
-
+function renderBoard(board, player_view) {
   // set board empty
   for (const cell of board.querySelectorAll(".cell")) {
     cell.innerHTML = "";
@@ -276,33 +227,35 @@ function renderLog(panel, player_view) {
 }
 
 function renderHand(player_view) {
+  // each player's strip: name, coins toward the smite, and the tiles in hand
   for (const player of PLAYERS) {
+    const strip = document.querySelector(`.strip.${player}`);
+    if (!strip) {
+      continue;
+    }
     const coins = player_view.coins[player];
-    const hand = player_view.tiles_in_hand[player];
-
-    const panel = document.querySelector(`.hand.${player}`);
-    const tileElements = panel.querySelectorAll('.hand-tile');
-    const coinElement = panel.querySelector('.coins');
-    coinElement.innerHTML = `$${coins}/${player_view.smite_cost}`;
+    strip.querySelector(".name").textContent = player_view.names[player];
+    strip.querySelector(".amount").textContent = `$${coins}`;
+    strip.querySelector(".of").textContent = `/${player_view.smite_cost}`;
+    const fill = Math.max(0, Math.min(1, coins / player_view.smite_cost));
+    strip.querySelector(".bar span").style.width = `${100 * fill}%`;
 
     // compare by contents, not just count: a rematch can deal a new hand with the
     // same number of tiles, and a length-only check would leave stale tiles (and
     // stale dataset.tileName) from the previous game in the DOM.
-    const currentTiles = Array.from(tileElements, (e) => e.dataset.tileName);
+    const hand = player_view.tiles_in_hand[player];
+    const panel = strip.querySelector(".hand-tiles");
+    const currentTiles = Array.from(panel.children, (e) => e.dataset.tileName);
     const handChanged =
       hand.length !== currentTiles.length ||
       hand.some((tile, i) => tile !== currentTiles[i]);
-
     if (handChanged) {
-      // redraw from scratch
-      for (const element of tileElements) {
-        panel.removeChild(element);
-      }
+      panel.innerHTML = "";
       for (const tile of hand) {
         const element = document.createElement("span");
-        element.innerHTML = tile;
+        element.textContent = tile;
         element.dataset.tileName = tile;
-        element.classList.add('hand-tile');
+        element.classList.add("hand-tile");
         panel.append(element);
       }
     }
@@ -332,33 +285,33 @@ function renderWebs(board, player_view) {
 }
 
 function renderOther(player_view) {
-  const unusedPanel = document.querySelector('.unused');
-  setTooltip(unusedPanel, 'Tiles unused this game.');
+  document.querySelector(".unused-contents").textContent = player_view.unused_tiles.join("");
+  document.querySelector(".discard-contents").textContent = player_view.discard.join("");
+  document.querySelector(".hidden-tiles-contents").textContent = player_view.hidden_tiles.join("");
+  document.querySelector(".in-play").textContent = player_view.tiles_in_game.join("");
+}
 
-  const unusedContents = document.querySelector('.unused-contents');
-  unusedContents.innerHTML = 'unused: ';
-  for (const tile of player_view.unused_tiles) {
-    unusedContents.innerHTML += tile;
-  }
-
-  const discardPanel = document.querySelector('.discard');
-  setTooltip(discardPanel, 'Tiles discarded from play.');
-
-  const discardContents = document.querySelector('.discard-contents');
-  discardContents.innerHTML = 'discarded: ';
-  for (const tile of player_view.discard) {
-    discardContents.innerHTML += tile;
-  }
-
-  const hiddenPanel = document.querySelector('.hidden-tiles');
-  setTooltip(hiddenPanel, 'All the tiles currently unknown to you.');
-
-  const contents = document.querySelector('.hidden-tiles-contents');
-  contents.innerHTML = 'unknown to you: ';
-  for (const tile of player_view.hidden_tiles) {
-    contents.innerHTML += tile;
+function renderRules(list, player_view) {
+  // the reference: every tile in play, then moving and smiting, written out
+  list.innerHTML = "";
+  const entries = [...player_view.tiles_in_game, "↕", "⚡"];
+  for (const glyph of entries) {
+    const row = document.createElement("div");
+    row.className = "rule";
+    const glyphElement = document.createElement("span");
+    glyphElement.className = "rule-glyph";
+    glyphElement.textContent = glyph;
+    const name = document.createElement("span");
+    name.className = "rule-name";
+    name.textContent = ACTION_NAMES[glyph];
+    const text = document.createElement("span");
+    text.className = "rule-text";
+    text.textContent = glyph === "⚡"
+      ? `on reaching $${player_view.smite_cost}, pay it to kill any enemy tile`
+      : DESCRIPTIONS[glyph];
+    row.append(glyphElement, name, text);
+    list.append(row);
   }
 }
 
-
-export {createBoard, renderBoard, renderLog, renderHand, createActionPanel, findCell, renderOther, renderWebs, setTooltip, addName};
+export {createBoard, renderBoard, renderLog, renderHand, findCell, renderOther, renderRules, renderWebs, setTooltip, addName};

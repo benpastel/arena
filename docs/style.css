@@ -1,10 +1,16 @@
 :root {
+  /* you and them, from the inks on the tiles: jade and cinnabar; north is the
+     opponent unless you sit north (see .me-north) */
+  --you: #2f6b55;
+  --them: #a8452f;
+  --north: var(--them);
+  --south: var(--you);
+
   /* the slightly rounded corner of a tile, shared by every button shell */
   --shell-radius: 0.4vmin;
 
   /* a tile that can be clicked is drawn bolder; a picked one is also underlined */
   --bold: 0.022em;
-  --picked-bar: 0.7vmin;
 }
 
 body {
@@ -205,369 +211,215 @@ a {
   display: none;
 }
 
-/* top-level grid containing the board, log, action panel, player info, etc. */
-.container {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 82vmin minmax(0, 1fr);
-  grid-template-rows: 82vmin 1fr;
-  cursor: default;
+/*
+------------------------------------------------------------------------- the game
 
-  font-family: 'Courier New';
-  font-weight: normal;
-  font-size: 20px;
-  text-align: center;
+Partitioned, never floating: the reference and tile accounting on the left, the board
+in the middle between the two players' strips (theirs above, yours below), the log on
+the right. Inspired by the tiles: white, fine lines, a tile's rounded corners. Only
+the board is set off a little more heavily.
+
+The board's size is derived from the window: as big as the height allows after the
+strips, unless the side columns need the width. Everything on the board is sized
+relative to it (cqmin), so the layout holds at any laptop size.
+*/
+.container.me-north {
+  --north: var(--you);
+  --south: var(--them);
+}
+.container {
+  --ink: #26241f;
+  --muted: #8d877b;
+  --line: #e4dfd5;
+  --frame: #bdb5a6;
+  --wash: #f2f6f3;
+  --radius: 8px;
+
+  --side-min: 230px;
+  --log-min: 300px;
+  --strip: clamp(70px, 12vh, 118px);
+  --board: min(calc(100vh - 2 * var(--strip)), calc(100vw - var(--side-min) - var(--log-min)));
 
   width: 100vw;
   height: 100vh;
-}
-.grid-element {
-  border: 5px solid black;
-}
-
-/*
-the player-info column runs beside the board: each player's coins and hand level
-with their own back row (north at the top, south at the bottom), and between them
-the unused, discarded and unknown tiles
-*/
-.player-info {
-  grid-column: 1 / 2;
-  grid-row: 1 / 2;
-
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-
-  border-bottom-width: 0;
-}
-.hand {
-  /* the height of one board row */
-  height: 15.4vmin;
-  margin: 2% 0;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 2vmin;
-}
-.coins {
-  font-size: 6vmin;
-}
-.hand-tile {
-  font-size: 9vmin;
-  font-weight: light;
-}
-
-
-/* the other box displays unused, discard, and hidden tiles; ruled off from the hands */
-.other {
-  flex: 1;
-  border-top: 5px solid black;
-  border-bottom: 5px solid black;
-
-  font-size: 3.5vmin;
-
-  display: flex;
-  justify-content: center;
-  flex-direction: column;
-  align-items: center;
-
-  color: grey;
-  font-weight: light;
-}
-
-/* the bottom row: quit in a narrow cell, then the action panel */
-.bottom-row {
-  grid-column: 1 / 4;
-  grid-row: 2 / 3;
-  display: flex;
-}
-.quit-panel {
-  padding: 0 4vmin;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  border-bottom-width: 0;
-}
-.quit {
-  cursor: pointer;
-}
-
-/*
-the log is a list of text notes on the right side of the screen
-explaining what happened in previous turns
-*/
-/* the right column: the log, and under it the prompt */
-.side {
-  grid-column: 3 / 4;
-  grid-row: 1 / 2;
-  min-height: 0;
-
-  display: flex;
-  flex-direction: column;
-
-  border-bottom-width: 0;
-}
-.prompt {
-  flex: none;
-  height: 16vmin;
-  padding: 0 1.5vmin;
-  border-top: 5px solid black;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  font-size: 2.6vmin;
-  font-style: italic;
-}
-
-.log {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-
-  /* the log is sized to its own width (cqi), so a row keeps to one line at any size */
-  container-type: inline-size;
-
-  font-size: 2vmin;
-  line-height: 2.1vmin;
-  cursor: text;
-}
-/* a grid of who, what, and coins, shared by every turn so the columns line up */
-.log-list {
   display: grid;
-  grid-template-columns: fit-content(8ch) 1fr auto;
-  column-gap: 4.3cqi;
-  padding: 0 3.2cqi;
-  text-align: left;
-  font-size: 4.7cqi;
-  line-height: 5.6cqi;
-}
-/* each turn is a block of rows, ruled off from the one before */
-.log-turn {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: subgrid;
-  align-items: center;
-  row-gap: 1.3cqi;
-  padding: 2.6cqi 0;
-  border-top: 1px solid black;
-}
-.log-turn:first-child {
-  border-top: none;
-}
-.log-turn.old {
-  opacity: 0.4;
-}
-.log-who {
-  /* long names are cut short, but the column never collapses */
-  min-width: 3ch;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.log-what {
-  display: flex;
-  align-items: center;
-  gap: 2.1cqi;
-}
-.log-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 1.3cqi;
-}
-.log-glyph {
-  font-size: 9.6cqi;
-  line-height: 9.6cqi;
-}
-.log-name {
-  font-size: 3.4cqi;
-}
-/* a claim that didn't happen: a bluff caught, or an attack reflected */
-.log-what.cancelled {
-  color: grey;
-  text-decoration: line-through;
-}
-.log-coins {
-  display: flex;
-  gap: 2.1cqi;
-  justify-content: flex-end;
-}
+  grid-template-columns: minmax(var(--side-min), 0.9fr) var(--board) minmax(var(--log-min), 1.2fr);
+  grid-template-rows: var(--strip) var(--board) var(--strip);
+  align-content: center;
 
-/*
-the action panel has buttons for move, smite, the tiles, and the responses
-currently available actions are highlighted
-*/
-.actions {
-  flex: 1;
-
-  /* the quit panel's right border is the line between them */
-  border-left-width: 0;
-
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-evenly;
-  vertical-align: middle;
-
-  color: grey;
-  font-weight: light;
-  border-bottom-width: 0;
-}
-.tile-button {
-  line-height: 7vmin;
-  font-size: 7vmin;
-}
-.tile-button,
-.outlined-button {
-  position: relative;
-}
-/* each button's name, under it */
-.action-name {
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-top: 1vmin;
-
-  font-size: 1.6vmin;
-  line-height: 1.6vmin;
-  white-space: nowrap;
-}
-.outlined-button {
-  border-radius: var(--shell-radius);
-  border: 1px solid grey;
-  box-sizing: content-box;
-  min-width: 5vmin;
-  line-height: 6.5vmin;
-  font-size: 5vmin;
-  font-family: inherit;
-  text-align: center;
-  color: inherit;
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  color: var(--ink);
   background-color: white;
-  padding: 0;
-  vertical-align: middle;
-  /* TODO the emoji aren't quite vertically centered in the box */
-}
-button.outlined-button {
-  cursor: pointer;
-}
-button.outlined-button:disabled {
-  color: grey;
   cursor: default;
 }
-/* One of the buttons has x2 written above in purple */
-.x2:before {
-  position: absolute;
-  content: "x2";
-  color: purple;
-  line-height: 0.1vmin;
-  font-size: 2vmin;
-  font-weight: normal;
-  text-align: center;
+
+/* ------------------------------------------------------------------- left */
+.left {
+  grid-column: 1;
+  grid-row: 1 / 4;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--line);
 }
-.action-separator {
-  border-left: 1px solid;
-  height: 100%;
-}
-/*
-selection; red and blue only ever say whose piece it is
-  - a tile that can be clicked (a piece, in hand, on an exchange) is drawn bolder,
-    and a picked one also gets a bar under it
-  - abilities, smites and responses are drawn on the board as options (see .option);
-    the action panel under the board is only for reference
-*/
-.hand-tile.highlight,
-.board-tile.highlight,
-.cell.highlight.own-piece .piece {
-  -webkit-text-stroke: var(--bold) currentColor;
-}
-.cell-marks .board-tile.highlight {
-  color: black;
-}
-.cell.chosen-start .piece,
-.cell.chosen-target .piece {
-  -webkit-text-stroke: var(--bold) currentColor;
-}
-.cell.chosen-start .piece::after,
-.cell.chosen-target .piece::after {
-  content: "";
-  position: absolute;
-  left: 15%;
-  right: 15%;
-  bottom: calc(-1.5 * var(--picked-bar));
-  height: var(--picked-bar);
-  background-color: currentColor;
-}
-.piece {
-  display: inline-block;
-  position: relative;
-  font-size: 12vmin;
+/* the tiles in play, at a glance; clicking opens what each does */
+.in-play {
+  padding: 14px 18px 12px;
+  font-size: 40px;
   line-height: 1;
-  /* the font draws the tile a little low in its box; lift it to the square's middle */
-  top: -0.058em;
+  letter-spacing: 2px;
+  cursor: pointer;
 }
-/* a button's name stays plain text when its tile is bolded */
-.action-name {
+.in-play:hover {
+  color: var(--you);
+}
+.acc {
+  border-top: 1px solid var(--line);
+  padding: 10px 18px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 10px;
+  align-items: center;
+}
+.acc-label {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--muted);
+}
+.acc-tiles {
+  font-size: 24px;
+  line-height: 1;
+  color: #7a756b;
+  word-break: break-all;
+}
+.quit {
+  margin-top: auto;
+  height: var(--strip);
+  padding: 0 18px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+.quit .option {
+  font-size: 36px;
   -webkit-text-stroke: 0;
 }
-.tooltip {
-  position: relative;
-  display: inline-block;
+.quit .option.shell::before {
+  border-width: var(--frame-width, 0.02em);
 }
-.tooltip .tooltiptext {
-  line-height: 2vmin;
-  font-size: 2vmin;
-  font-weight: normal;
-
-  background-color: black;
-  color: white;
-
-  visibility: hidden;
-  text-align: center;
-  padding: 5px 0;
-  border-radius: 6px;
-
-  position: absolute;
-  z-index: 1;
-
-  width: 25vmin;
-  bottom: 100%;
-  left: 50%;
-  margin-left: -10vmin;
+.quit-name {
+  font-size: 12px;
+  font-variant: small-caps;
+  letter-spacing: 0.1em;
+  color: var(--muted);
 }
 
-.tooltip:hover .tooltiptext {
-  visibility: visible;
+/* ----------------------------------------------------------------- strips */
+.strip {
+  grid-column: 2;
+  min-width: 0;
+  padding: 8px calc(var(--board) * 0.025);
+  display: grid;
+  grid-template-columns: minmax(0, auto) 1fr auto;
+  grid-template-rows: 1fr auto;
+  column-gap: 16px;
+  align-items: center;
 }
-
-
-/* the board is a 5x5 display with the tiles on board */
-.board {
-  grid-column: 2 / 3;
-  grid-row: 1 / 2;
-  aspect-ratio: 1;
-
-  background-color: gray;
+.strip.top {
+  grid-row: 1;
+}
+.strip.bottom {
+  grid-row: 3;
+}
+/* the strip of whoever the game is waiting on */
+.strip.acting {
+  background-color: var(--wash);
+  border-radius: var(--radius);
+}
+.strip .who {
+  grid-row: 1 / 3;
+  min-width: 0;
   display: flex;
-  flex-direction: row;
-  padding: 2% 2%;
-  position: relative;
-  border: 1px solid gray;
+  flex-direction: column;
+  gap: 2px;
 }
-.column {
-  box-sizing: border-box;
-  width: 20%; /* assumes a 5x5 board */
+.strip .name {
+  font-size: 16px;
+  font-variant: small-caps;
+  letter-spacing: 0.06em;
+}
+.turn-note {
+  font-size: 13px;
+  font-style: italic;
+}
+.strip .coins {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+.amount {
+  font-size: calc(var(--strip) * 0.32);
+}
+.of {
+  font-size: calc(var(--strip) * 0.17);
+  color: var(--muted);
+}
+/* a hairline filling toward the smite */
+.bar {
+  grid-column: 2;
+  grid-row: 2;
+  max-width: 220px;
+  height: 2px;
+  position: relative;
+  border-radius: 1px;
+  background-color: var(--line);
+}
+.bar span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 1px;
+  background-color: currentColor;
+}
+.hand-tiles {
+  grid-column: 3;
+  grid-row: 1 / 3;
+  display: flex;
+  gap: 6px;
+}
+.hand-tile {
+  font-size: calc(var(--strip) * 0.62);
+  line-height: 1;
+}
+.strip.north .name, .strip.north .amount, .strip.north .bar, .strip.north .hand-tile { color: var(--north); }
+.strip.south .name, .strip.south .amount, .strip.south .bar, .strip.south .hand-tile { color: var(--south); }
+
+/* ------------------------------------------------------------------ board */
+.board {
+  grid-column: 2;
+  grid-row: 2;
+  width: var(--board);
+  height: var(--board);
+  position: relative;
+  container-type: size;
+
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+
+  border: 1.5px solid var(--frame);
+  border-radius: var(--radius);
+  background-color: white;
 }
 .cell {
-  box-sizing: border-box;
-  height: 20%; /* assumes a 5x5 board */
-  width: 100%;
-  border: 1px solid darkgrey;
-  background-color: white;
   position: relative;
+  min-width: 0;
+  min-height: 0;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
 
   /* the piece sits in the middle, a little smaller than the square so what's drawn in
      the corners (options, exchange tiles, bonus) mostly clears it */
@@ -575,8 +427,22 @@ selection; red and blue only ever say whose piece it is
   align-items: center;
   justify-content: center;
 }
+.cell:nth-child(5n) {
+  border-right: none;
+}
+.cell:nth-child(n + 21) {
+  border-bottom: none;
+}
+.piece {
+  display: inline-block;
+  position: relative;
+  font-size: 14.6cqmin;
+  line-height: 1;
+  /* the font draws the tile a little low in its box; lift it to the square's middle */
+  top: -0.058em;
+}
 .board-tile {
-  font-weight: light;
+  font-weight: normal;
 }
 /*
 what makes a square special sits in its bottom-left corner: the bonus, or an
@@ -584,30 +450,66 @@ exchange's two tiles side by side
 */
 .cell-marks {
   position: absolute;
-  left: 0.4vmin;
-  bottom: 0.4vmin;
-
+  left: 0.5cqmin;
+  bottom: 0.5cqmin;
   display: flex;
   align-items: flex-end;
-  gap: 0.4vmin;
-
+  gap: 0.5cqmin;
   line-height: 1;
   pointer-events: none;
-  color: grey;
+  color: #9a958b;
 }
 .cell-marks .board-tile {
-  font-size: 3.6vmin;
+  font-size: 4.4cqmin;
   pointer-events: auto;
 }
 .cell-marks .bonus {
-  font-size: 3vmin;
+  font-size: 3.7cqmin;
+}
+/* webs: a wash of the colour of whoever laid them */
+.web {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.web.north { background-color: color-mix(in srgb, var(--north) 18%, transparent); }
+.web.south { background-color: color-mix(in srgb, var(--south) 18%, transparent); }
+
+/*
+selection; colour only ever says whose piece it is
+  - a tile that can be clicked (a piece, in hand, on an exchange) is drawn bolder,
+    and a picked one also gets a bar under it
+  - abilities, smites and responses are drawn on the board as options (see .option)
+*/
+.hand-tile.highlight,
+.board-tile.highlight,
+.cell.highlight.own-piece .piece,
+.cell.chosen-start .piece,
+.cell.chosen-target .piece {
+  -webkit-text-stroke: var(--bold) currentColor;
+}
+.cell-marks .board-tile.highlight {
+  color: var(--ink);
+}
+.cell.chosen-start .piece::after,
+.cell.chosen-target .piece::after {
+  content: "";
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: -0.06em;
+  height: 0.035em;
+  border-radius: 0.02em;
+  background-color: currentColor;
+}
+.highlight {
+  cursor: pointer;
 }
 
-/* a finished claim: a line from the piece to its target, the ability on the piece */
+/* a finished claim: a line from the piece to its target */
 .claim-line {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
@@ -615,75 +517,60 @@ exchange's two tiles side by side
 }
 .claim-line line {
   stroke: currentColor;
-  stroke-width: 0.8vmin;
+  stroke-width: 0.9cqmin;
   stroke-linecap: round;
 }
 .claim-line circle {
   fill: currentColor;
 }
-/* the claimed ability (and any reflect) written beside the claim's line */
+/* the claimed ability (and any reflect, and the answers) written beside the line */
 .claim-note {
   position: absolute;
   display: flex;
   align-items: center;
-  gap: 1vmin;
+  gap: 1.2cqmin;
   white-space: nowrap;
 }
-/* placed at a point beside the line, running away from it */
-.claim-note.above {
-  transform: translate(-50%, -100%);
+.claim-note.above { transform: translate(-50%, -100%); }
+.claim-note.right { transform: translate(0, -50%); }
+.claim-note.left { transform: translate(-100%, -50%); }
+.claim-note.below { transform: translate(-50%, 0); }
+.claim-note .claimed,
+.claim-note .option {
+  font-size: 7.3cqmin;
 }
-.claim-note.right {
-  transform: translate(0, -50%);
-}
-.claim-note.left {
-  transform: translate(-100%, -50%);
-}
-.claim-note.below {
-  transform: translate(-50%, 0);
-}
-.claim-note .claimed {
-  font-size: 6vmin;
-  line-height: 6vmin;
+.claim-note .note-separator {
+  font-size: 4.9cqmin;
+  color: var(--muted);
 }
 
-/*
-options: an ability or response that can be clicked, drawn as a small black glyph;
-the ones that aren't tiles (↕ ✓ 🚩) get a shell
-*/
-/* in every square they sit in a row in the top-right corner, ↕ rightmost */
+/* options, in every square: a row in the top-right corner, ↕ rightmost */
 .cell-options {
-  --option-size: 4.2vmin;
-  --option-gap: 0.4vmin;
-
+  --option-gap: 0.5cqmin;
   position: absolute;
   inset: 0;
   padding: var(--option-gap);
-
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   align-content: flex-start;
   gap: var(--option-gap);
-
   pointer-events: none;
 }
 .cell-options .option {
-  font-size: var(--option-size);
+  font-size: 5.2cqmin;
 }
 .option {
   pointer-events: auto;
   cursor: pointer;
-  font-size: 5vmin;
-  color: black;
+  color: var(--ink);
   -webkit-text-stroke: var(--bold) currentColor;
 }
-
-
 /*
 the face of a tile glyph, where this font draws it in the glyph's box (measured):
-an option or claimed tile is filled white only there, so it covers just the tile
-and not a box around it, and ↕ ✓ 🚩 get a frame drawn in the same place
+an option or claimed tile is filled white only there, so it covers just the tile and
+not a box around it, and the ones that aren't tiles (↕ ⚡ ✓ 🚩 ✕) get a frame drawn in
+the same place
 */
 .option,
 .claim-note .claimed {
@@ -692,7 +579,7 @@ and not a box around it, and ↕ ✓ 🚩 get a frame drawn in the same place
   --face-width: 0.685em;
   --face-height: 0.908em;
   --face-radius: 0.055em;
-  --frame: 0.02em;
+  --frame-width: 0.02em;
 
   position: relative;
   z-index: 0;
@@ -720,7 +607,7 @@ and not a box around it, and ↕ ✓ 🚩 get a frame drawn in the same place
   top: calc(var(--face-top) - var(--bold) / 2);
   width: calc(var(--face-width) + var(--bold));
   height: calc(var(--face-height) + var(--bold));
-  border: calc(var(--frame) + var(--bold)) solid currentColor;
+  border: calc(var(--frame-width) + var(--bold)) solid currentColor;
   border-radius: calc(var(--face-radius) + var(--bold) / 2);
 }
 .option.shell .symbol {
@@ -737,45 +624,228 @@ and not a box around it, and ↕ ✓ 🚩 get a frame drawn in the same place
   font-size: 0.5em;
   line-height: 1;
 }
-/* the answers are the same size as the claim they answer */
-.claim-note .option {
-  font-size: 6vmin;
+
+/* ------------------------------------------------------------------- log */
+.side {
+  grid-column: 3;
+  grid-row: 1 / 4;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--line);
 }
-.claim-note .note-separator {
-  font-size: 4vmin;
-  color: grey;
+.log {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 6px 0;
+  /* the log is sized to its own width (cqi), so a row keeps to one line at any size */
+  container-type: inline-size;
+  cursor: text;
+}
+/* a grid of who, what, and coins, shared by every turn so the columns line up */
+.log-list {
+  display: grid;
+  grid-template-columns: fit-content(8ch) 1fr auto;
+  column-gap: 4cqi;
+  padding: 0 5cqi;
+  text-align: left;
+  font-size: 4.6cqi;
+  line-height: 5.6cqi;
+}
+/* each turn is a block of rows, ruled off from the one before */
+.log-turn {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  align-items: center;
+  row-gap: 1.4cqi;
+  padding: 2.6cqi 0;
+  border-top: 1px solid var(--line);
+}
+.log-turn:first-child {
+  border-top: none;
+}
+.log-turn.old {
+  opacity: 0.45;
+}
+.log-who {
+  /* long names are cut short, but the column never collapses */
+  min-width: 3ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant: small-caps;
+  letter-spacing: 0.04em;
+}
+.log-what {
+  display: flex;
+  align-items: center;
+  gap: 2.1cqi;
+  font-style: italic;
+}
+.log-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.3cqi;
+  font-style: normal;
+}
+.log-glyph {
+  font-size: 8.6cqi;
+  line-height: 8.6cqi;
+}
+.log-name {
+  font-size: 3.6cqi;
+  font-variant: small-caps;
+  letter-spacing: 0.08em;
+}
+/* a claim that didn't happen: a bluff caught, or an attack reflected */
+.log-what.cancelled {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+.log-coins {
+  display: flex;
+  gap: 2.1cqi;
+  justify-content: flex-end;
 }
 
-.north {
-  color: red;
+/* ----------------------------------------------------- the tiles reference */
+.rules {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background-color: rgba(255, 255, 255, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rules[hidden] {
+  display: none;
+}
+.rules-panel {
+  position: relative;
+  width: 88vw;
+  height: 88vh;
+  overflow-y: auto;
+  padding: 5vh 5vw;
+  box-sizing: border-box;
+  background-color: white;
+  border: 1.5px solid #bdb5a6;
+  border-radius: 8px;
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  color: #26241f;
+}
+.rules-close {
+  position: absolute;
+  top: 2.5vh;
+  right: 2vw;
+  font-size: 40px;
+  -webkit-text-stroke: 0;
+}
+.rules-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 4vh 4vw;
+}
+.rule {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto 1fr;
+  column-gap: 18px;
+  align-items: start;
+}
+.rule-glyph {
+  grid-row: 1 / 3;
+  font-size: 84px;
+  line-height: 1;
+}
+.rule-name {
+  margin-top: 10px;
+  font-size: 20px;
+  font-variant: small-caps;
+  letter-spacing: 0.08em;
+}
+.rule-text {
+  font-size: 18px;
+  line-height: 1.45;
+  font-style: italic;
 }
 
-.south {
-  color: blue;
+/*
+-------------------------------------------------------------- shared with the lobby
+*/
+.tile-button {
+  line-height: 7vmin;
+  font-size: 7vmin;
 }
+.tile-button,
+.outlined-button {
+  position: relative;
+}
+/* each button's name, under it */
+.action-name {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 1vmin;
 
-
-.highlight {
+  font-size: 1.6vmin;
+  line-height: 1.6vmin;
+  white-space: nowrap;
+  -webkit-text-stroke: 0;
+}
+.outlined-button {
+  border-radius: var(--shell-radius);
+  border: 1px solid grey;
+  box-sizing: content-box;
+  min-width: 5vmin;
+  line-height: 6.5vmin;
+  font-size: 5vmin;
+  font-family: inherit;
+  text-align: center;
+  color: inherit;
+  background-color: white;
+  padding: 0;
+  vertical-align: middle;
+}
+button.outlined-button {
   cursor: pointer;
 }
-
-/* Web styling - tints the cell background to show player control */
-.web {
+button.outlined-button:disabled {
+  color: grey;
+  cursor: default;
+}
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+.tooltip .tooltiptext {
+  line-height: 2vmin;
+  font-size: 2vmin;
+  font-weight: normal;
+  background-color: black;
+  color: white;
+  visibility: hidden;
+  text-align: center;
+  padding: 5px 0;
+  border-radius: 6px;
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0.3;  /* Semi-transparent overlay */
-  pointer-events: none;  /* Allow clicks to pass through */
+  z-index: 1;
+  width: 25vmin;
+  bottom: 100%;
+  left: 50%;
+  margin-left: -10vmin;
+}
+.tooltip:hover .tooltiptext {
+  visibility: visible;
 }
 
-/* Set background colors for web overlays */
-.web.north {
-  background-color: red;
+/* whose piece it is: jade for you, cinnabar for the opponent, whichever side you sit */
+.north {
+  color: var(--north);
 }
-
-.web.south {
-  background-color: blue;
+.south {
+  color: var(--south);
 }
-
