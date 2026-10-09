@@ -313,6 +313,8 @@ function renderRules(list, player_view) {
   // the reference: every tile in play, then moving and smiting, written out
   list.innerHTML = "";
   const entries = [...player_view.tiles_in_game, "↕", "⚡"];
+  // two columns, filled top to bottom
+  list.style.gridTemplateRows = `repeat(${Math.ceil(entries.length / 2)}, auto)`;
   for (const glyph of entries) {
     const row = document.createElement("div");
     row.className = "rule";
@@ -336,7 +338,7 @@ function renderRules(list, player_view) {
     boards.className = "rule-boards";
     // moving and smiting aren't a tile's, so any of your tiles stands in
     const actor = glyph in TILES ? glyph : HIDDEN_TILE;
-    for (const diagram of DIAGRAMS[glyph]) {
+    for (const diagram of DIAGRAMS[glyph] || []) {
       boards.append(renderDiagram(diagram, actor));
     }
     row.append(glyphElement, name, text, boards);
@@ -345,10 +347,12 @@ function renderRules(list, player_view) {
 }
 
 function renderDiagram(diagram, actor) {
-  // a mini board from DIAGRAMS: each square's token is its mark, then any suffixes
+  // a mini board from DIAGRAMS: each square's token is its mark, then any suffixes;
+  // a diagram is its grid, or {grid, arrows}
+  const {grid, arrows = []} = Array.isArray(diagram) ? {grid: diagram} : diagram;
   const board = document.createElement("div");
   board.className = "rule-board";
-  for (const line of diagram) {
+  for (const line of grid) {
     for (const token of line.split(" ")) {
       const square = document.createElement("div");
       square.className = "rule-square";
@@ -374,7 +378,48 @@ function renderDiagram(diagram, actor) {
       board.append(square);
     }
   }
+  if (arrows.length) {
+    board.append(renderArrows(arrows));
+  }
   return board;
+}
+
+function renderArrows(arrows) {
+  // arrows over a mini board, in units of squares, each starting clear of the tile it
+  // leaves and stopping short of the square it reaches
+  const svgNS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(svgNS, "svg");
+  svg.setAttribute("class", "rule-arrows");
+  svg.setAttribute("viewBox", "0 0 5 5");
+  const head = document.createElementNS(svgNS, "marker");
+  head.setAttribute("id", "rule-arrowhead");
+  head.setAttribute("viewBox", "0 0 10 10");
+  head.setAttribute("refX", "8");
+  head.setAttribute("refY", "5");
+  head.setAttribute("markerWidth", "5");
+  head.setAttribute("markerHeight", "5");
+  head.setAttribute("orient", "auto");
+  const tip = document.createElementNS(svgNS, "path");
+  tip.setAttribute("d", "M 0 0 L 10 5 L 0 10 z");
+  tip.setAttribute("fill", "currentColor");
+  head.append(tip);
+  const defs = document.createElementNS(svgNS, "defs");
+  defs.append(head);
+  svg.append(defs);
+  for (const [fromRow, fromCol, toRow, toCol] of arrows) {
+    const dx = toCol - fromCol;
+    const dy = toRow - fromRow;
+    const length = Math.hypot(dx, dy);
+    const [ux, uy] = [dx / length, dy / length];
+    const line = document.createElementNS(svgNS, "line");
+    line.setAttribute("x1", fromCol + 0.5 + ux * 0.45);
+    line.setAttribute("y1", fromRow + 0.5 + uy * 0.45);
+    line.setAttribute("x2", toCol + 0.5 - ux * 0.2);
+    line.setAttribute("y2", toRow + 0.5 - uy * 0.2);
+    line.setAttribute("marker-end", "url(#rule-arrowhead)");
+    svg.append(line);
+  }
+  return svg;
 }
 
 export {createBoard, renderBoard, renderLog, renderHand, findCell, renderOther, renderRules, renderWebs, setTooltip, addName};

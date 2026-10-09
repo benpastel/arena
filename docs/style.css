@@ -770,7 +770,9 @@ the same place
   width: 88vw;
   height: 88vh;
   overflow-y: auto;
-  padding: max(5vh, 64px) 5vw 5vh;
+  /* everything scales from the mini boards' squares, so the whole reference fits */
+  --sq: clamp(16px, 3.2vh, 30px);
+  padding: max(5vh, 48px) 4vw 3vh;
   box-sizing: border-box;
   background-color: white;
   border: 1.5px solid #bdb5a6;
@@ -780,19 +782,19 @@ the same place
 }
 .rules-close {
   position: absolute;
-  top: 2.5vh;
-  right: 2vw;
-  font-size: 40px;
+  top: 12px;
+  right: 16px;
+  font-size: 36px;
   -webkit-text-stroke: 0;
 }
-/* columns rather than a grid, so a tile with two boards doesn't open a gap beside it */
+/* two columns, filled top to bottom (renderRules sets the rows) */
 .rules-list {
-  columns: 460px;
-  column-gap: 4vw;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-flow: column;
+  gap: calc(var(--sq) * 0.9) 4vw;
 }
 .rule {
-  break-inside: avoid;
-  margin-bottom: 4vh;
   display: grid;
   grid-template-columns: auto 1fr auto;
   grid-template-rows: auto 1fr;
@@ -801,29 +803,28 @@ the same place
 }
 .rule-glyph {
   grid-row: 1 / 3;
-  font-size: 84px;
+  font-size: calc(var(--sq) * 2.6);
   line-height: 1;
 }
 .rule-name {
-  margin-top: 10px;
-  font-size: 20px;
+  margin-top: 6px;
+  font-size: calc(var(--sq) * 0.72);
   font-variant: small-caps;
   letter-spacing: 0.08em;
 }
 .rule-text {
-  font-size: 18px;
-  line-height: 1.45;
+  font-size: calc(var(--sq) * 0.66);
+  line-height: 1.4;
   font-style: italic;
 }
 .rule-text > div + div {
-  margin-top: 4px;
+  margin-top: 2px;
 }
 /* a mini board per use, in the board's own hairlines, jade for you, cinnabar for them */
 .rule-boards {
   grid-column: 3;
   grid-row: 1 / 3;
   display: flex;
-  flex-direction: column;
   gap: 10px;
   --you: #2f6b55;
   --them: #a8452f;
@@ -831,9 +832,10 @@ the same place
   --frame: #bdb5a6;
 }
 .rule-board {
+  position: relative;
   display: grid;
-  grid-template-columns: repeat(5, 28px);
-  grid-template-rows: repeat(5, 28px);
+  grid-template-columns: repeat(5, var(--sq));
+  grid-template-rows: repeat(5, var(--sq));
   border: 1px solid var(--frame);
   border-radius: 5px;
   overflow: hidden;
@@ -858,8 +860,19 @@ the same place
 .rule-square.webbed {
   background-color: color-mix(in srgb, var(--you) 18%, transparent);
 }
+.rule-arrows {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  color: var(--them);
+  stroke: currentColor;
+  stroke-width: 0.07;
+  stroke-linecap: round;
+  pointer-events: none;
+}
 .rule-tile {
-  font-size: 26px;
+  font-size: calc(var(--sq) * 0.93);
   line-height: 1;
   position: relative;
   top: -0.058em;
@@ -879,13 +892,13 @@ the same place
   opacity: 0.6;
 }
 .rule-sign {
-  font-size: 15px;
+  font-size: calc(var(--sq) * 0.55);
   line-height: 1;
 }
 /* where the tile set off from: an empty tile, dashed */
 .rule-start {
-  width: 15px;
-  height: 19px;
+  width: calc(var(--sq) * 0.55);
+  height: calc(var(--sq) * 0.7);
   border: 1.5px dashed var(--you);
   border-radius: 3px;
   box-sizing: border-box;
