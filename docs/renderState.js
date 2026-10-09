@@ -237,8 +237,6 @@ function renderHand(player_view) {
     strip.querySelector(".name").textContent = player_view.names[player];
     strip.querySelector(".amount").textContent = `$${coins}`;
     strip.querySelector(".of").textContent = `/${player_view.smite_cost}`;
-    const fill = Math.max(0, Math.min(1, coins / player_view.smite_cost));
-    strip.querySelector(".bar span").style.width = `${100 * fill}%`;
 
     // compare by contents, not just count: a rematch can deal a new hand with the
     // same number of tiles, and a length-only check would leave stale tiles (and

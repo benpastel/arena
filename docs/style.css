@@ -220,8 +220,9 @@ the right. Inspired by the tiles: white, fine lines, a tile's rounded corners. O
 the board is set off a little more heavily.
 
 The board's size is derived from the window: as big as the height allows after the
-strips, unless the side columns need the width. Everything on the board is sized
-relative to it (cqmin), so the layout holds at any laptop size.
+strips, unless the side columns need the width. As the window narrows, the left
+column stacks its contents before the board gives up any size. Everything on the
+board is sized relative to it (cqmin), so the layout holds at any laptop size.
 */
 .container.me-north {
   --north: var(--you);
@@ -235,7 +236,7 @@ relative to it (cqmin), so the layout holds at any laptop size.
   --wash: #f2f6f3;
   --radius: 8px;
 
-  --side-min: 230px;
+  --side-min: 124px;
   --log-min: 300px;
   --strip: clamp(70px, 12vh, 118px);
   --board: min(calc(100vh - 2 * var(--strip)), calc(100vw - var(--side-min) - var(--log-min)));
@@ -244,8 +245,8 @@ relative to it (cqmin), so the layout holds at any laptop size.
   height: 100vh;
   display: grid;
   grid-template-columns: minmax(var(--side-min), 0.9fr) var(--board) minmax(var(--log-min), 1.2fr);
-  grid-template-rows: var(--strip) var(--board) var(--strip);
-  align-content: center;
+  /* the outer rows take any spare height, so the columns always run the full height */
+  grid-template-rows: minmax(var(--strip), 1fr) var(--board) minmax(var(--strip), 1fr);
 
   font-family: "Iowan Old Style", Palatino, Georgia, serif;
   color: var(--ink);
@@ -261,6 +262,7 @@ relative to it (cqmin), so the layout holds at any laptop size.
   display: flex;
   flex-direction: column;
   border-right: 1px solid var(--line);
+  container-type: inline-size;
 }
 /* the tiles in play, at a glance; clicking opens what each does */
 .in-play {
@@ -292,14 +294,26 @@ relative to it (cqmin), so the layout holds at any laptop size.
   color: #7a756b;
   word-break: break-all;
 }
+/* a narrow column stacks each label over its tiles */
+@container (max-width: 200px) {
+  .in-play, .acc, .quit {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .acc {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+  .acc-tiles {
+    margin-bottom: 6px;
+  }
+}
 .quit {
   margin-top: auto;
   height: var(--strip);
   padding: 0 18px;
-  border-top: 1px solid var(--line);
   display: flex;
   align-items: center;
-  gap: 10px;
   cursor: pointer;
 }
 .quit .option {
@@ -309,12 +323,6 @@ relative to it (cqmin), so the layout holds at any laptop size.
 .quit .option.shell::before {
   border-width: var(--frame-width, 0.02em);
 }
-.quit-name {
-  font-size: 12px;
-  font-variant: small-caps;
-  letter-spacing: 0.1em;
-  color: var(--muted);
-}
 
 /* ----------------------------------------------------------------- strips */
 .strip {
@@ -322,24 +330,25 @@ relative to it (cqmin), so the layout holds at any laptop size.
   min-width: 0;
   padding: 8px calc(var(--board) * 0.025);
   display: grid;
+  height: var(--strip);
+  box-sizing: border-box;
   grid-template-columns: minmax(0, auto) 1fr auto;
-  grid-template-rows: 1fr auto;
   column-gap: 16px;
   align-items: center;
 }
 .strip.top {
   grid-row: 1;
+  align-self: end;
 }
 .strip.bottom {
   grid-row: 3;
+  align-self: start;
 }
 /* the strip of whoever the game is waiting on */
 .strip.acting {
   background-color: var(--wash);
-  border-radius: var(--radius);
 }
 .strip .who {
-  grid-row: 1 / 3;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -356,7 +365,6 @@ relative to it (cqmin), so the layout holds at any laptop size.
 }
 .strip .coins {
   grid-column: 2;
-  grid-row: 1;
   display: flex;
   align-items: baseline;
   gap: 2px;
@@ -368,25 +376,8 @@ relative to it (cqmin), so the layout holds at any laptop size.
   font-size: calc(var(--strip) * 0.17);
   color: var(--muted);
 }
-/* a hairline filling toward the smite */
-.bar {
-  grid-column: 2;
-  grid-row: 2;
-  max-width: 220px;
-  height: 2px;
-  position: relative;
-  border-radius: 1px;
-  background-color: var(--line);
-}
-.bar span {
-  position: absolute;
-  inset: 0 auto 0 0;
-  border-radius: 1px;
-  background-color: currentColor;
-}
 .hand-tiles {
   grid-column: 3;
-  grid-row: 1 / 3;
   display: flex;
   gap: 6px;
 }
@@ -394,8 +385,8 @@ relative to it (cqmin), so the layout holds at any laptop size.
   font-size: calc(var(--strip) * 0.62);
   line-height: 1;
 }
-.strip.north .name, .strip.north .amount, .strip.north .bar, .strip.north .hand-tile { color: var(--north); }
-.strip.south .name, .strip.south .amount, .strip.south .bar, .strip.south .hand-tile { color: var(--south); }
+.strip.north .name, .strip.north .amount, .strip.north .hand-tile { color: var(--north); }
+.strip.south .name, .strip.south .amount, .strip.south .hand-tile { color: var(--south); }
 
 /* ------------------------------------------------------------------ board */
 .board {
@@ -411,7 +402,6 @@ relative to it (cqmin), so the layout holds at any laptop size.
   grid-template-rows: repeat(5, 1fr);
 
   border: 1.5px solid var(--frame);
-  border-radius: var(--radius);
   background-color: white;
 }
 .cell {
