@@ -227,7 +227,7 @@ function renderLog(panel, player_view) {
 }
 
 function renderHand(player_view) {
-  // each player's strip: name, coins toward the smite, and the tiles in hand
+  // each player's strip: name, coins, and the tiles in hand
   for (const player of PLAYERS) {
     const strip = document.querySelector(`.strip.${player}`);
     if (!strip) {
@@ -236,7 +236,6 @@ function renderHand(player_view) {
     const coins = player_view.coins[player];
     strip.querySelector(".name").textContent = player_view.names[player];
     strip.querySelector(".amount").textContent = `$${coins}`;
-    strip.querySelector(".of").textContent = `/${player_view.smite_cost}`;
 
     // compare by contents, not just count: a rematch can deal a new hand with the
     // same number of tiles, and a length-only check would leave stale tiles (and
@@ -287,6 +286,7 @@ function renderOther(player_view) {
   document.querySelector(".discard-contents").textContent = player_view.discard.join("");
   document.querySelector(".hidden-tiles-contents").textContent = player_view.hidden_tiles.join("");
   document.querySelector(".in-play").textContent = player_view.tiles_in_game.join("");
+  document.querySelector(".smite-cost .cost").textContent = `= $${player_view.smite_cost}`;
 }
 
 function renderRules(list, player_view) {
