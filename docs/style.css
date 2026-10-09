@@ -409,19 +409,26 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
 .strip.south .name, .strip.south .amount, .strip.south .hand-tile { color: var(--south); }
 
 /* ------------------------------------------------------------------ board */
+/* the board's frame sits centred on the column dividers above and below it: its box
+   reaches half a frame plus half a divider past its column on each side */
 .board {
+  --frame-width: 1.5px;
+  --reach: calc(var(--frame-width) / 2 + 0.5px);
   grid-column: 2;
   grid-row: 2;
-  width: var(--board);
-  height: var(--board);
+  box-sizing: border-box;
+  width: calc(var(--board) + 2 * var(--reach));
+  height: calc(var(--board) + 2 * var(--reach));
+  margin: calc(-1 * var(--reach));
   position: relative;
+  z-index: 1;
   container-type: size;
 
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   grid-template-rows: repeat(5, 1fr);
 
-  border: 1.5px solid var(--frame);
+  border: var(--frame-width) solid var(--frame);
   background-color: white;
 }
 .cell {
