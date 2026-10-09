@@ -110,7 +110,7 @@ function drawClaim(board, selection, responses) {
     line.setAttribute("y2", attack ? y2 : y2 - uy * head * 0.8);
     svg.append(line);
     if (attack) {
-      const arm = width * 0.03;
+      const arm = width * 0.02;
       for (const halo of [true, false]) {
         for (const [dx, dy] of [[arm, arm], [arm, -arm]]) {
           const stroke = document.createElementNS(SVG, "line");
