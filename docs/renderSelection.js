@@ -13,9 +13,9 @@ import {
   CHOSEN_START,
   CHOSEN_TARGET,
   ACTION_NAMES,
-  OTHER_ACTIONS,
   RESPONSES,
   ALL_TILES,
+  TILES,
 } from "./constants.js";
 
 import {findCell} from "./renderState.js";
@@ -35,12 +35,12 @@ function pieceCenter(board, square) {
 
 function option(name) {
   // a clickable glyph for an ability or a response; tiles are their own glyph, and
-  // ↕ ✓ 🚩 sit in a shell drawn to match a tile's frame
+  // the rest (↕ ⚡ ✓ 🚩) sit in a shell drawn to match a tile's frame
   const element = document.createElement("span");
   element.classList.add("option");
   element.dataset.name = name;
   element.title = ACTION_NAMES[name];
-  if (name in OTHER_ACTIONS || name in RESPONSES) {
+  if (!(name in TILES)) {
     element.classList.add("shell");
     const symbol = document.createElement("span");
     symbol.classList.add("symbol");

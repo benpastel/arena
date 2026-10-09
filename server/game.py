@@ -552,13 +552,24 @@ async def _select_smite_target(
         "Waiting for opponent to select a tile to smite ⚡",
         players[other_player(player)].seat,
     )
-    choice = await players[player].choose_action_or_square(
+    agent = players[player]
+    targets = state.positions[other_player(player)]
+    if not isinstance(agent, Human):
+        choice = await agent.choose_action_or_square(
+            [], targets, "Select a tile to smite ⚡", true_action_hint=None
+        )
+        return cast(Square, choice)
+
+    # a person picks the target from a smite drawn on each enemy tile
+    smite = await agent.choose_action_or_square(
         [],
-        state.positions[other_player(player)],
+        [],
         "Select a tile to smite ⚡",
         true_action_hint=None,
+        targets={OtherAction.SMITE: targets},
     )
-    return cast(Square, choice)
+    assert isinstance(smite, ActionAndTarget)
+    return smite.target
 
 
 async def _maybe_smite(state: State, players: dict[Player, Agent]) -> None:

@@ -48,6 +48,7 @@ const ALL_TILES = [
 // names shown under the action panel buttons
 const ACTION_NAMES = {
   "↕": "MOVE",
+  "⚡": "SMITE",
   ...Object.fromEntries(ALL_TILES),
   "✓": "ACCEPT",
   "🚩": "CHALLENGE",

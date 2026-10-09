@@ -124,6 +124,10 @@ class OtherAction(str, Enum):
     # Move 1 square and gain 1 mana
     MOVE = "↕"
 
+    # Kill any enemy tile, forced when a player's coins reach the smite cost.
+    # Never chosen as a turn's action: it only marks the targets of a smite.
+    SMITE = "⚡"
+
     def __str__(self) -> str:
         return f"{self.value} ({self.name.lower()})"
 

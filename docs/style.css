@@ -2,9 +2,6 @@
   /* the slightly rounded corner of a tile, shared by every button shell */
   --shell-radius: 0.4vmin;
 
-  /* a target square that can be clicked gets a ring */
-  --ring: 0.4vmin;
-
   /* a tile that can be clicked is drawn bolder; a picked one is also underlined */
   --bold: 0.022em;
   --picked-bar: 0.7vmin;
@@ -479,9 +476,8 @@ button.outlined-button:disabled {
 selection; red and blue only ever say whose piece it is
   - a tile that can be clicked (a piece, in hand, on an exchange) is drawn bolder,
     and a picked one also gets a bar under it
-  - abilities and responses are drawn on the board as options (see .option); the
-    action panel under the board is only for reference
-  - a target square that can be clicked on its own (a smite) gets a ring
+  - abilities, smites and responses are drawn on the board as options (see .option);
+    the action panel under the board is only for reference
 */
 .hand-tile.highlight,
 .board-tile.highlight,
@@ -578,9 +574,6 @@ selection; red and blue only ever say whose piece it is
   display: flex;
   align-items: center;
   justify-content: center;
-}
-.cell.highlight:not(.own-piece) {
-  box-shadow: inset 0 0 0 var(--ring) black;
 }
 .board-tile {
   font-weight: light;
