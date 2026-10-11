@@ -1,8 +1,8 @@
 :root {
-  /* you and them, from the inks on the tiles: jade and cinnabar; north is the
-     opponent unless you sit north (see .me-north) */
-  --you: #2f6b55;
-  --them: #a8452f;
+  /* you and them: blue and red; north is the opponent unless you sit north
+     (see .me-north) */
+  --you: #1f4fb4;
+  --them: #c4302b;
   --north: var(--them);
   --south: var(--you);
 
@@ -229,11 +229,11 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
   --south: var(--them);
 }
 .container {
-  --ink: #26241f;
-  --muted: #8d877b;
-  --line: #e4dfd5;
-  --frame: #bdb5a6;
-  --wash: #f2f6f3;
+  --ink: #141414;
+  --muted: #5c5c5c;
+  --line: #d4d4d4;
+  --frame: #6b6b6b;
+  --wash: #e9effb;
   --radius: 8px;
 
   --side-min: 124px;
@@ -248,7 +248,7 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
   /* the outer rows take any spare height, so the columns always run the full height */
   grid-template-rows: minmax(var(--strip), 1fr) var(--board) minmax(var(--strip), 1fr);
 
-  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   color: var(--ink);
   background-color: white;
   cursor: default;
@@ -309,13 +309,12 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
 }
 .acc-label {
   font-size: 14px;
-  font-style: italic;
   color: var(--muted);
 }
 .acc-tiles {
   font-size: 28px;
   line-height: 1;
-  color: #7a756b;
+  color: #555555;
 }
 /* a dying tile, on its way from the board to the graveyard */
 .ghost {
@@ -379,13 +378,14 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
   gap: 2px;
 }
 .strip .name {
-  font-size: 16px;
-  font-variant: small-caps;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
   letter-spacing: 0.06em;
 }
 .turn-note {
-  font-size: 13px;
-  font-style: italic;
+  font-size: 14px;
+  color: var(--ink);
 }
 .strip .coins {
   grid-column: 2;
@@ -499,7 +499,7 @@ exchange's two tiles side by side
   gap: 0.5cqmin;
   line-height: 1;
   pointer-events: none;
-  color: #9a958b;
+  color: #555555;
 }
 .cell-marks .board-tile {
   font-size: 4.4cqmin;
@@ -721,7 +721,7 @@ the same place
   border-top: none;
 }
 .log-turn.old {
-  opacity: 0.45;
+  opacity: 0.75;
 }
 .log-who {
   /* long names are cut short, but the column never collapses */
@@ -729,14 +729,15 @@ the same place
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-variant: small-caps;
-  letter-spacing: 0.04em;
+  font-size: 0.85em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 .log-what {
   display: flex;
   align-items: center;
   gap: 2.1cqi;
-  font-style: italic;
 }
 .log-item {
   display: inline-flex;
@@ -750,8 +751,9 @@ the same place
 }
 .log-name {
   font-size: 3.6cqi;
-  font-variant: small-caps;
-  letter-spacing: 0.08em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 /* a claim that didn't happen: a bluff caught, or an attack reflected */
 .log-what.cancelled {
@@ -787,10 +789,10 @@ the same place
   padding: max(5vh, 48px) 4vw 3vh;
   box-sizing: border-box;
   background-color: white;
-  border: 1.5px solid #bdb5a6;
+  border: 1.5px solid #6b6b6b;
   border-radius: 8px;
-  font-family: "Iowan Old Style", Palatino, Georgia, serif;
-  color: #26241f;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color: #141414;
 }
 .rules-close {
   position: absolute;
@@ -820,14 +822,14 @@ the same place
 }
 .rule-name {
   margin-top: 6px;
-  font-size: calc(var(--sq) * 0.72);
-  font-variant: small-caps;
-  letter-spacing: 0.08em;
+  font-size: calc(var(--sq) * 0.6);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 .rule-text {
-  font-size: calc(var(--sq) * 0.66);
-  line-height: 1.4;
-  font-style: italic;
+  font-size: calc(var(--sq) * 0.56);
+  line-height: 1.35;
 }
 .rule-text > div + div {
   margin-top: 2px;
@@ -838,10 +840,10 @@ the same place
   grid-row: 1 / 3;
   display: flex;
   gap: 10px;
-  --you: #2f6b55;
-  --them: #a8452f;
-  --line: #e4dfd5;
-  --frame: #bdb5a6;
+  --you: #1f4fb4;
+  --them: #c4302b;
+  --line: #d4d4d4;
+  --frame: #6b6b6b;
 }
 .rule-board {
   position: relative;
