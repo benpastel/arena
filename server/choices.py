@@ -34,6 +34,20 @@ async def send_prompt(prompt: str, seat: Seat, choice_id: int = 0) -> None:
     await seat.send(event)
 
 
+async def send_waiting(activity: str, seat: Seat) -> None:
+    """
+    Tell the player what their opponent is doing while they wait, e.g. "Choosing an
+    action…"; it's shown in the opponent's strip, under their name.
+    """
+    event = {
+        "type": OutEventType.PROMPT,
+        "choiceId": 0,
+        "prompt": activity,
+        "waiting": True,
+    }
+    await seat.send(event)
+
+
 async def _get_choice(prompt: str, seat: Seat) -> dict:
     """
     Prompts the player for a choice

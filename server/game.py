@@ -22,7 +22,7 @@ from server.constants import (
     ActionAndTarget,
     other_player,
 )
-from server.choices import send_prompt
+from server.choices import send_waiting
 from server.notify import (
     broadcast_state_changed,
     notify_selection_changed,
@@ -58,8 +58,8 @@ async def _move_x2(
 ) -> None:
     """Allow the player to move the x2 highlight."""
     player = state.player_at(square)
-    await send_prompt(
-        "Waiting for opponent to move the ×2.",
+    await send_waiting(
+        "Moving the ×2…",
         players[other_player(player)].seat,
     )
     choices: list[Action] = [t for t in Tile if t != state.x2_tile and t != Tile.HIDDEN]
@@ -90,8 +90,8 @@ async def _resolve_exchange(
     state.exchange_tiles_revealed[player][exchange_index] = True
 
     await broadcast_state_changed(state, players)
-    await send_prompt(
-        "Waiting for opponent to exchange tiles.",
+    await send_waiting(
+        "Looking at the exchange…",
         players[other_player(player)].seat,
     )
 
@@ -254,8 +254,8 @@ async def _select_action(
         - the action
         - target square of the action
     """
-    await send_prompt(
-        "Waiting for opponent to select their action.",
+    await send_waiting(
+        "Choosing an action…",
         players[state.other_player].seat,
     )
     current_agent = players[state.current_player]
@@ -399,8 +399,8 @@ async def _lose_tile(
         # current player will need to choose a tile, so set a waiting prompt for opponent
         # and send any state updates so far to both players
         await broadcast_state_changed(state, players)
-        await send_prompt(
-            "Waiting for opponent to lose tile.",
+        await send_waiting(
+            "Choosing a tile to lose…",
             players[other_player(player)].seat,
         )
 
@@ -434,8 +434,8 @@ async def _lose_tile(
         state.vacant = {player: square}
         await clear_selection(players)
         await broadcast_state_changed(state, players)
-        await send_prompt(
-            "Waiting for opponent to choose a replacement tile.",
+        await send_waiting(
+            "Choosing a replacement…",
             players[other_player(player)].seat,
         )
         choice = await agent.choose_square_or_hand(
@@ -493,8 +493,8 @@ async def _select_response(
         # Tile.FIREBALL reflects Tile.FIREBALL, but only if the direct target is an enemy
         possible_responses.append(Tile.FIREBALL)
 
-    await send_prompt(
-        "Waiting for opponent to respond.", players[state.current_player].seat
+    await send_waiting(
+        "Deciding whether to challenge…", players[state.current_player].seat
     )
 
     return await players[state.other_player].choose_response(
@@ -507,8 +507,8 @@ async def _select_response(
 async def _select_reflect_response(
     action: Action, state: State, players: dict[Player, Agent]
 ) -> Response:
-    await send_prompt(
-        "Waiting for opponent to respond to reflect.",
+    await send_waiting(
+        "Deciding whether to challenge the reflect…",
         players[state.other_player].seat,
     )
     response = await players[state.current_player].choose_response(
@@ -522,8 +522,8 @@ async def _select_reflect_response(
 async def _select_smite_target(
     state: State, player: Player, players: dict[Player, Agent]
 ) -> Square:
-    await send_prompt(
-        "Waiting for opponent to select a tile to smite ⚡",
+    await send_waiting(
+        "Choosing a tile to smite…",
         players[other_player(player)].seat,
     )
     agent = players[player]

@@ -128,23 +128,18 @@ window.addEventListener("DOMContentLoaded", () => {
     animate(before, board, player_view);
   }
 
-  // the turn is shown in the strip of whoever the game is waiting on, with the prompt
-  // written in it
-  function showTurn(promptText, choiceId) {
-    const waiting = "Waiting for opponent to ";
+  // the turn is shown in the strip of whoever the game is waiting on: what to do in
+  // ours, or what they're doing in theirs
+  function showTurn(promptText, choiceId, waiting) {
     let acting = null;
-    let note = "";
     if (choiceId > 0) {
       acting = bottomStrip;
-      note = promptText;
-    } else if (promptText.startsWith(waiting)) {
+    } else if (waiting) {
       acting = topStrip;
-      const rest = promptText.slice(waiting.length);
-      note = rest.charAt(0).toUpperCase() + rest.slice(1);
     }
     for (const strip of [topStrip, bottomStrip]) {
       strip.classList.toggle("acting", strip === acting);
-      strip.querySelector(".turn-note").textContent = strip === acting ? note : "";
+      strip.querySelector(".turn-note").textContent = strip === acting ? promptText : "";
     }
   }
   window.addEventListener("resize", redrawSelection);
@@ -300,7 +295,7 @@ window.addEventListener("DOMContentLoaded", () => {
       redrawSelection();
     } else if (event.type === "PROMPT") {
       CHOICE_ID = parseInt(event.choiceId);
-      showTurn(event.prompt, CHOICE_ID);
+      showTurn(event.prompt, CHOICE_ID, event.waiting);
     } else if (event.type === "MATCH_CHANGE") {
       alert(event.message);
     }
