@@ -13,6 +13,7 @@
      fallback, keeps the tile in the same place in its box whatever the text font,
      so the shells and faces measured against it (--face-*) line up */
   --tile-font: "Apple Symbols", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --text-font: "Tenor Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
 
   /* a tile that can be clicked is drawn bolder; a picked one is also underlined */
   --bold: 0.022em;
@@ -253,7 +254,7 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
   /* the outer rows take any spare height, so the columns always run the full height */
   grid-template-rows: minmax(var(--strip), 1fr) var(--board) minmax(var(--strip), 1fr);
 
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: var(--text-font);
   color: var(--ink);
   background-color: white;
   cursor: default;
@@ -384,7 +385,7 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
 }
 .strip .name {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: normal;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -741,7 +742,7 @@ the same place
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 0.85em;
-  font-weight: 600;
+  font-weight: normal;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -762,7 +763,7 @@ the same place
 }
 .log-name {
   font-size: 3.6cqi;
-  font-weight: 600;
+  font-weight: normal;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -802,7 +803,7 @@ the same place
   background-color: white;
   border: 1.5px solid #6b6b6b;
   border-radius: 8px;
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: var(--text-font);
   color: #141414;
 }
 .rules-close {
@@ -834,7 +835,7 @@ the same place
 .rule-name {
   margin-top: 6px;
   font-size: calc(var(--sq) * 0.6);
-  font-weight: 600;
+  font-weight: normal;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
