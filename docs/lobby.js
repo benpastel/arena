@@ -9,11 +9,13 @@
 import {
   HIDDEN_TILE,
   ALL_TILES,
+  ACTION_NAMES,
   DESCRIPTIONS,
   TILES_PER_GAME,
 } from "./constants.js";
 
 const TILE_MODES = ["starter", "random", "custom"];
+const EVERY_TILE = ALL_TILES.map(([tile]) => tile);
 
 function element(tag, className, text) {
   const e = document.createElement(tag);
@@ -109,6 +111,55 @@ function renderOpponent(table, actions) {
   return seat;
 }
 
+// the tiles the table will play, named; clicking one shows what they do, or, while
+// the host is picking, takes it out again
+function renderSet(table, actions) {
+  const set = element("div", "room-set");
+  const picking = table.mode === "custom" && table.amHost;
+  // random tables draw any five of them
+  const about = table.mode === "random" ? EVERY_TILE : [...table.tiles, "↕", "⚡"];
+  for (let i = 0; i < TILES_PER_GAME; i++) {
+    const tile = table.mode === "random" ? HIDDEN_TILE : table.tiles[i];
+    if (!tile) {
+      set.append(element("span", "set-tile empty"));
+      continue;
+    }
+    const entry = button("set-tile", "", () => {
+      if (picking) {
+        actions.setTiles("custom", table.tiles.filter((t) => t !== tile));
+      } else {
+        actions.showRules(about);
+      }
+    });
+    entry.append(element("span", "set-glyph", tile));
+    if (tile !== HIDDEN_TILE) {
+      entry.append(element("span", "set-name", ACTION_NAMES[tile]));
+      entry.title = DESCRIPTIONS[tile].join("\n");
+    }
+    set.append(entry);
+  }
+  return set;
+}
+
+// every tile, pale until picked, in the order picked; a tile's name shows what it does
+function renderPicker(table, actions) {
+  const picker = element("div", "picker");
+  const full = table.tiles.length >= TILES_PER_GAME;
+  for (const [tile, name] of ALL_TILES) {
+    const chosen = table.tiles.includes(tile);
+    const pick = element("div", "pick");
+    pick.classList.toggle("on", chosen);
+    const glyph = button("pick-tile", tile, () => {
+      const tiles = chosen ? table.tiles.filter((t) => t !== tile) : [...table.tiles, tile];
+      actions.setTiles("custom", tiles);
+    }, full && !chosen);
+    glyph.title = DESCRIPTIONS[tile].join("\n");
+    pick.append(glyph, button("pick-name", name, () => actions.showRules([tile])));
+    picker.append(pick);
+  }
+  return picker;
+}
+
 // starter, random, or custom; only the host can change it
 function renderTiles(table, actions) {
   const area = element("div", "tiles-area");
@@ -121,23 +172,10 @@ function renderTiles(table, actions) {
     }, !table.amHost);
     modes.append(b);
   }
-  area.append(modes, setPreview(table.mode, table.tiles, "room-tiles"));
+  area.append(modes, renderSet(table, actions));
 
   if (table.mode === "custom" && table.amHost) {
-    const picker = element("div", "picker");
-    const full = table.tiles.length >= TILES_PER_GAME;
-    for (const [tile, name] of ALL_TILES) {
-      const chosen = table.tiles.includes(tile);
-      const pick = button("pick", "", () => {
-        const tiles = chosen ? table.tiles.filter((t) => t !== tile) : [...table.tiles, tile];
-        actions.setTiles("custom", tiles);
-      }, full && !chosen);
-      pick.classList.toggle("on", chosen);
-      pick.title = DESCRIPTIONS[tile].join("\n");
-      pick.append(element("span", "pick-tile", tile), element("span", "pick-name", name));
-      picker.append(pick);
-    }
-    area.append(picker);
+    area.append(renderPicker(table, actions));
   }
   return area;
 }

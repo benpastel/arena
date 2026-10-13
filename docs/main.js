@@ -169,6 +169,12 @@ window.addEventListener("DOMContentLoaded", () => {
     removeBot: () => net.send({type: "removeBot"}),
     setTiles: (mode, tiles) => net.send({type: "setTiles", mode, tiles}),
     start: () => net.send({type: "start"}),
+    // before a game, the reference shows whichever tiles were clicked
+    showRules: (entries) => {
+      // must match python DEFAULT_SMITE_COST; random tables vary it, but show no smite
+      renderRules(rules.querySelector(".rules-list"), {smite_cost: 10}, entries);
+      openRules();
+    },
   };
 
   function maybeJoin() {

@@ -336,8 +336,8 @@ class Lobby:
             return
         if len(chosen) > TILES_PER_GAME:
             return
-        # keep the canonical order, which the action panel follows
-        table.tiles = [t for t in ALL_TILES if t in chosen]
+        # a custom pick keeps the order it was picked in, through to the game
+        table.tiles = chosen if mode == "custom" else [t for t in ALL_TILES if t in chosen]
         table.tile_mode = mode
         await self._push_table(table)
 

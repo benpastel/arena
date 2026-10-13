@@ -287,11 +287,11 @@ function renderOther(player_view) {
   document.querySelector(".smite-cost .cost").textContent = `= $${player_view.smite_cost}`;
 }
 
-function renderRules(list, player_view) {
+function renderRules(list, player_view, entries = [...player_view.tiles_in_game, "↕", "⚡"]) {
   // the reference: every tile in play, then moving and smiting, written out
   list.innerHTML = "";
-  const entries = [...player_view.tiles_in_game, "↕", "⚡"];
-  // two columns, filled top to bottom
+  // two columns, filled top to bottom; a single entry gets the panel to itself
+  list.classList.toggle("single", entries.length === 1);
   list.style.gridTemplateRows = `repeat(${Math.ceil(entries.length / 2)}, auto)`;
   for (const glyph of entries) {
     const row = document.createElement("div");

@@ -207,9 +207,44 @@ the tiles between.
   letter-spacing: 2px;
   color: var(--muted);
 }
-.room-tiles {
+/* the room's set: each tile named under it; an empty one is a dashed slot */
+.room-set {
+  display: flex;
+  gap: 6px;
+}
+.set-tile {
+  width: 84px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  font: inherit;
+  color: var(--ink);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.set-glyph {
+  font-family: var(--tile-font);
   font-size: 64px;
-  letter-spacing: 6px;
+  line-height: 1;
+}
+.set-tile:hover .set-glyph {
+  color: var(--you);
+}
+.set-name {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+}
+.set-tile.empty {
+  box-sizing: border-box;
+  width: 46px;
+  height: 60px;
+  margin: 2px 19px 0;
+  border: 1.5px dashed var(--line);
+  border-radius: 4px;
+  cursor: default;
 }
 
 /* the room */
@@ -309,34 +344,64 @@ the tiles between.
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 0;
-  font: inherit;
+  gap: 2px;
   color: var(--faint);
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-.pick:hover {
-  color: var(--muted);
 }
 .pick.on {
   color: var(--ink);
 }
-.pick:disabled {
-  opacity: 0.4;
-  cursor: default;
+.pick-tile,
+.pick-name {
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
 }
 .pick-tile {
   font-family: var(--tile-font);
   font-size: 52px;
   line-height: 1;
 }
+.pick-tile:hover {
+  color: var(--muted);
+}
+.pick.on .pick-tile:hover {
+  color: var(--ink);
+}
+.pick-tile:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+/* a tile's name opens what it does */
 .pick-name {
+  padding: 2px 4px;
   font-size: 10px;
   letter-spacing: 0.12em;
+  border-bottom: 1px solid transparent;
+}
+.pick-name:hover {
+  color: var(--ink);
+  border-color: var(--line);
 }
 @media (max-width: 600px) {
+  .room-set {
+    gap: 2px;
+  }
+  .set-tile {
+    width: 62px;
+  }
+  .set-tile.empty {
+    margin: 2px 8px 0;
+  }
+  .set-glyph {
+    font-size: 56px;
+  }
+  .set-name {
+    font-size: 8px;
+    letter-spacing: 0.04em;
+  }
   .picker {
     grid-template-columns: repeat(4, 80px);
   }
@@ -961,6 +1026,16 @@ the same place
   right: 16px;
   font-size: 36px;
   -webkit-text-stroke: 0;
+}
+/* a single tile's reference: a panel just big enough for it */
+.rules-panel:has(.rules-list.single) {
+  width: auto;
+  height: auto;
+  max-width: 88vw;
+  padding-right: max(4vw, 64px);
+}
+.rules-list.single {
+  grid-template-columns: auto;
 }
 /* two columns, filled top to bottom (renderRules sets the rows) */
 .rules-list {
