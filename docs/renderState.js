@@ -33,28 +33,6 @@ function createBoard(board, mySide) {
   return board;
 }
 
-function setTooltip(element, text) {
-  if (!element.classList.contains('tooltip')) {
-    element.classList.add('tooltip');
-    const textElement = document.createElement("span");
-    textElement.classList.add('tooltiptext');
-    textElement.innerHTML = text;
-    element.append(textElement);
-  } else {
-    const textElement = element.querySelector(".tooltiptext");
-    textElement.innerHTML = text;
-  }
-}
-
-
-function addName(element, text) {
-  // the small name under a button, shared by the game and the lobby
-  const nameElement = document.createElement("span");
-  nameElement.classList.add("action-name");
-  nameElement.textContent = text;
-  element.append(nameElement);
-}
-
 function findCell(board, row, col) {
   return board.querySelector(`.cell[data-row="${row}"][data-column="${col}"]`);
 }
@@ -422,4 +400,4 @@ function renderArrows(arrows) {
   return svg;
 }
 
-export {createBoard, renderBoard, renderLog, renderHand, findCell, renderOther, renderRules, renderWebs, setTooltip, addName};
+export {createBoard, renderBoard, renderLog, renderHand, findCell, renderOther, renderRules, renderWebs};

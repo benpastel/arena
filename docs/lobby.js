@@ -1,35 +1,19 @@
 "use strict";
 
-// The lobby (your name and the open tables) and the table room (seats and tiles,
-// before the match starts).
+// The lobby (your name and the open tables) and the table room (who's playing, and with
+// which tiles, before the match starts).
 //
-// Every control is drawn like the game's buttons: an icon in a tile-like shell,
-// with its name under it.
+// You're always blue and whoever you'll play is red, as in the game, so the room is laid
+// out like the board: them above, the tiles between, you below.
 
 import {
-  NORTH_PLAYER,
-  SOUTH_PLAYER,
   HIDDEN_TILE,
-  TOOLTIPS,
   ALL_TILES,
+  DESCRIPTIONS,
   TILES_PER_GAME,
 } from "./constants.js";
 
-import {setTooltip, addName} from "./renderState.js";
-
-// icons for the lobby's buttons; the game's own buttons are its tiles and responses
-const ICONS = {
-  newTable: "+",
-  sit: "🪑",
-  bot: "🤖",
-  remove: "X",
-  random: "🎲",
-  // text presentation, so it stays a plain black triangle rather than an emoji
-  start: "▶︎",
-  leave: "←",
-  copy: "📋",
-};
-
+const TILE_MODES = ["starter", "random", "custom"];
 
 function element(tag, className, text) {
   const e = document.createElement(tag);
@@ -42,140 +26,139 @@ function element(tag, className, text) {
   return e;
 }
 
-function iconButton(icon, name, onClick, disabled = false) {
-  const b = element("button", "outlined-button", icon);
-  addName(b, name);
+function button(className, text, onClick, disabled = false) {
+  const b = element("button", className, text);
   b.disabled = disabled;
   b.addEventListener("click", onClick);
   return b;
 }
 
-function row(...children) {
-  const r = element("div", "button-row");
-  r.append(...children);
-  return r;
+// the tiles a table will play: face down when they're drawn fresh every game, and an
+// empty slot for each still to be picked
+function setPreview(mode, tiles, className) {
+  const preview = element("div", `tile-set ${className}`);
+  if (mode === "random") {
+    preview.textContent = HIDDEN_TILE.repeat(TILES_PER_GAME);
+    return preview;
+  }
+  preview.textContent = tiles.join("");
+  for (let i = tiles.length; i < TILES_PER_GAME; i++) {
+    preview.append(element("span", "slot"));
+  }
+  return preview;
 }
 
-function tilesText(random, tiles) {
-  // random tables show face-down tiles, since the set changes every game
-  return random ? HIDDEN_TILE.repeat(TILES_PER_GAME) : tiles.join("");
-}
-
-function setUpLobby(panel, onNewTable) {
-  // the static parts of the lobby: the name field and the new table button
-  addName(panel.querySelector(".name-field"), "NAME");
-  panel.querySelector(".new-table-row").append(
-    iconButton(ICONS.newTable, "NEW TABLE", onNewTable, true),
-  );
+function setUpLobby(panel, actions) {
+  panel.querySelector(".new-table").addEventListener("click", actions.newTable);
+  panel.querySelector(".play-bot").addEventListener("click", actions.playBot);
 }
 
 function renderLobby(panel, tables, named, actions) {
-  panel.querySelector(".new-table-row .outlined-button").disabled = !named;
+  // nothing works until you've given a name
+  panel.classList.toggle("locked", !named);
+  for (const b of panel.querySelectorAll(".lobby-actions button")) {
+    b.disabled = !named;
+  }
 
   const list = panel.querySelector(".table-list");
   list.innerHTML = "";
+  list.hidden = tables.length === 0;
+  if (tables.length) {
+    list.append(element("div", "list-head", "open tables"));
+  }
   for (const table of tables) {
-    const joinButton = iconButton("", "JOIN", () => actions.join(table.id), !named);
-    joinButton.classList.add("table-row");
-    for (const side of [NORTH_PLAYER, SOUTH_PLAYER]) {
-      if (table.seats[side] !== null) {
-        joinButton.append(element("span", `seat-name ${side}`, table.seats[side]));
-      }
-    }
-    joinButton.append(element("span", "table-tiles", tilesText(table.random, table.tiles)));
-    list.append(joinButton);
+    const row = element("div", "table-row");
+    const host = Object.values(table.seats).find((name) => name !== null) ?? "";
+    row.append(
+      element("span", "row-name them", host),
+      setPreview(table.mode, table.tiles, "row-tiles"),
+      button("btn small", "join", () => actions.join(table.id), !named),
+    );
+    list.append(row);
   }
 }
 
-function renderSeat(table, side, actions) {
-  const seat = element("div", `seat ${side}`);
+function renderOpponent(table, actions) {
+  const seat = element("div", "seat them");
+  const side = table.mySide === "north" ? "south" : "north";
   const occupant = table.seats[side];
+  const buttons = element("div", "seat-buttons");
 
   if (occupant === null) {
-    const buttons = [iconButton(ICONS.sit, "SIT", () => actions.sit(side))];
+    seat.append(element("span", "seat-name empty", "waiting for an opponent"));
+    const copy = button("btn small", "copy invite", () => {
+      const link = `${location.origin}${location.pathname}#/t/${table.id}`;
+      navigator.clipboard?.writeText(link).then(() => {
+        copy.textContent = "copied";
+        window.setTimeout(() => { copy.textContent = "copy invite"; }, 1400);
+      }, () => undefined);
+    });
+    buttons.append(copy);
     if (table.amHost) {
-      buttons.push(iconButton(ICONS.bot, "BOT", () => actions.addBot(side)));
+      buttons.append(button("btn small", "add bot", actions.addBot));
     }
-    seat.append(row(...buttons));
-    return seat;
+  } else {
+    const name = element("span", "seat-name", occupant.name);
+    name.classList.toggle("gone", !occupant.connected);
+    seat.append(name);
+    if (occupant.bot && table.amHost) {
+      buttons.append(button("btn small", "remove", actions.removeBot));
+    }
   }
-
-  const name = element("span", "seat-name", occupant.name);
-  if (!occupant.connected) {
-    name.classList.add("gone");
-  }
-  seat.append(name);
-  if (occupant.bot && table.amHost) {
-    seat.append(iconButton(ICONS.remove, "REMOVE", () => actions.removeBot(side)));
-  }
+  seat.append(buttons);
   return seat;
 }
 
-function renderPicker(table, actions) {
-  const editable = table.amHost;
-  const picker = element("div", "picker");
+// starter, random, or custom; only the host can change it
+function renderTiles(table, actions) {
+  const area = element("div", "tiles-area");
 
-  const random = iconButton(ICONS.random, "RANDOM", () => actions.setTiles(!table.random, table.tiles), !editable);
-  random.classList.toggle("on", table.random);
-  const head = row(random);
-  if (editable && !table.random && table.tiles.length !== TILES_PER_GAME) {
-    head.append(element("span", "tile-count", `${table.tiles.length}/${TILES_PER_GAME}`));
+  const modes = element("div", "segmented");
+  for (const mode of TILE_MODES) {
+    const b = button(mode === table.mode ? "on" : "", mode, () => {
+      // custom starts from nothing picked
+      actions.setTiles(mode, mode === "custom" ? [] : table.tiles);
+    }, !table.amHost);
+    modes.append(b);
   }
-  picker.append(head);
+  area.append(modes, setPreview(table.mode, table.tiles, "room-tiles"));
 
-  const grid = element("div", "tile-grid");
-  grid.classList.toggle("off", table.random);
-  for (const [tile, name] of ALL_TILES) {
-    const chosen = table.tiles.includes(tile);
-    const choice = element("button", "tile-button tile-choice", tile);
-    choice.classList.toggle("chosen", chosen);
-    choice.disabled = !editable || table.random;
-    choice.addEventListener("click", () => {
-      const tiles = chosen ? table.tiles.filter((t) => t !== tile) : [...table.tiles, tile];
-      if (tiles.length <= TILES_PER_GAME) {
-        actions.setTiles(table.random, tiles);
-      }
-    });
-    addName(choice, name);
-    setTooltip(choice, TOOLTIPS[tile]);
-    grid.append(choice);
+  if (table.mode === "custom" && table.amHost) {
+    const picker = element("div", "picker");
+    const full = table.tiles.length >= TILES_PER_GAME;
+    for (const [tile, name] of ALL_TILES) {
+      const chosen = table.tiles.includes(tile);
+      const pick = button("pick", "", () => {
+        const tiles = chosen ? table.tiles.filter((t) => t !== tile) : [...table.tiles, tile];
+        actions.setTiles("custom", tiles);
+      }, full && !chosen);
+      pick.classList.toggle("on", chosen);
+      pick.title = DESCRIPTIONS[tile].join("\n");
+      pick.append(element("span", "pick-tile", tile), element("span", "pick-name", name));
+      picker.append(pick);
+    }
+    area.append(picker);
   }
-  picker.append(grid);
-  return picker;
+  return area;
 }
 
 function renderRoom(panel, table, actions) {
   panel.innerHTML = "";
 
-  // north on top and south below, as on the board
-  panel.append(
-    renderSeat(table, NORTH_PLAYER, actions),
-    renderPicker(table, actions),
-    renderSeat(table, SOUTH_PLAYER, actions),
-  );
+  const card = element("div", "room-card");
+  const you = element("div", "seat you");
+  you.append(element("span", "seat-name", table.seats[table.mySide]?.name ?? ""));
+  card.append(renderOpponent(table, actions), renderTiles(table, actions), you);
 
-  const full = table.seats[NORTH_PLAYER] !== null && table.seats[SOUTH_PLAYER] !== null;
-  const ready = table.random || table.tiles.length === TILES_PER_GAME;
-
-  const buttons = [];
+  const full = Object.values(table.seats).every((occupant) => occupant !== null);
+  const ready = table.mode === "random" || table.tiles.length === TILES_PER_GAME;
+  const foot = element("div", "room-foot");
   if (table.amHost) {
-    buttons.push(iconButton(ICONS.start, "START", actions.start, !(full && ready)));
+    foot.append(button("btn primary", "start", actions.start, !(full && ready)));
   }
-  buttons.push(iconButton(ICONS.leave, "LEAVE", actions.leave));
-  panel.append(row(...buttons));
+  foot.append(button("btn", "leave", actions.leave));
 
-  if (!full) {
-    const link = `${location.origin}${location.pathname}#/t/${table.id}`;
-    const copy = iconButton(ICONS.copy, "COPY", () => {
-      navigator.clipboard?.writeText(link).then(() => {
-        copy.querySelector(".action-name").textContent = "COPIED";
-        window.setTimeout(() => { copy.querySelector(".action-name").textContent = "COPY"; }, 1400);
-      }, () => undefined);
-    });
-    const linkRow = element("div", "link-row");
-    linkRow.append(copy, element("code", "", link));
-    panel.append(linkRow);
-  }
+  panel.append(card, foot);
 }
 
 export {setUpLobby, renderLobby, renderRoom};

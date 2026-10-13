@@ -165,10 +165,9 @@ window.addEventListener("DOMContentLoaded", () => {
   const actions = {
     join: (tableId) => net.send({type: "joinTable", tableId}),
     leave: () => net.send({type: "leaveTable"}),
-    sit: (side) => net.send({type: "sit", side}),
-    addBot: (side) => net.send({type: "addBot", side}),
-    removeBot: (side) => net.send({type: "removeBot", side}),
-    setTiles: (random, tiles) => net.send({type: "setTiles", random, tiles}),
+    addBot: () => net.send({type: "addBot"}),
+    removeBot: () => net.send({type: "removeBot"}),
+    setTiles: (mode, tiles) => net.send({type: "setTiles", mode, tiles}),
     start: () => net.send({type: "start"}),
   };
 
@@ -187,7 +186,10 @@ window.addEventListener("DOMContentLoaded", () => {
   });
   // a pasted table link joins once the name is entered, not on its first letter
   nameInput.addEventListener("change", maybeJoin);
-  setUpLobby(lobby, () => net.send({type: "createTable"}));
+  setUpLobby(lobby, {
+    newTable: () => net.send({type: "createTable"}),
+    playBot: () => net.send({type: "createTable", bot: true}),
+  });
   // the reference for the tiles in play: one click opens it over most of the screen
   const openRules = () => { rules.hidden = false; };
   const closeRules = () => { rules.hidden = true; };

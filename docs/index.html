@@ -11,15 +11,14 @@
   </head>
   <body class="at-lobby">
     <div class="lobby screen">
-      <div class="lobby-head">
-        <h1>Liar's Arena</h1>
-        <a href="how-to-play.html" target="_blank" rel="noreferrer">how to play</a>
+      <h1 class="title">Liar's Arena</h1>
+      <a class="link how-to" href="how-to-play.html" target="_blank" rel="noreferrer">how to play</a>
+      <input class="name-input" maxlength="20" spellcheck="false" autocomplete="off" placeholder="your name" aria-label="Your name">
+      <div class="lobby-actions">
+        <button class="btn primary new-table" disabled>new table</button>
+        <button class="btn play-bot" disabled>play the bot</button>
       </div>
-      <div class="name-field">
-        <input class="name-input" maxlength="20" spellcheck="false" autocomplete="off" aria-label="Your name">
-      </div>
-      <div class="button-row new-table-row"></div>
-      <div class="table-list"></div>
+      <div class="table-list" hidden></div>
     </div>
     <div class="room screen"></div>
     <div class="container">

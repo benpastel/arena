@@ -5,6 +5,12 @@
   --them: #c4302b;
   --north: var(--them);
   --south: var(--you);
+  --ink: #141414;
+  --muted: #5c5c5c;
+  --faint: #9a9a9a;
+  --line: #d4d4d4;
+  --frame: #6b6b6b;
+  --wash: #e9effb;
 
   /* the slightly rounded corner of a tile, shared by every button shell */
   --shell-radius: 0.4vmin;
@@ -21,10 +27,9 @@
 
 body {
   background-color: white;
-  color: black;
+  color: var(--ink);
   margin: 0;
-  font-family: 'Courier New';
-  font-size: 20px;
+  font-family: var(--text-font);
 }
 body.at-game {
   justify-content: center;
@@ -40,158 +45,307 @@ body:not(.at-game) .container {
   display: none;
 }
 
-/* the lobby and table room: a single plain column, built from the game's buttons */
+/*
+------------------------------------------------------------- the lobby and table room
+
+One quiet column. The lobby: the title, your name, and the open tables. The room: a
+card laid out like the game, with your opponent above in red, you below in blue, and
+the tiles between.
+*/
 .screen {
   box-sizing: border-box;
-  width: min(600px, 100%);
-  margin: 0 auto;
-  padding: 40px 16px;
+  min-height: 100vh;
+  padding: 12vh 16px 48px;
   display: flex;
   flex-direction: column;
-  gap: 5vmin;
-}
-.lobby-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-.lobby-head h1 {
-  margin: 0;
-  font-size: 40px;
-}
-a {
-  color: black;
-}
-
-/* a row of buttons, with room underneath for their names */
-.button-row {
-  display: flex;
   align-items: center;
-  gap: 3vmin;
+}
+.title {
+  margin: 0 0 6px;
+  font-size: clamp(28px, 6vw, 44px);
+  font-weight: normal;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  text-align: center;
+}
+.link {
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-decoration: none;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 2px;
+}
+.link:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+.how-to {
+  margin-bottom: 64px;
 }
 
-/* outside the game, everything sits in the same light tile outline as the game's
-   buttons; one that can be pressed is drawn in black, one that can't in grey */
-.screen .outlined-button:not(:disabled) {
-  color: black;
+/* plain buttons: a thin outline and letter-spaced capitals */
+.btn {
+  height: 44px;
+  padding: 0 22px;
+  font: inherit;
+  font-size: 14px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: inherit;
+  background: white;
+  border: 1px solid currentColor;
+  cursor: pointer;
 }
-/* a toggle that's on gets a black outline (inset, so nothing shifts) */
-.outlined-button.on {
-  border-color: black;
-  box-shadow: inset 0 0 0 2px black;
+.btn:hover {
+  background-color: #f4f4f4;
+}
+.btn.primary {
+  color: white;
+  background-color: var(--you);
+  border-color: var(--you);
+}
+.btn.primary:hover {
+  background-color: #1a4399;
+}
+.btn:disabled {
+  color: var(--faint);
+  border-color: var(--line);
+  background: white;
+  cursor: default;
+}
+.btn.primary:disabled {
+  color: white;
+  background-color: var(--line);
+}
+.btn.small {
+  height: 36px;
+  padding: 0 16px;
+  font-size: 12px;
 }
 
-/* the name field is a shell too, with its name under it */
-.name-field {
-  position: relative;
-}
+/* the name: a single underline */
 .name-input {
   box-sizing: border-box;
-  width: 100%;
-  font-family: inherit;
-  font-size: 5vmin;
-  line-height: 6.5vmin;
-  padding: 0 2vmin;
-  color: black;
-  border: 1px solid grey;
-  border-radius: var(--shell-radius);
+  width: min(300px, 100%);
+  padding: 6px 0;
+  font: inherit;
+  font-size: 26px;
+  text-align: center;
+  color: var(--ink);
+  background: none;
+  border: none;
+  border-bottom: 1.5px solid var(--ink);
+  border-radius: 0;
   outline: none;
 }
-.name-input:focus {
-  border-color: darkgreen;
+.name-input::placeholder {
+  color: var(--faint);
+}
+.lobby-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin: 18px 0 56px;
+}
+/* until there's a name, the rest is only a preview */
+.lobby.locked .table-list {
+  opacity: 0.35;
 }
 
-/* each open table is one wide button: who's there and the tiles */
 .table-list {
-  display: flex;
-  flex-direction: column;
-  gap: 5vmin;
+  width: min(560px, 100%);
+  border-top: 1px solid var(--line);
 }
-.screen .table-row {
+.table-list[hidden] {
+  display: none;
+}
+.list-head {
+  padding: 14px 0 6px;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.table-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 24px;
+  height: 64px;
+  border-bottom: 1px solid var(--line);
+}
+.row-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--them);
+}
+
+/* a table's tiles, with a dashed slot for each still to be picked */
+.tile-set {
+  font-family: var(--tile-font);
+  line-height: 1;
+  white-space: nowrap;
+}
+.tile-set .slot {
+  display: inline-block;
+  width: 0.72em;
+  height: 0.94em;
+  margin: 0 0.04em;
+  vertical-align: top;
+  border: 1.5px dashed var(--line);
+  border-radius: 0.06em;
+}
+.row-tiles {
+  font-size: 34px;
+  letter-spacing: 2px;
+  color: var(--muted);
+}
+.room-tiles {
+  font-size: 64px;
+  letter-spacing: 6px;
+}
+
+/* the room */
+.room {
+  padding-top: 8vh;
+}
+.room-card {
+  width: min(640px, 100%);
+  border: 1.5px solid var(--frame);
+}
+.seat {
+  min-height: 96px;
   box-sizing: border-box;
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  width: 100%;
-  padding: 1vmin 2vmin;
-  font-size: 5vmin;
+  gap: 12px;
+  padding: 16px 28px;
 }
-.table-row:disabled .seat-name {
-  color: grey;
+.seat.them {
+  border-bottom: 1px solid var(--line);
+  color: var(--them);
 }
-.table-tiles {
-  line-height: 6.5vmin;
+.seat.you {
+  border-top: 1px solid var(--line);
+  background-color: var(--wash);
+  color: var(--you);
 }
-
-/* the table room: north's seat, the tiles, south's seat */
-.seat {
-  display: flex;
-  align-items: center;
-  gap: 3vmin;
-  min-height: 70px;
-  padding: 3vmin 16px;
-  border: 1px solid grey;
-  border-radius: var(--shell-radius);
+.seat-name {
+  font-size: 20px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
-.seat .seat-name {
-  font-size: 36px;
-  flex: 1;
+.seat-name.empty {
+  font-size: 17px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--faint);
 }
+/* someone who has dropped out; the game will wait for them */
 .seat-name.gone {
   opacity: 0.35;
 }
-.picker {
+.seat-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.tiles-area {
+  padding: 26px 20px 30px;
   display: flex;
   flex-direction: column;
-  gap: 5vmin;
+  align-items: center;
+  gap: 22px;
 }
-.tile-grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  row-gap: 5vmin;
-  justify-items: center;
+/* starter, random, or custom */
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--ink);
 }
-.tile-grid.off {
-  opacity: 0.3;
-}
-/* tiles in the picker are drawn like the game's tile buttons */
-.tile-choice {
-  font-family: inherit;
-  background: none;
+.segmented button {
+  height: 40px;
+  padding: 0 20px;
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: white;
   border: none;
-  padding: 0;
-  color: lightgrey;
+  border-left: 1px solid var(--ink);
   cursor: pointer;
 }
-.tile-choice.chosen {
-  color: black;
-  font-weight: bold;
+.segmented button:first-child {
+  border-left: none;
 }
-.tile-choice:disabled {
+.segmented button.on {
+  color: white;
+  background-color: var(--ink);
+}
+.segmented button:disabled {
   cursor: default;
 }
-.tile-choice:not(:disabled):hover {
-  color: darkgreen;
+.segmented button:disabled:not(.on) {
+  color: var(--faint);
 }
-/* a tooltip opens over the controls above; it mustn't hold itself open or take their clicks */
-.picker .tooltiptext {
-  pointer-events: none;
+
+/* every tile, pale until picked */
+.picker {
+  display: grid;
+  grid-template-columns: repeat(6, 92px);
+  justify-content: center;
+  row-gap: 10px;
 }
-.tile-count {
-  font-size: 3vmin;
-}
-.link-row {
+.pick {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 3vmin;
+  gap: 4px;
+  padding: 0;
+  font: inherit;
+  color: var(--faint);
+  background: none;
+  border: none;
+  cursor: pointer;
 }
-.link-row code {
-  font-family: inherit;
-  font-size: 14px;
-  overflow-wrap: anywhere;
+.pick:hover {
+  color: var(--muted);
+}
+.pick.on {
+  color: var(--ink);
+}
+.pick:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.pick-tile {
+  font-family: var(--tile-font);
+  font-size: 52px;
+  line-height: 1;
+}
+.pick-name {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+}
+@media (max-width: 600px) {
+  .picker {
+    grid-template-columns: repeat(4, 80px);
+  }
+}
+
+.room-foot {
+  display: flex;
+  gap: 12px;
+  margin-top: 26px;
 }
 
 /* connection trouble and server errors */
@@ -235,11 +389,6 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
   --south: var(--them);
 }
 .container {
-  --ink: #141414;
-  --muted: #5c5c5c;
-  --line: #d4d4d4;
-  --frame: #6b6b6b;
-  --wash: #e9effb;
   --radius: 8px;
 
   --side-min: 124px;
@@ -927,76 +1076,6 @@ the same place
   border: 1.5px dashed var(--you);
   border-radius: 3px;
   box-sizing: border-box;
-}
-
-/*
--------------------------------------------------------------- shared with the lobby
-*/
-.tile-button {
-  line-height: 7vmin;
-  font-size: 7vmin;
-}
-.tile-button,
-.outlined-button {
-  position: relative;
-}
-/* each button's name, under it */
-.action-name {
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-top: 1vmin;
-
-  font-size: 1.6vmin;
-  line-height: 1.6vmin;
-  white-space: nowrap;
-  -webkit-text-stroke: 0;
-}
-.outlined-button {
-  border-radius: var(--shell-radius);
-  border: 1px solid grey;
-  box-sizing: content-box;
-  min-width: 5vmin;
-  line-height: 6.5vmin;
-  font-size: 5vmin;
-  font-family: inherit;
-  text-align: center;
-  color: inherit;
-  background-color: white;
-  padding: 0;
-  vertical-align: middle;
-}
-button.outlined-button {
-  cursor: pointer;
-}
-button.outlined-button:disabled {
-  color: grey;
-  cursor: default;
-}
-.tooltip {
-  position: relative;
-  display: inline-block;
-}
-.tooltip .tooltiptext {
-  line-height: 2vmin;
-  font-size: 2vmin;
-  font-weight: normal;
-  background-color: black;
-  color: white;
-  visibility: hidden;
-  text-align: center;
-  padding: 5px 0;
-  border-radius: 6px;
-  position: absolute;
-  z-index: 1;
-  width: 25vmin;
-  bottom: 100%;
-  left: 50%;
-  margin-left: -10vmin;
-}
-.tooltip:hover .tooltiptext {
-  visibility: visible;
 }
 
 /* whose piece it is: jade for you, cinnabar for the opponent, whichever side you sit */

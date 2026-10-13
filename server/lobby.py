@@ -4,8 +4,10 @@ Users, tables, and the connections between them.
 A user is identified by an id their browser keeps in localStorage, so a refresh or a
 dropped connection reattaches them to the same seat, mid-game included.
 
-A table has two seats, NORTH and SOUTH, each empty, a user, or the bot.  The host
-picks the tiles and starts the match; the match then runs until either player quits,
+A table has two seats, NORTH and SOUTH, each empty, a user, or the bot.  Which is
+which doesn't matter to the players, who each see themselves at the bottom; the host
+takes one and the next to join, or the bot, the other.  The host picks the tiles and
+starts the match; the match then runs until either player quits,
 which closes the table.  A missing player is simply waited for: the game pauses at
 their next choice.
 
@@ -23,9 +25,12 @@ from websockets.server import WebSocketServerProtocol
 
 from server.agents import Agent, Human, RandomBot
 from server.config import ALL_TILES, DEFAULT_TILES, TILES_PER_GAME
-from server.constants import Player, Tile, other_player
+from server.constants import Player, Tile
 from server.game import play_one_match
 from server.seat import Seat
+
+TILE_MODES = ("starter", "random", "custom")
+STARTER_TILES = [t for t in ALL_TILES if t in DEFAULT_TILES]
 
 # who sits in a seat: a user id, the bot, or nobody
 BOT = "bot"
@@ -65,11 +70,10 @@ class Table:
     host_id: str
     seats: dict[Player, Occupant]
 
-    # random re-rolls the tiles (and the other game parameters) every game
-    random_tiles: bool = False
-    tiles: list[Tile] = field(
-        default_factory=lambda: [t for t in ALL_TILES if t in DEFAULT_TILES]
-    )
+    # "starter" plays the default tiles, "random" re-rolls the tiles (and the other
+    # game parameters) every game, and "custom" plays the host's pick
+    tile_mode: str = "starter"
+    tiles: list[Tile] = field(default_factory=lambda: list(STARTER_TILES))
 
     # set when the match starts
     game_seats: dict[Player, Seat] | None = None
@@ -82,6 +86,12 @@ class Table:
     def side_of(self, user_id: str) -> Player | None:
         for side, occupant in self.seats.items():
             if occupant == user_id:
+                return side
+        return None
+
+    def free_side(self) -> Player | None:
+        for side, occupant in self.seats.items():
+            if occupant is None:
                 return side
         return None
 
@@ -160,21 +170,19 @@ class Lobby:
         if kind == "setName":
             await self._set_name(user, event.get("name"))
         elif kind == "createTable":
-            await self._create_table(user)
+            await self._create_table(user, event.get("bot") is True)
         elif kind == "joinTable":
             await self._join_table(user, event.get("tableId"))
         elif kind == "leaveTable":
             await self._leave_table(user)
         elif kind == "quit":
             await self._quit(user)
-        elif kind == "sit":
-            await self._sit(user, Player(event.get("side")))
         elif kind == "addBot":
-            await self._set_bot(user, Player(event.get("side")), True)
+            await self._set_bot(user, True)
         elif kind == "removeBot":
-            await self._set_bot(user, Player(event.get("side")), False)
+            await self._set_bot(user, False)
         elif kind == "setTiles":
-            await self._set_tiles(user, event.get("random"), event.get("tiles"))
+            await self._set_tiles(user, event.get("mode"), event.get("tiles"))
         elif kind == "start":
             await self._start(user)
         else:
@@ -205,14 +213,14 @@ class Lobby:
 
     # ---------------------------------------------------------------- tables
 
-    async def _create_table(self, user: User) -> None:
+    async def _create_table(self, user: User, bot: bool) -> None:
         if not user.name or self._busy(user):
             return
         await self._leave_table(user, quiet=True)
         table = Table(
             id=_random_id(5),
             host_id=user.id,
-            seats={Player.N: None, Player.S: user.id},
+            seats={Player.N: BOT if bot else None, Player.S: user.id},
         )
         self.tables[table.id] = table
         user.table_id = table.id
@@ -237,15 +245,15 @@ class Lobby:
             await self._send(user, {"type": "left"})
             await self._send(user, self._lobby_event())
             return
-        free = [side for side, occupant in table.seats.items() if occupant is None]
-        if table.playing or not free:
+        free = table.free_side()
+        if table.playing or free is None:
             await self._error(user, "That table is full.")
             await self._send(user, {"type": "left"})
             await self._send(user, self._lobby_event())
             return
 
         await self._leave_table(user, quiet=True)
-        table.seats[free[0]] = user.id
+        table.seats[free] = user.id
         user.table_id = table.id
         await self._push_table(table)
         await self._push_lobby()
@@ -294,35 +302,32 @@ class Lobby:
             await self._send(seated, {"type": "left"})
         await self._push_lobby()
 
-    async def _sit(self, user: User, side: Player) -> None:
-        """Move to the other, empty, seat."""
-        table = self._table_of(user)
-        if table is None or table.playing or table.seats[side] is not None:
-            return
-        table.seats[other_player(side)] = None
-        table.seats[side] = user.id
-        await self._push_table(table)
-        await self._push_lobby()
-
-    async def _set_bot(self, user: User, side: Player, bot: bool) -> None:
+    async def _set_bot(self, user: User, bot: bool) -> None:
+        """Seat the bot in the free seat, or take it out of its seat."""
         table = self._table_of(user)
         if table is None or table.playing or table.host_id != user.id:
             return
-        if bot and table.seats[side] is None:
+        if bot:
+            side = table.free_side()
+            if side is None:
+                return
             table.seats[side] = BOT
-        elif not bot and table.seats[side] == BOT:
-            table.seats[side] = None
         else:
-            return
+            side = table.side_of(BOT)
+            if side is None:
+                return
+            table.seats[side] = None
         await self._push_table(table)
         await self._push_lobby()
 
-    async def _set_tiles(self, user: User, random_tiles: object, tiles: object) -> None:
+    async def _set_tiles(self, user: User, mode: object, tiles: object) -> None:
         table = self._table_of(user)
         if table is None or table.playing or table.host_id != user.id:
             return
-        if not isinstance(random_tiles, bool) or not isinstance(tiles, list):
+        if mode not in TILE_MODES or not isinstance(tiles, list):
             return
+        if mode == "starter":
+            tiles = STARTER_TILES
         try:
             chosen = [Tile(t) for t in tiles]
         except ValueError:
@@ -333,7 +338,7 @@ class Lobby:
             return
         # keep the canonical order, which the action panel follows
         table.tiles = [t for t in ALL_TILES if t in chosen]
-        table.random_tiles = random_tiles
+        table.tile_mode = mode
         await self._push_table(table)
 
     async def _start(self, user: User) -> None:
@@ -342,7 +347,7 @@ class Lobby:
             return
         if any(occupant is None for occupant in table.seats.values()):
             return
-        if not table.random_tiles and len(table.tiles) != TILES_PER_GAME:
+        if table.tile_mode != "random" and len(table.tiles) != TILES_PER_GAME:
             return
 
         seats = {side: Seat() for side in Player}
@@ -358,7 +363,7 @@ class Lobby:
                 names[side] = self.users[occupant].name
 
         table.game_seats = seats
-        tiles = None if table.random_tiles else list(table.tiles)
+        tiles = None if table.tile_mode == "random" else list(table.tiles)
         table.task = asyncio.create_task(play_one_match(agents, tiles, names))
         table.task.add_done_callback(_report_crash)
 
@@ -401,7 +406,7 @@ class Lobby:
                 "id": table.id,
                 "playing": table.playing,
                 "seats": seats,
-                "random": table.random_tiles,
+                "mode": table.tile_mode,
                 "tiles": table.tiles,
                 "mySide": my_side.value if my_side else None,
                 "amHost": table.host_id == user_id,
@@ -427,7 +432,7 @@ class Lobby:
                 {
                     "id": table.id,
                     "seats": names,
-                    "random": table.random_tiles,
+                    "mode": table.tile_mode,
                     "tiles": table.tiles,
                 }
             )
