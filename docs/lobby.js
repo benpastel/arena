@@ -111,13 +111,11 @@ function renderOpponent(table, actions) {
   return seat;
 }
 
-// the tiles the table will play, named; clicking one shows what they do, or, while
+// the tiles the table will play, named; clicking one shows what it does, or, while
 // the host is picking, takes it out again
 function renderSet(table, actions) {
   const set = element("div", "room-set");
   const picking = table.mode === "custom" && table.amHost;
-  // random tables draw any five of them
-  const about = table.mode === "random" ? EVERY_TILE : [...table.tiles, "↕", "⚡"];
   for (let i = 0; i < TILES_PER_GAME; i++) {
     const tile = table.mode === "random" ? HIDDEN_TILE : table.tiles[i];
     if (!tile) {
@@ -128,7 +126,8 @@ function renderSet(table, actions) {
       if (picking) {
         actions.setTiles("custom", table.tiles.filter((t) => t !== tile));
       } else {
-        actions.showRules(about);
+        // a random table could draw any of them
+        actions.showRules(tile === HIDDEN_TILE ? EVERY_TILE : [tile]);
       }
     });
     entry.append(element("span", "set-glyph", tile));
@@ -141,7 +140,7 @@ function renderSet(table, actions) {
   return set;
 }
 
-// every tile, pale until picked, in the order picked; a tile's name shows what it does
+// every tile, pale until picked, in the order picked
 function renderPicker(table, actions) {
   const picker = element("div", "picker");
   const full = table.tiles.length >= TILES_PER_GAME;
@@ -154,7 +153,7 @@ function renderPicker(table, actions) {
       actions.setTiles("custom", tiles);
     }, full && !chosen);
     glyph.title = DESCRIPTIONS[tile].join("\n");
-    pick.append(glyph, button("pick-name", name, () => actions.showRules([tile])));
+    pick.append(glyph, element("span", "pick-name", name));
     picker.append(pick);
   }
   return picker;
@@ -175,7 +174,10 @@ function renderTiles(table, actions) {
   area.append(modes, renderSet(table, actions));
 
   if (table.mode === "custom" && table.amHost) {
-    area.append(renderPicker(table, actions));
+    area.append(
+      renderPicker(table, actions),
+      button("link about-tiles", "what each tile does", () => actions.showRules(EVERY_TILE)),
+    );
   }
   return area;
 }

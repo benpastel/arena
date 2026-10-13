@@ -350,19 +350,15 @@ the tiles between.
 .pick.on {
   color: var(--ink);
 }
-.pick-tile,
-.pick-name {
+.pick-tile {
   padding: 0;
-  font: inherit;
+  font-family: var(--tile-font);
+  font-size: 52px;
+  line-height: 1;
   color: inherit;
   background: none;
   border: none;
   cursor: pointer;
-}
-.pick-tile {
-  font-family: var(--tile-font);
-  font-size: 52px;
-  line-height: 1;
 }
 .pick-tile:hover {
   color: var(--muted);
@@ -374,16 +370,18 @@ the tiles between.
   opacity: 0.4;
   cursor: default;
 }
-/* a tile's name opens what it does */
 .pick-name {
-  padding: 2px 4px;
   font-size: 10px;
   letter-spacing: 0.12em;
-  border-bottom: 1px solid transparent;
 }
-.pick-name:hover {
-  color: var(--ink);
-  border-color: var(--line);
+.about-tiles {
+  font: inherit;
+  font-size: 14px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  padding: 0 0 2px;
+  cursor: pointer;
 }
 @media (max-width: 600px) {
   .room-set {
