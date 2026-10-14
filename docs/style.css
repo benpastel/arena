@@ -11,6 +11,7 @@
   --line: #d4d4d4;
   --frame: #6b6b6b;
   --wash: #e9effb;
+  --wash-them: #fbeaea;
 
   /* the slightly rounded corner of a tile, shared by every button shell */
   --shell-radius: 0.4vmin;
@@ -585,9 +586,12 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
   grid-row: 3;
   align-self: start;
 }
-/* the strip of whoever the game is waiting on */
+/* the strip of whoever the game is waiting on, washed in their colour */
 .strip.acting {
   background-color: var(--wash);
+}
+.strip.top.acting {
+  background-color: var(--wash-them);
 }
 .strip .who {
   min-width: 0;
