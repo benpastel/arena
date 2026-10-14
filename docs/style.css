@@ -456,7 +456,8 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
   --radius: 8px;
 
   --side-min: 124px;
-  --log-min: 300px;
+  /* the log gives up width before the board does */
+  --log-min: clamp(150px, 20vw, 300px);
   --strip: clamp(70px, 12vh, 118px);
   --board: min(calc(100vh - 2 * var(--strip)), calc(100vw - var(--side-min) - var(--log-min)));
 
@@ -483,10 +484,22 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
   border-right: 1px solid var(--line);
   container-type: inline-size;
 }
+/* the tiles in play and the smite cost, filling the height above the board so the
+   graveyard's rule meets the board's top edge (unless they wrap in a narrow column) */
+.sidebar-top {
+  flex-shrink: 0;
+  box-sizing: border-box;
+  min-height: calc((100vh - var(--board)) / 2 - 1px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: calc(var(--strip) * 0.06);
+  padding: calc(var(--strip) * 0.06) 0;
+}
 /* the tiles in play, at a glance; clicking opens what each does */
 .in-play {
-  padding: 14px 18px 12px;
-  font-size: 40px;
+  padding: 0 18px;
+  font-size: calc(var(--strip) * 0.36);
   line-height: 1;
   letter-spacing: 2px;
   cursor: pointer;
@@ -495,14 +508,14 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
   color: var(--you);
 }
 .smite-cost {
-  padding: 0 18px 12px;
+  padding: 0 18px;
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 20px;
+  font-size: calc(var(--strip) * 0.19);
 }
 .smite-cost .option {
-  font-size: 32px;
+  font-size: calc(var(--strip) * 0.28);
   cursor: default;
   -webkit-text-stroke: 0;
 }
@@ -992,6 +1005,31 @@ the same place
   display: flex;
   gap: 2.1cqi;
   justify-content: flex-end;
+}
+/* a narrow log keeps to the glyphs: who is a bar in their colour, and the tiles go
+   unnamed */
+@container (max-width: 240px) {
+  .log-list {
+    grid-template-columns: 3px 1fr auto;
+    column-gap: 6cqi;
+    font-size: 8cqi;
+    line-height: 10cqi;
+  }
+  .log-who {
+    align-self: stretch;
+    min-width: 0;
+    font-size: 0;
+  }
+  .log-who:not(:empty) {
+    background-color: currentColor;
+  }
+  .log-glyph {
+    font-size: 14cqi;
+    line-height: 14cqi;
+  }
+  .log-name {
+    display: none;
+  }
 }
 
 /* ----------------------------------------------------- the tiles reference */
