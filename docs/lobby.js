@@ -88,14 +88,6 @@ function renderOpponent(table, actions) {
 
   if (occupant === null) {
     seat.append(element("span", "seat-name empty", "waiting for an opponent"));
-    const copy = button("btn small", "copy invite", () => {
-      const link = `${location.origin}${location.pathname}#/t/${table.id}`;
-      navigator.clipboard?.writeText(link).then(() => {
-        copy.textContent = "copied";
-        window.setTimeout(() => { copy.textContent = "copy invite"; }, 1400);
-      }, () => undefined);
-    });
-    buttons.append(copy);
     if (table.amHost) {
       buttons.append(button("btn small", "add bot", actions.addBot));
     }
@@ -197,8 +189,20 @@ function renderRoom(panel, table, actions) {
     foot.append(button("btn primary", "start", actions.start, !(full && ready)));
   }
   foot.append(button("btn", "leave", actions.leave));
-
   panel.append(card, foot);
+
+  // the link to send whoever you'd like to play; clicking it copies it
+  if (Object.values(table.seats).includes(null)) {
+    const link = `${location.origin}${location.pathname}#/t/${table.id}`;
+    const invite = button("link invite", link, () => {
+      navigator.clipboard?.writeText(link).then(() => {
+        invite.textContent = "copied";
+        window.setTimeout(() => { invite.textContent = link; }, 1400);
+      }, () => undefined);
+    });
+    invite.title = "copy";
+    panel.append(invite);
+  }
 }
 
 export {setUpLobby, renderLobby, renderRoom};

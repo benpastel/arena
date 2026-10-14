@@ -411,6 +411,16 @@ the tiles between.
   gap: 12px;
   margin-top: 26px;
 }
+.invite {
+  margin-top: 40px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  background: none;
+  border-width: 0 0 1px;
+  font-family: inherit;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
 
 /* connection trouble and server errors */
 .netbar,
