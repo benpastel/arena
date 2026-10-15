@@ -23,6 +23,8 @@ const SLIDE_MS_PER_SQUARE = 220;
 // exchange) go at one speed too, faster; a dying tile first pauses where it died
 const FLY_MS_PER_SQUARE = 150;
 const PAUSE_MS = 140;
+// the pause between an exchange's swap and the shuffle of its stack
+const SHUFFLE_BEAT_MS = 250;
 const FLIP_MS = 420;
 const FADE_MS = 300;
 const FLOAT_MS = 1100;
@@ -220,11 +222,12 @@ function fly(element, fromRect, duration, delay = 0) {
 }
 
 // a copy of a tile that's left, flying from where it was to `target` (an element,
-// hidden until the copy arrives), or fading where it was if there's no target
-function ghost(glyph, from, target, duration, pause = 0) {
+// hidden until the copy arrives; at `toRect` if given, else where it's drawn), or
+// fading where it was if there's no target
+function ghost(glyph, from, target, duration, pause = 0, toRect = null) {
   const element = document.createElement("span");
   element.className = "ghost";
-  element.textContent = target ? target.textContent : glyph;
+  element.textContent = glyph;
   element.style.left = `${from.rect.left}px`;
   element.style.top = `${from.rect.top}px`;
   element.style.fontSize = from.fontSize;
@@ -237,7 +240,7 @@ function ghost(glyph, from, target, duration, pause = 0) {
     {transform: "none", opacity: 1, offset: pause / total},
   ];
   if (target) {
-    const to = target.getBoundingClientRect();
+    const to = toRect || target.getBoundingClientRect();
     const dx = to.left + to.width / 2 - (from.rect.left + from.rect.width / 2);
     const dy = to.top + to.height / 2 - (from.rect.top + from.rect.height / 2);
     keyframes.push({transform: `translate(${dx}px, ${dy}px) scale(${to.height / from.rect.height})`, opacity: 0.6});
@@ -255,7 +258,8 @@ function ghostToGrave(from, grave, square) {
   const duration = grave
     ? travel(from.rect, grave.getBoundingClientRect(), square, FLY_MS_PER_SQUARE)
     : FLY_MS_PER_SQUARE;
-  ghost(from.glyph, from, grave, duration, PAUSE_MS);
+  // the graveyard shows the tile's face, which the board may not have
+  ghost(grave ? grave.textContent : from.glyph, from, grave, duration, PAUSE_MS);
 }
 
 // the tiles left in a hand slide over to where they're now drawn
@@ -273,8 +277,10 @@ function closeHand(player, left, square) {
 }
 
 // After an exchange: if we can see it was a swap (it was ours), the new tile flies out
-// of the stack onto the piece's square and the old one into the stack; then, for both
-// players, the stack's two tiles change places, so neither can tell which is which.
+// of its place in the stack onto the piece's square, and the old one into that place.
+// Then the server's shuffle, so neither player can tell which is which: a beat later
+// the stack's two tiles change places if the shuffle changed their order, which
+// whoever can see them can tell, or half the time at random for whoever can't.
 // Returns the square of a piece that swapped, which isn't also turned over.
 function animateExchange(board, before, view, kept, square) {
   const exchanges = (log) =>
@@ -293,31 +299,42 @@ function animateExchange(board, before, view, kept, square) {
     }
     const piece = pieceAt(board, ...position);
     const marks = Array.from(exchangeMarks(board, ...position));
+    const slots = before.marks[e];
     const oldGlyph = before.view.tiles_on_board[player][oldIndex];
     const newGlyph = view.tiles_on_board[player][newIndex];
-    let wait = 0;
-    let swapped = null;
     const from = before.pieces[player][oldIndex];
-    if (piece && from && oldGlyph !== newGlyph && oldGlyph !== HIDDEN_TILE && newGlyph !== HIDDEN_TILE) {
-      // the new tile came out of the stack, from where it lay
-      const stack = before.view.exchange_tiles[e];
-      const slot = Math.max(0, stack.indexOf(newGlyph));
-      const out = before.marks[e][slot];
-      const into = marks.find((mark) => mark.textContent === oldGlyph);
-      if (out) {
-        wait = travel(out, piece.getBoundingClientRect(), square, FLY_MS_PER_SQUARE);
-        fly(piece, out, wait);
-      }
-      if (into) {
-        ghost(oldGlyph, from, into, travel(from.rect, into.getBoundingClientRect(), square, FLY_MS_PER_SQUARE));
-      }
+
+    // the stack as it lay before the shuffle
+    const stack = [...before.view.exchange_tiles[e]];
+    let swapped = null;
+    let slot = -1;
+    if (oldGlyph !== newGlyph && oldGlyph !== HIDDEN_TILE && newGlyph !== HIDDEN_TILE) {
+      slot = Math.max(0, stack.indexOf(newGlyph));
+      stack[slot] = oldGlyph;
       swapped = position;
     }
-    if (marks.length === 2) {
-      const [a, b] = marks.map((mark) => mark.getBoundingClientRect());
-      const duration = travel(a, b, square, SLIDE_MS_PER_SQUARE, 0.5);
-      fly(marks[0], b, duration, wait);
-      fly(marks[1], a, duration, wait);
+    const shuffled = view.exchange_tiles[e];
+    const visible = !shuffled.includes(HIDDEN_TILE) && !stack.includes(HIDDEN_TILE);
+    const reorder =
+      marks.length === 2 && slots.length === 2 &&
+      (visible ? stack.some((glyph, i) => glyph !== shuffled[i]) : Math.random() < 0.5);
+
+    let wait = 0;
+    if (swapped && piece && from && slots[slot]) {
+      wait = travel(slots[slot], piece.getBoundingClientRect(), square, FLY_MS_PER_SQUARE);
+      fly(piece, slots[slot], wait);
+      // the old tile lands in that place, drawn there by whichever tile will be there
+      // until the shuffle
+      const lands = marks[reorder ? 1 - slot : slot];
+      const duration = travel(from.rect, slots[slot], square, FLY_MS_PER_SQUARE);
+      ghost(oldGlyph, from, lands, duration, 0, slots[slot]);
+      wait = Math.max(wait, duration);
+    }
+    if (reorder) {
+      const delay = wait ? wait + SHUFFLE_BEAT_MS : 0;
+      const duration = travel(slots[0], slots[1], square, SLIDE_MS_PER_SQUARE, 0.5);
+      fly(marks[0], slots[1], duration, delay);
+      fly(marks[1], slots[0], duration, delay);
     }
     return swapped;
   }
