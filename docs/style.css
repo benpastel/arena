@@ -486,8 +486,7 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
 }
 
 /* ------------------------------------------------------------------- left */
-/* quitting above, the tray beside the board, a row to each of its rows, and the smite
-   cost below; each row of the tray, and the smite cost, opens what it does */
+/* quitting above, the tray beside the board, and the smite cost below; each row of the tray, and the smite cost, opens what it does */
 .sidebar {
   grid-column: 1;
   grid-row: 1 / 4;
@@ -512,10 +511,17 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
 .quit .option.shell::before {
   border-width: var(--frame-width, 0.02em);
 }
-.tray {
+/* the tray's rows sit close together from the board's top edge, the smite cost
+   under them */
+.tray-area {
   grid-row: 2;
+  display: flex;
+  flex-direction: column;
+  padding-top: 8px;
+}
+.tray {
   display: grid;
-  grid-template-rows: repeat(5, 1fr);
+  row-gap: 4px;
   /* its tiles are sized to its width (the sidebar can't be the container: containing
      its layout would stop it sharing the page's rows) */
   container-type: inline-size;
@@ -526,7 +532,7 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
   justify-content: center;
   align-items: flex-start;
   gap: 2px;
-  padding: 0 18px;
+  padding: 4px 18px;
   cursor: pointer;
 }
 .tray-copies {
@@ -594,8 +600,6 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
   line-height: 1;
 }
 .smite-cost {
-  grid-row: 3;
-  align-self: start;
   padding: 10px 18px;
   display: flex;
   align-items: center;
