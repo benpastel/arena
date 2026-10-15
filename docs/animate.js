@@ -7,9 +7,13 @@
 import {PLAYERS} from "./constants.js";
 import {findCell} from "./renderState.js";
 
-const SLIDE_MS = 220;
-const DIE_MS = 450;
-const PLACE_MS = 300;
+// a piece slides at one speed however far it goes: a step, a hook's pull, a ram's
+// knockback
+const SLIDE_MS_PER_SQUARE = 220;
+// tiles leaving the board for the graveyard, or coming onto it from a hand, all take
+// the same time to fly; a dying tile first pauses where it died
+const FLY_MS = 400;
+const PAUSE_MS = 140;
 
 let lastView = null;
 
@@ -85,7 +89,10 @@ function animate(before, board, view) {
   for (const [from, [row, col]] of slides) {
     const piece = pieceAt(board, row, col);
     if (from && piece) {
-      fly(piece, from.rect, SLIDE_MS);
+      const square = piece.closest(".cell").getBoundingClientRect().width;
+      const to = piece.getBoundingClientRect();
+      const squares = Math.hypot(from.rect.left - to.left, from.rect.top - to.top) / square;
+      fly(piece, from.rect, SLIDE_MS_PER_SQUARE * Math.max(1, squares));
     }
   }
 
@@ -98,8 +105,8 @@ function animate(before, board, view) {
     }
   });
 
-  // a placed tile leaves after any tile it replaces
-  const delay = deaths.length ? DIE_MS / 3 : 0;
+  // a placed tile leaves as any tile it replaces does
+  const delay = deaths.length ? PAUSE_MS : 0;
   for (const [player, index] of placements) {
     const [row, col] = view.positions[player][index];
     const piece = pieceAt(board, row, col);
@@ -107,7 +114,7 @@ function animate(before, board, view) {
     const hand = before.hands[player];
     const from = hand.find((t) => t.glyph === glyph) || hand[hand.length - 1];
     if (piece && from) {
-      fly(piece, from.rect, PLACE_MS, delay);
+      fly(piece, from.rect, FLY_MS, delay);
     }
   }
 }
@@ -180,18 +187,22 @@ function ghostToGrave(from, grave) {
   ghost.style.color = from.color;
   document.body.append(ghost);
 
-  const keyframes = [{transform: "none", opacity: 1}, {transform: "none", opacity: 1, offset: 0.25}];
+  const duration = PAUSE_MS + FLY_MS;
+  const keyframes = [
+    {transform: "none", opacity: 1},
+    {transform: "none", opacity: 1, offset: PAUSE_MS / duration},
+  ];
   if (grave) {
     const to = grave.getBoundingClientRect();
     const dx = to.left + to.width / 2 - (from.rect.left + from.rect.width / 2);
     const dy = to.top + to.height / 2 - (from.rect.top + from.rect.height / 2);
     keyframes.push({transform: `translate(${dx}px, ${dy}px) scale(${to.height / from.rect.height})`, opacity: 0.6});
-    grave.animate([{opacity: 0}, {opacity: 0}], {duration: DIE_MS});
+    grave.animate([{opacity: 0}, {opacity: 0}], {duration});
   } else {
     keyframes.push({transform: "scale(0.6)", opacity: 0});
   }
   ghost
-    .animate(keyframes, {duration: DIE_MS, easing: "ease-in"})
+    .animate(keyframes, {duration, easing: "ease-in"})
     .finished.then(() => ghost.remove(), () => ghost.remove());
 }
 
