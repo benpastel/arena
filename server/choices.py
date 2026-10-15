@@ -112,9 +112,12 @@ async def _highlighted(
 ):
     """Sends a list of highlighted options to the player.  Clears highlights when done."""
     await _send_highlights(seat, squares, actions, hand_tiles, board_tiles, targets)
-    yield
-    # clear highlights in UI by highlighting empty lists
-    await _send_highlights(seat, [], [], [], [])
+    try:
+        yield
+    finally:
+        # clear highlights in UI by highlighting empty lists, also when the clock
+        # runs out mid-choice
+        await _send_highlights(seat, [], [], [], [])
 
 
 def _parse_action(data: dict) -> Action | None:

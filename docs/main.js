@@ -144,6 +144,36 @@ window.addEventListener("DOMContentLoaded", () => {
   }
   window.addEventListener("resize", redrawSelection);
 
+  // each player's reserve, and for whoever is deciding, the seconds left of this
+  // decision's allowance; once those are gone their reserve counts down instead
+  let clock = null;
+  function showClocks() {
+    for (const strip of [topStrip, bottomStrip]) {
+      const owner = strip.classList.contains("north") ? "north" : "south";
+      const allowance = strip.querySelector(".allowance");
+      const reserve = strip.querySelector(".reserve");
+      if (!clock) {
+        allowance.textContent = reserve.textContent = "";
+        continue;
+      }
+      let left = clock.reserve[owner];
+      if (clock.running === owner) {
+        const now = Date.now();
+        allowance.textContent = Math.ceil(Math.max(0, clock.allowanceEnds - now) / 1000);
+        left = Math.max(0, left - Math.max(0, now - clock.allowanceEnds));
+      } else {
+        allowance.textContent = "";
+      }
+      const seconds = Math.ceil(left / 1000);
+      reserve.textContent = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+    }
+  }
+  window.setInterval(() => {
+    if (clock?.running) {
+      showClocks();
+    }
+  }, 200);
+
   let welcomed = false;
   let table = null;
   let tables = [];
@@ -163,6 +193,7 @@ window.addEventListener("DOMContentLoaded", () => {
     addBot: () => net.send({type: "addBot"}),
     removeBot: () => net.send({type: "removeBot"}),
     setTiles: (mode, tiles) => net.send({type: "setTiles", mode, tiles}),
+    setTime: (mode) => net.send({type: "setTime", mode}),
     start: () => net.send({type: "start"}),
     // before a game, the reference shows whichever tiles were clicked
     showRules: (entries) => {
@@ -252,6 +283,7 @@ window.addEventListener("DOMContentLoaded", () => {
         setHash(`#/t/${table.id}`);
         if (table.playing) {
           orient(table.mySide);
+          container.classList.toggle("timed", table.time !== "unlimited");
           showScreen("game");
         } else {
           renderRoom(room, table, actions);
@@ -296,6 +328,11 @@ window.addEventListener("DOMContentLoaded", () => {
     } else if (event.type === "PROMPT") {
       CHOICE_ID = parseInt(event.choiceId);
       showTurn(event.prompt, CHOICE_ID, event.waiting);
+    } else if (event.type === "CLOCK") {
+      // the server's times, moved onto ours
+      const offset = Date.now() - event.sent;
+      clock = {...event, allowanceEnds: event.allowanceEnds + offset};
+      showClocks();
     } else if (event.type === "MATCH_CHANGE") {
       alert(event.message);
     }

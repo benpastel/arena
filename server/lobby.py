@@ -7,9 +7,9 @@ dropped connection reattaches them to the same seat, mid-game included.
 A table has two seats, NORTH and SOUTH, each empty, a user, or the bot.  Which is
 which doesn't matter to the players, who each see themselves at the bottom; the host
 takes one and the next to join, or the bot, the other.  The host picks the tiles and
-starts the match; the match then runs until either player quits,
-which closes the table.  A missing player is simply waited for: the game pauses at
-their next choice.
+and the time control and starts the match; the match then runs until either player
+quits, which closes the table.  A missing player is waited for: the game pauses at
+their next choice, though their clock, if the table has one, keeps running.
 
 Everything is in memory, so a server restart ends every table.
 """
@@ -24,6 +24,7 @@ from websockets.exceptions import ConnectionClosed
 from websockets.server import WebSocketServerProtocol
 
 from server.agents import Agent, Human, RandomBot
+from server.clock import TIME_MODES
 from server.config import ALL_TILES, DEFAULT_TILES, TILES_PER_GAME
 from server.constants import Player, Tile
 from server.game import play_one_match
@@ -74,6 +75,9 @@ class Table:
     # game parameters) every game, and "custom" plays the host's pick
     tile_mode: str = "starter"
     tiles: list[Tile] = field(default_factory=lambda: list(STARTER_TILES))
+
+    # one of clock.TIME_MODES
+    time_mode: str = "medium"
 
     # set when the match starts
     game_seats: dict[Player, Seat] | None = None
@@ -183,6 +187,8 @@ class Lobby:
             await self._set_bot(user, False)
         elif kind == "setTiles":
             await self._set_tiles(user, event.get("mode"), event.get("tiles"))
+        elif kind == "setTime":
+            await self._set_time(user, event.get("mode"))
         elif kind == "start":
             await self._start(user)
         else:
@@ -337,8 +343,19 @@ class Lobby:
         if len(chosen) > TILES_PER_GAME:
             return
         # a custom pick keeps the order it was picked in, through to the game
-        table.tiles = chosen if mode == "custom" else [t for t in ALL_TILES if t in chosen]
-        table.tile_mode = mode
+        table.tiles = (
+            chosen if mode == "custom" else [t for t in ALL_TILES if t in chosen]
+        )
+        table.tile_mode = str(mode)
+        await self._push_table(table)
+
+    async def _set_time(self, user: User, mode: object) -> None:
+        table = self._table_of(user)
+        if table is None or table.playing or table.host_id != user.id:
+            return
+        if mode not in TIME_MODES:
+            return
+        table.time_mode = str(mode)
         await self._push_table(table)
 
     async def _start(self, user: User) -> None:
@@ -364,7 +381,9 @@ class Lobby:
 
         table.game_seats = seats
         tiles = None if table.tile_mode == "random" else list(table.tiles)
-        table.task = asyncio.create_task(play_one_match(agents, tiles, names))
+        table.task = asyncio.create_task(
+            play_one_match(agents, tiles, names, table.time_mode)
+        )
         table.task.add_done_callback(_report_crash)
 
         # switch both screens to the board before the game's first messages
@@ -408,6 +427,7 @@ class Lobby:
                 "seats": seats,
                 "mode": table.tile_mode,
                 "tiles": table.tiles,
+                "time": table.time_mode,
                 "mySide": my_side.value if my_side else None,
                 "amHost": table.host_id == user_id,
             },

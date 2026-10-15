@@ -334,6 +334,14 @@ the tiles between.
   color: var(--faint);
 }
 
+/* fast, medium, slow, or unlimited */
+.time-area {
+  padding: 22px 20px;
+  display: flex;
+  justify-content: center;
+  border-top: 1px solid var(--line);
+}
+
 /* every tile, pale until picked */
 .picker {
   display: grid;
@@ -403,6 +411,9 @@ the tiles between.
   }
   .picker {
     grid-template-columns: repeat(4, 80px);
+  }
+  .time-area .segmented button {
+    padding: 0 10px;
   }
 }
 
@@ -630,6 +641,18 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
 }
 .amount {
   font-size: calc(var(--strip) * 0.32);
+}
+/* this decision's seconds, then the reserve; only on a timed table */
+.clock {
+  display: none;
+  margin-left: calc(var(--strip) * 0.3);
+  gap: calc(var(--strip) * 0.14);
+  font-size: calc(var(--strip) * 0.18);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.timed .clock {
+  display: flex;
 }
 .hand-tiles {
   grid-column: 3;

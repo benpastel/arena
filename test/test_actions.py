@@ -1,4 +1,7 @@
+from itertools import combinations
+
 from server.state import Square
+from server.constants import ROWS, COLUMNS
 from server.actions import _all_distances, _fireball_targets, path
 
 
@@ -83,3 +86,25 @@ def test_path():
     # off the lines (a knight move, or two steps round a corner): diagonal, then straight
     assert path(Square(0, 0), Square(1, 2)) == [Square(1, 1), Square(1, 2)]
     assert path(Square(4, 4), Square(2, 3)) == [Square(3, 3), Square(2, 3)]
+
+
+def test_a_move_always_exists():
+    # a player out of time makes a random ↕ move (game._random_move), so one of their
+    # tiles must always have an empty square next to it, however the board's tiles
+    # (at most 2 each) are placed
+    squares = [Square(r, c) for r in range(ROWS) for c in range(COLUMNS)]
+    for count in range(2, 5):
+        for placed in combinations(squares, count):
+            for own_count in range(1, min(count, 3)):
+                if count - own_count > 2:
+                    continue
+                for own in combinations(placed, own_count):
+                    assert any(
+                        any(
+                            dist == 1 and s not in placed
+                            for s, dist in _all_distances(
+                                start, [p for p in placed if p != start]
+                            ).items()
+                        )
+                        for start in own
+                    ), placed

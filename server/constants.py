@@ -173,3 +173,5 @@ class OutEventType(str, Enum):
     HIGHLIGHT_CHANGE = "HIGHLIGHT_CHANGE"
 
     MATCH_CHANGE = "MATCH_CHANGE"
+
+    CLOCK = "CLOCK"

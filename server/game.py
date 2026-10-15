@@ -1,6 +1,7 @@
 from typing import Optional, cast
 from random import shuffle
 import asyncio
+import random
 
 from server.agents import Agent, Human
 from server.actions import (
@@ -23,6 +24,7 @@ from server.constants import (
     other_player,
 )
 from server.choices import send_waiting
+from server.clock import start_clock, decide
 from server.notify import (
     broadcast_state_changed,
     notify_selection_changed,
@@ -63,11 +65,16 @@ async def _move_x2(
         players[other_player(player)].seat,
     )
     choices: list[Action] = [t for t in Tile if t != state.x2_tile and t != Tile.HIDDEN]
-    choice = await players[player].choose_action_or_square(
-        choices,
-        [],
-        "Move the ×2 to a different action.",
-        true_action_hint=None,
+    choice = await decide(
+        player,
+        False,
+        players[player].choose_action_or_square(
+            choices,
+            [],
+            "Move the ×2 to a different action.",
+            true_action_hint=None,
+        ),
+        lambda: random.choice(choices),
     )
     assert isinstance(choice, Tile)
     state.x2_tile = choice
@@ -102,9 +109,15 @@ async def _resolve_exchange(
 
     old_tile = state.tile_at(square)
     exchange_choices = state.exchange_tiles[exchange_index] + [old_tile]
-    choice = await players[player].choose_exchange(
-        exchange_choices,
-        "Exchange tiles, or keep your current tile.",
+    # out of time, they keep their tile
+    choice = await decide(
+        player,
+        False,
+        players[player].choose_exchange(
+            exchange_choices,
+            "Exchange tiles, or keep your current tile.",
+        ),
+        lambda: old_tile,
     )
 
     if choice != old_tile:
@@ -241,6 +254,20 @@ async def _resolve_action(
     # spider goes again after exchange
     if action == Tile.SPIDER and target in state.exchange_positions:
         state.go_again = True
+
+
+def _random_move(state: State) -> tuple[Square, Action, Square]:
+    """
+    A ↕ move by one of the current player's tiles, at random: what they do if they run
+    out of time.  There's always one (see test_actions).
+    """
+    moves = [
+        (start, target)
+        for start in state.positions[state.current_player]
+        for target in valid_targets(start, state).get(OtherAction.MOVE, [])
+    ]
+    start, target = random.choice(moves)
+    return start, OtherAction.MOVE, target
 
 
 async def _select_action(
@@ -407,10 +434,15 @@ async def _lose_tile(
     agent = players[player]
 
     if len(possible_squares) > 1:
-        choice = await agent.choose_square_or_hand(
-            possible_squares,
-            [],
-            "Choose which tile to lose.",
+        choice = await decide(
+            player,
+            False,
+            agent.choose_square_or_hand(
+                possible_squares,
+                [],
+                "Choose which tile to lose.",
+            ),
+            lambda: random.choice(possible_squares),
         )
         square = cast(Square, choice)
     else:
@@ -438,10 +470,15 @@ async def _lose_tile(
             "Choosing a replacement…",
             players[other_player(player)].seat,
         )
-        choice = await agent.choose_square_or_hand(
-            possible_squares=[],
-            possible_hand_tiles=hand_tiles,
-            prompt="Choose the replacement tile from your hand.",
+        choice = await decide(
+            player,
+            False,
+            agent.choose_square_or_hand(
+                possible_squares=[],
+                possible_hand_tiles=hand_tiles,
+                prompt="Choose the replacement tile from your hand.",
+            ),
+            lambda: random.choice(hand_tiles),
         )
         replacement = cast(Tile, choice)
         state.vacant = {}
@@ -497,10 +534,16 @@ async def _select_response(
         "Deciding whether to challenge…", players[state.current_player].seat
     )
 
-    return await players[state.other_player].choose_response(
-        possible_responses,
-        f"Opponent claimed {action}.  Choose your response.",
-        true_response_hint=tile_at_target,
+    # out of time, they accept: neither challenge nor reflect
+    return await decide(
+        state.other_player,
+        False,
+        players[state.other_player].choose_response(
+            possible_responses,
+            f"Opponent claimed {action}.  Choose your response.",
+            true_response_hint=tile_at_target,
+        ),
+        lambda: Response.ACCEPT,
     )
 
 
@@ -511,10 +554,15 @@ async def _select_reflect_response(
         "Deciding whether to challenge the reflect…",
         players[state.other_player].seat,
     )
-    response = await players[state.current_player].choose_response(
-        [Response.ACCEPT, Response.CHALLENGE],
-        f"Opponent reflected with {action}.  Choose your response.",
-        true_response_hint=None,
+    response = await decide(
+        state.current_player,
+        False,
+        players[state.current_player].choose_response(
+            [Response.ACCEPT, Response.CHALLENGE],
+            f"Opponent reflected with {action}.  Choose your response.",
+            true_response_hint=None,
+        ),
+        lambda: Response.ACCEPT,
     )
     return cast(Response, response)
 
@@ -564,7 +612,12 @@ async def _maybe_smite(state: State, players: dict[Player, Agent]) -> None:
         # make sure both players see the updated coin amount before selecting a target
         await broadcast_state_changed(state, players)
 
-        target = await _select_smite_target(state, state.current_player, players)
+        target = await decide(
+            state.current_player,
+            False,
+            _select_smite_target(state, state.current_player, players),
+            lambda: random.choice(state.positions[other_player(state.current_player)]),
+        )
         await _resolve_smite(state, state.current_player, players, target)
 
     if state.smite_cost <= state.coins[state.other_player]:
@@ -573,7 +626,12 @@ async def _maybe_smite(state: State, players: dict[Player, Agent]) -> None:
         # make sure both players see the updated coin amount before selecting a target
         await broadcast_state_changed(state, players)
 
-        target = await _select_smite_target(state, state.other_player, players)
+        target = await decide(
+            state.other_player,
+            False,
+            _select_smite_target(state, state.other_player, players),
+            lambda: random.choice(state.positions[other_player(state.other_player)]),
+        )
         await _resolve_smite(state, state.other_player, players, target)
 
 
@@ -610,8 +668,13 @@ async def _play_one_turn(state: State, players: dict[Player, Agent]) -> None:
         if state.game_result() != GameResult.ONGOING:
             return
 
-        # current player chooses their move
-        start, action, target = await _select_action(state, players)
+        # current player chooses their move, or moves at random if out of time
+        start, action, target = await decide(
+            state.current_player,
+            True,
+            _select_action(state, players),
+            lambda: _random_move(state),
+        )
         if not action in Tile:
             assert action in OtherAction
             # the player didn't claim a tile
@@ -739,17 +802,24 @@ async def play_one_game(
     tiles: list[Tile] | None,
     first_player: Player,
     names: dict[Player, str],
+    time_mode: str,
 ) -> dict[Player, int]:
     """
     Play one game between the seated players.
 
-    `tiles` is the set of tiles in use, or None to randomize it.
+    `tiles` is the set of tiles in use, or None to randomize it.  `time_mode` is one of
+    clock.TIME_MODES.
 
     Returns the game score.
     """
     # initialize a new game
     state = new_state(match_score, tiles, first_player, names)
     await broadcast_state_changed(state, players)
+    clock = start_clock(
+        time_mode, {player: agent.seat for player, agent in players.items()}
+    )
+    if clock is not None:
+        await clock.send(None, 0)
 
     while state.game_result() == GameResult.ONGOING:
         state.check_consistency()
@@ -769,6 +839,7 @@ async def play_one_match(
     players: dict[Player, Agent],
     tiles: list[Tile] | None,
     names: dict[Player, str],
+    time_mode: str,
 ) -> None:
     """
     Play games forever in a loop, updating the match score and broadcasting each game's score.
@@ -780,7 +851,7 @@ async def play_one_match(
     first_player = Player.S
     while True:
         game_score = await play_one_game(
-            match_score.copy(), players, tiles, first_player, names
+            match_score.copy(), players, tiles, first_player, names, time_mode
         )
         for player, points in game_score.items():
             match_score[player] += points

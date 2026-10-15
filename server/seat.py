@@ -6,6 +6,7 @@ the game noticing.
 
 import asyncio
 import json
+import time
 
 from websockets.exceptions import ConnectionClosed
 from websockets.server import WebSocketServerProtocol
@@ -20,6 +21,7 @@ _REPLAYED = [
     OutEventType.SELECTION_CHANGE,
     OutEventType.HIGHLIGHT_CHANGE,
     OutEventType.PROMPT,
+    OutEventType.CLOCK,
 ]
 
 
@@ -58,7 +60,14 @@ class Seat:
             self.websocket = websocket
             for kind in _REPLAYED:
                 if kind in self._latest:
-                    await self._send_now(self._latest[kind])
+                    message = self._latest[kind]
+                    if kind == OutEventType.CLOCK:
+                        # the clock's times are the server's; `sent` lets the browser
+                        # allow for its own clock being off, so it must be now
+                        message = json.dumps(
+                            {**json.loads(message), "sent": time.time() * 1000}
+                        )
+                    await self._send_now(message)
 
     def detach(self, websocket: WebSocketServerProtocol) -> None:
         if self.websocket is websocket:
