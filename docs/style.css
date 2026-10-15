@@ -598,7 +598,8 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
   display: grid;
   height: var(--strip);
   box-sizing: border-box;
-  grid-template-columns: minmax(0, auto) 1fr auto;
+  /* the note takes whatever's left, so the coins and clock never move as it changes */
+  grid-template-columns: minmax(0, 1fr) auto auto;
   column-gap: 16px;
   align-items: center;
 }
@@ -640,6 +641,8 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
   gap: 2px;
 }
 .amount {
+  min-width: 2.2em;
+  text-align: right;
   font-size: calc(var(--strip) * 0.32);
 }
 /* this decision's seconds, then the reserve; only on a timed table */
@@ -651,13 +654,25 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
   font-variant-numeric: tabular-nums;
   color: var(--muted);
 }
+/* sized for their widest, so the numbers stay put as they count down */
+.allowance {
+  min-width: 1.3em;
+  text-align: right;
+}
+.reserve {
+  min-width: 2.3em;
+  text-align: right;
+}
 .timed .clock {
   display: flex;
 }
 .hand-tiles {
   grid-column: 3;
   display: flex;
+  justify-content: flex-end;
   gap: 6px;
+  /* room for a full hand of two, so nothing moves as it empties */
+  min-width: calc(var(--strip) * 0.62 * 1.57 + 6px);
 }
 .hand-tile {
   font-size: calc(var(--strip) * 0.62);
