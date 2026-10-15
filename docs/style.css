@@ -517,7 +517,7 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
 .hidden-tiles-contents {
   display: grid;
   grid-template-columns: repeat(auto-fill, var(--play-column));
-  column-gap: 2px;
+  gap: 2px;
   justify-items: center;
 }
 .in-play {
@@ -545,7 +545,7 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
   border-width: var(--frame-width, 0.02em);
 }
 /* each kind of tile has its own fixed share of the column, so one filling up never
-   moves the others */
+   moves the others, unless its tiles need more room than that (in a narrow column) */
 .acc {
   flex: 1;
   min-height: 0;
@@ -553,8 +553,8 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
   flex-direction: column;
 }
 .acc-row {
-  flex: 1;
-  min-height: 0;
+  flex: 1 1 0;
+  min-height: min-content;
   padding: 12px 18px;
   border-top: 1px solid var(--line);
   display: flex;
@@ -570,10 +570,9 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
   line-height: 1;
   color: #555555;
 }
-/* the copies of a tile we haven't seen, stacked under it */
+/* the copies of a tile we haven't seen, stacked under it, drawn like the tiles in play */
 .hidden-tiles-contents {
-  row-gap: 10px;
-  font-size: calc(var(--play-glyph) * 0.72);
+  font-size: var(--play-glyph);
 }
 .unknown-column {
   display: flex;
