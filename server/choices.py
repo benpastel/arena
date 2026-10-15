@@ -48,26 +48,24 @@ async def send_waiting(activity: str, seat: Seat) -> None:
     await seat.send(event)
 
 
-async def acknowledge(message: str, seat: Seat) -> None:
+async def acknowledge(event: dict, seat: Seat) -> dict:
     """
-    Show the player a message, e.g. how the game went, and wait for them to dismiss it.
+    Show the player something, e.g. how the game went, and wait for them to answer it;
+    returns their answer.  `event` is sent with a choice id added.
     """
     # nothing else is asked of either player meanwhile
     await send_prompt("", seat)
     expected_choice_id = seat.next_choice_id
     seat.next_choice_id += 1
-    event = {
-        "type": OutEventType.MATCH_CHANGE,
-        "message": message,
-        "choiceId": expected_choice_id,
-    }
-    await seat.send(event)
+    await seat.send({**event, "choiceId": expected_choice_id})
     while True:
-        event = await seat.recv()
-        if event.get("choiceId") == expected_choice_id:
+        answer = await seat.recv()
+        if answer.get("choiceId") == expected_choice_id:
             break
     # gone, also for a reconnecting player
-    await seat.send({"type": OutEventType.MATCH_CHANGE, "message": None, "choiceId": 0})
+    await seat.send({"type": event["type"], "result": None, "choiceId": 0})
+    data = answer.get("data")
+    return data if isinstance(data, dict) else {}
 
 
 async def _get_choice(prompt: str, seat: Seat) -> dict:

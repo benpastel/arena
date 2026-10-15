@@ -8,7 +8,8 @@ A table has two seats, NORTH and SOUTH, each empty, a user, or the bot.  Which i
 which doesn't matter to the players, who each see themselves at the bottom; the host
 takes one and the next to join, or the bot, the other.  The host picks the tiles and
 and the time control and starts the match; the match then runs until either player
-quits, which closes the table.  A missing player is waited for: the game pauses at
+goes back to the table, to change it and start again, or quits, which closes it.  How
+the pair at the table have done is kept until one of them leaves.  A missing player is waited for: the game pauses at
 their next choice, though their clock, if the table has one, keeps running.
 
 Everything is in memory, so a server restart ends every table.
@@ -27,7 +28,7 @@ from server.agents import Agent, Human, RandomBot
 from server.clock import TIME_MODES
 from server.config import ALL_TILES, DEFAULT_TILES, TILES_PER_GAME
 from server.constants import Player, Tile
-from server.game import play_one_match
+from server.game import Tally, play_one_match
 from server.seat import Seat
 
 TILE_MODES = ("starter", "random", "custom")
@@ -78,6 +79,9 @@ class Table:
 
     # one of clock.TIME_MODES
     time_mode: str = "medium"
+
+    # the games won and points scored by whoever's seated; new when that changes
+    tally: Tally = field(default_factory=Tally)
 
     # set when the match starts
     game_seats: dict[Player, Seat] | None = None
@@ -260,6 +264,7 @@ class Lobby:
 
         await self._leave_table(user, quiet=True)
         table.seats[free] = user.id
+        table.tally = Tally()
         user.table_id = table.id
         await self._push_table(table)
         await self._push_lobby()
@@ -275,6 +280,7 @@ class Lobby:
             side = table.side_of(user.id)
             if side is not None:
                 table.seats[side] = None
+                table.tally = Tally()
             humans = table.humans()
             if not humans:
                 del self.tables[table.id]
@@ -323,6 +329,7 @@ class Lobby:
             if side is None:
                 return
             table.seats[side] = None
+        table.tally = Tally()
         await self._push_table(table)
         await self._push_lobby()
 
@@ -381,9 +388,7 @@ class Lobby:
 
         table.game_seats = seats
         tiles = None if table.tile_mode == "random" else list(table.tiles)
-        table.task = asyncio.create_task(
-            play_one_match(agents, tiles, names, table.time_mode)
-        )
+        table.task = asyncio.create_task(self._run_match(table, agents, tiles, names))
         table.task.add_done_callback(_report_crash)
 
         # switch both screens to the board before the game's first messages
@@ -393,6 +398,20 @@ class Lobby:
             seated = self.users.get(occupant) if occupant else None
             if seated is not None and seated.websocket is not None:
                 await seats[side].attach(seated.websocket)
+
+    async def _run_match(
+        self,
+        table: Table,
+        agents: dict[Player, Agent],
+        tiles: list[Tile] | None,
+        names: dict[Player, str],
+    ) -> None:
+        """Play the match, then, unless it was quit, bring everyone back to the table."""
+        await play_one_match(agents, tiles, names, table.time_mode, table.tally)
+        table.task = None
+        table.game_seats = None
+        await self._push_table(table)
+        await self._push_lobby()
 
     # ------------------------------------------------------------- plumbing
 

@@ -31,7 +31,7 @@ def test_a_game_plays_itself_out_on_defaults(monkeypatch):
     players = {Player.N: RandomBot(delay=0), Player.S: Human(seats[Player.S])}
     names = {Player.N: "n", Player.S: "s"}
 
-    score = asyncio.run(
+    score, _ = asyncio.run(
         asyncio.wait_for(
             play_one_game(
                 {Player.N: 0, Player.S: 0}, players, None, Player.S, names, "test"

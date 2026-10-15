@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 from typing import Optional, cast
 from random import shuffle
 import asyncio
@@ -803,14 +804,14 @@ async def play_one_game(
     first_player: Player,
     names: dict[Player, str],
     time_mode: str,
-) -> dict[Player, int]:
+) -> tuple[dict[Player, int], GameResult]:
     """
     Play one game between the seated players.
 
     `tiles` is the set of tiles in use, or None to randomize it.  `time_mode` is one of
     clock.TIME_MODES.
 
-    Returns the game score.
+    Returns the game score and result.
     """
     # initialize a new game
     state = new_state(match_score, tiles, first_player, names)
@@ -834,7 +835,21 @@ async def play_one_game(
     # the game is over, so every tile is turned face up
     state.revealed_all = True
     await broadcast_state_changed(state, players)
-    return state.game_score
+    return state.game_score, state.game_result()
+
+
+@dataclass
+class Tally:
+    """
+    How a pair of players has done at a table: the games each has won and the points
+    (kills) each has scored, over every game they've played there.  It outlives a match,
+    which ends when they go back to the table, so it also says who moves first next.
+    """
+
+    wins: dict[Player, int] = field(default_factory=lambda: {p: 0 for p in Player})
+    points: dict[Player, int] = field(default_factory=lambda: {p: 0 for p in Player})
+    # south moves first in the first game, then the first move alternates
+    first_player: Player = Player.S
 
 
 async def play_one_match(
@@ -842,24 +857,38 @@ async def play_one_match(
     tiles: list[Tile] | None,
     names: dict[Player, str],
     time_mode: str,
+    tally: Tally,
 ) -> None:
     """
-    Play games forever in a loop, updating the match score and broadcasting each game's score.
-
-    South moves first in the first game, then the first move alternates.
+    Play games in a loop, adding each to `tally` and showing both players how it went,
+    until either goes back to the table.
     """
     print(f"New match with {names}")
-    match_score = {Player.N: 0, Player.S: 0}
-    first_player = Player.S
     while True:
-        game_score = await play_one_game(
-            match_score.copy(), players, tiles, first_player, names, time_mode
+        game_score, result = await play_one_game(
+            tally.points.copy(), players, tiles, tally.first_player, names, time_mode
         )
+        winner = {GameResult.NORTH_WINS: Player.N, GameResult.SOUTH_WINS: Player.S}.get(
+            result
+        )
+        if winner is not None:
+            tally.wins[winner] += 1
         for player, points in game_score.items():
-            match_score[player] += points
-        first_player = other_player(first_player)
+            tally.points[player] += points
+        tally.first_player = other_player(tally.first_player)
 
         # time to see every tile turn over before the result covers the board
         await asyncio.sleep(1.5)
 
-        await broadcast_game_over(players, game_score)
+        play_on = await broadcast_game_over(
+            players,
+            {
+                "winner": winner,
+                "names": names,
+                "game": game_score,
+                "wins": tally.wins,
+                "points": tally.points,
+            },
+        )
+        if not play_on:
+            return

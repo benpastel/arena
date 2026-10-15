@@ -3,7 +3,7 @@ from typing import Optional
 
 from server.seat import Seat
 from server.state import State
-from server.constants import Player, Square, Action, Tile, OutEventType, other_player
+from server.constants import Player, Square, Action, Tile, OutEventType
 from server.agents import Agent, Human
 from server.choices import acknowledge
 
@@ -78,23 +78,23 @@ async def notify_selection_changed(
     await seat.send(event)
 
 
-async def broadcast_game_over(
-    players: dict[Player, Agent],
-    game_score: dict[Player, int],
-) -> None:
+async def broadcast_game_over(players: dict[Player, Agent], result: dict) -> bool:
     """
-    Tell both players how the game went, and wait until every person has dismissed it,
-    so the next game (and its clock) doesn't start without them.
+    Tell both players how the game went and the match so far, and wait until every
+    person has chosen the next game, so it (and its clock) doesn't start without them.
+    Returns False as soon as either chooses to go back to the table instead.
     """
-    async with asyncio.TaskGroup() as tg:
-        for player, agent in players.items():
-            us = game_score[player]
-            them = game_score[other_player(player)]
-            if us > them:
-                msg = f"🎉🎉🎉 You won {us} to {them}. Nice! Try to win again!"
-            elif us == them:
-                msg = f"Tie! {us} - {them}. Wow, it finally happened! Cool!"
-            else:
-                msg = f"You lose {us} to {them}... but this game is mostly luck, so try again!"
-            if isinstance(agent, Human):
-                tg.create_task(acknowledge(msg, agent.seat))
+    event = {"type": OutEventType.MATCH_CHANGE.value, "result": result}
+    tasks = [
+        asyncio.create_task(acknowledge(event, agent.seat))
+        for agent in players.values()
+        if isinstance(agent, Human)
+    ]
+    try:
+        for done in asyncio.as_completed(tasks):
+            if (await done).get("back"):
+                return False
+        return True
+    finally:
+        for task in tasks:
+            task.cancel()

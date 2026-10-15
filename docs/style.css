@@ -1153,7 +1153,7 @@ the same place
   display: none;
 }
 .result-panel {
-  max-width: min(440px, 88vw);
+  max-width: min(480px, 92vw);
   box-sizing: border-box;
   padding: 36px 40px 32px;
   display: flex;
@@ -1165,10 +1165,53 @@ the same place
   border-radius: 8px;
   text-align: center;
 }
-.result-text {
+.result-title {
   margin: 0;
+  font-size: 26px;
+  font-weight: normal;
+  letter-spacing: 0.04em;
+}
+.result-title.you { color: var(--you); }
+.result-title.them { color: var(--them); }
+/* this game's points, then the games won and points over the match, for each player */
+.result-table {
+  border-collapse: collapse;
   font-size: 18px;
-  line-height: 1.45;
+}
+.result-table th,
+.result-table td {
+  padding: 7px 14px;
+  text-align: center;
+  font-weight: normal;
+}
+.result-table thead th {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.result-table .you { color: var(--you); }
+.result-table .them { color: var(--them); }
+.result-table tbody th {
+  text-align: left;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.result-table tbody tr + tr {
+  border-top: 1px solid var(--line);
+}
+.result-actions {
+  display: flex;
+  gap: 12px;
+}
+.confetti {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 30;
+  pointer-events: none;
 }
 /* a single tile's reference: a panel just big enough for it */
 .rules-panel:has(.rules-list.single) {

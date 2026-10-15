@@ -15,6 +15,7 @@ import {
 import {renderSelection} from "./renderSelection.js";
 
 import {snapshot, animate} from "./animate.js";
+import {confetti} from "./confetti.js";
 
 import {
   highlightSquares,
@@ -247,12 +248,57 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // how the game went, and the match so far, until we choose what's next
   const result = document.querySelector(".result");
   let resultChoice = 0;
-  result.querySelector(".next-game").addEventListener("click", () => {
-    net.send({choiceId: resultChoice, data: {}});
+  function showResult(outcome, choiceId) {
+    const shown = !result.hidden;
+    result.hidden = !outcome;
+    resultChoice = choiceId;
+    if (!outcome) {
+      return;
+    }
+    const me = table?.mySide || "south";
+    const them = otherSide(me);
+    const who = (side) => (side === me ? "you" : "them");
+
+    const title = result.querySelector(".result-title");
+    title.className = `result-title ${outcome.winner ? who(outcome.winner) : ""}`;
+    title.textContent = outcome.winner ? `${outcome.names[outcome.winner]} wins!` : "A draw!";
+
+    const cell = (tag, text, className = "") => {
+      const element = document.createElement(tag);
+      element.textContent = text;
+      element.className = className;
+      return element;
+    };
+    const head = document.createElement("thead");
+    const names = document.createElement("tr");
+    names.append(cell("th", ""), cell("th", outcome.names[me], "you"), cell("th", outcome.names[them], "them"));
+    head.append(names);
+    const body = document.createElement("tbody");
+    for (const [label, counts] of [
+      ["this game", outcome.game],
+      ["games won", outcome.wins],
+      ["total points", outcome.points],
+    ]) {
+      const row = document.createElement("tr");
+      row.append(cell("th", label), cell("td", counts[me], "you"), cell("td", counts[them], "them"));
+      body.append(row);
+    }
+    result.querySelector(".result-table").replaceChildren(head, body);
+
+    if (!shown && outcome.winner) {
+      const color = outcome.winner === me ? "#1f4fb4" : "#c4302b";
+      confetti([color, color, "#141414", "#9a9a9a"]);
+    }
+  }
+  const answerResult = (data) => {
+    net.send({choiceId: resultChoice, data});
     result.hidden = true;
-  });
+  };
+  result.querySelector(".next-game").addEventListener("click", () => answerResult({}));
+  result.querySelector(".back-to-table").addEventListener("click", () => answerResult({back: true}));
 
   document.querySelector(".quit").addEventListener("click", () => {
     if (window.confirm("End this match for both players?")) {
@@ -351,9 +397,7 @@ window.addEventListener("DOMContentLoaded", () => {
       showClocks();
     } else if (event.type === "MATCH_CHANGE") {
       // how the game went, until we move on; null once we have
-      result.hidden = !event.message;
-      result.querySelector(".result-text").textContent = event.message ?? "";
-      resultChoice = event.choiceId;
+      showResult(event.result, event.choiceId);
     }
   }
 
