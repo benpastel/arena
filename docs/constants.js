@@ -30,6 +30,18 @@ const TILES = {
 };
 const HIDDEN_TILE = "🀫";
 
+// the mark of a tile on an exchange: turning arrows in a fine ring, drawn in the
+// corner of the exchange's tiles and of the tray's copies known to be on one
+const EXCHANGE_MARK =
+  '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+  '<circle cx="12" cy="12" r="11" fill="white" stroke="#141414" stroke-width="1" />' +
+  '<g transform="translate(12 12) scale(0.8) translate(-12 -12)">' +
+  '<g fill="none" stroke="#141414" stroke-width="1.9" stroke-linecap="round">' +
+  '<path d="M5.34 10.21A6.9 6.9 0 0 1 15.96 6.35" /><path d="M18.66 13.79A6.9 6.9 0 0 1 8.04 17.65" />' +
+  '</g><g fill="#141414">' +
+  '<path d="M18.74 8.30L17.01 1.71L11.96 8.92Z" /><path d="M5.26 15.70L6.99 22.29L12.04 15.08Z" />' +
+  '</g></g></svg>';
+
 // every tile that can be chosen for a game, in order; must match python ALL_TILES
 const ALL_TILES = [
   ["🀥", "FLOWER"],
@@ -205,6 +217,7 @@ const RESPONSES = {
 };
 
 export {
+  EXCHANGE_MARK,
   ROWS,
   COLUMNS,
   NORTH_PLAYER,

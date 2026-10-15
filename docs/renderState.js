@@ -8,6 +8,7 @@ import {
   NORTH_PLAYER,
   SOUTH_PLAYER,
   HIDDEN_TILE,
+  EXCHANGE_MARK,
   ACTION_NAMES,
   DESCRIPTIONS,
   DIAGRAMS,
@@ -50,6 +51,13 @@ function addSquareMarks(cell, kind, contents) {
     if (content in TILES || content === HIDDEN_TILE) {
       element.dataset.tileName = content;
       element.classList.add('board-tile');
+      if (kind === "exchange") {
+        // the exchange's mark, face up or down
+        const mark = document.createElement("span");
+        mark.className = "exchange-mark";
+        mark.innerHTML = EXCHANGE_MARK;
+        element.append(mark);
+      }
     } else {
       element.classList.add('bonus');
     }

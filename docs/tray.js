@@ -5,17 +5,18 @@
 //   - ours, in our colour, and theirs once we've seen it, in theirs
 //   - dead, in the colour of whoever it was, with a tombstone in its corner
 //   - unused, seen with the bonus, with a magnifying glass in its corner
+//   - on an exchange, seen there or put there, with the exchange's mark in its corner
 //   - unknown, pale
 //
 // Our copies start on the left. After that a copy keeps its place as what we know of
 // it changes (ours dies where it was), and a copy we newly know of takes a row's
 // leftmost unknown place, so nothing is ever reordered.
 
-import {HIDDEN_TILE, ACTION_NAMES} from "./constants.js";
+import {HIDDEN_TILE, EXCHANGE_MARK, ACTION_NAMES} from "./constants.js";
 
 const COPIES = 3;
 // what a copy can be, in the order newly known copies fill a row's free places
-const KINDS = ["you", "them", "you-dead", "them-dead", "unused", "unknown"];
+const KINDS = ["you", "them", "you-dead", "them-dead", "unused", "exchange", "unknown"];
 // what a known copy becomes when it changes, keeping its place
 const NEXT = {you: "you-dead", them: "them-dead"};
 const MARKS = {"you-dead": "🪦", "them-dead": "🪦", unused: "🔎"};
@@ -53,6 +54,11 @@ function count(view, me) {
   for (const tile of view.unused_tiles) {
     if (tile !== HIDDEN_TILE) {
       add(tile, "unused");
+    }
+  }
+  for (const tile of view.exchange_tiles.flat()) {
+    if (tile !== HIDDEN_TILE) {
+      add(tile, "exchange");
     }
   }
   for (const tile of view.tiles_in_game) {
@@ -119,7 +125,7 @@ function renderTray(tray, view, me) {
       const copy = document.createElement("span");
       copy.className = `tray-copy ${kind}`;
       copy.dataset.tile = tile;
-      if (kind !== "unknown" && kind !== "unused") {
+      if (kind.startsWith("you") || kind.startsWith("them")) {
         copy.dataset.owner = kind.startsWith("you") ? me : them;
       }
       if (was && was[i] !== kind) {
@@ -133,6 +139,11 @@ function renderTray(tray, view, me) {
         const mark = document.createElement("span");
         mark.className = "tray-mark";
         mark.textContent = MARKS[kind];
+        copy.append(mark);
+      } else if (kind === "exchange") {
+        const mark = document.createElement("span");
+        mark.className = "exchange-mark";
+        mark.innerHTML = EXCHANGE_MARK;
         copy.append(mark);
       }
       copies.append(copy);

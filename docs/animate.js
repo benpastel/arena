@@ -413,9 +413,19 @@ function popMarks() {
   }
 }
 
+// show `glyph` on a tile, keeping any mark drawn on it (an exchange's)
+function setGlyph(element, glyph) {
+  const text = element.firstChild;
+  if (text && text.nodeType === Node.TEXT_NODE) {
+    text.nodeValue = glyph;
+  } else {
+    element.prepend(glyph);
+  }
+}
+
 // a tile turns over side to side, like a card: edge-on halfway, then the other face
 function flip(element, from, to, delay = 0) {
-  element.textContent = from;
+  setGlyph(element, from);
   const turn = (start, end, easing) =>
     element.animate(
       [{transform: `perspective(400px) rotateY(${start}deg)`}, {transform: `perspective(400px) rotateY(${end}deg)`}],
@@ -423,7 +433,7 @@ function flip(element, from, to, delay = 0) {
     );
   window.setTimeout(() => {
     turn(0, 90, "ease-in").finished.then(() => {
-      element.textContent = to;
+      setGlyph(element, to);
       turn(-90, 0, "ease-out");
     }, () => {});
   }, delay);

@@ -24,7 +24,7 @@ from server.constants import (
     ActionAndTarget,
     other_player,
 )
-from server.choices import send_waiting
+from server.choices import send_prompt, send_waiting
 from server.clock import start_clock, decide
 from server.notify import (
     broadcast_state_changed,
@@ -877,7 +877,10 @@ async def play_one_match(
             tally.points[player] += points
         tally.first_player = other_player(tally.first_player)
 
-        # time to see every tile turn over before the result covers the board
+        # nothing more is asked of either player; then time to see every tile turn
+        # over before the result covers the board
+        for agent in players.values():
+            await send_prompt("", agent.seat)
         await asyncio.sleep(1.5)
 
         play_on = await broadcast_game_over(

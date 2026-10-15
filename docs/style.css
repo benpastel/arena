@@ -559,13 +559,30 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
 .tray-copy.them-dead {
   color: var(--them);
 }
-.tray-copy.unused {
+.tray-copy.unused,
+.tray-copy.exchange {
   color: #555555;
 }
 .tray-copy.you-dead .tray-glyph,
 .tray-copy.them-dead .tray-glyph,
-.tray-copy.unused .tray-glyph {
+.tray-copy.unused .tray-glyph,
+.tray-copy.exchange .tray-glyph {
   opacity: 0.45;
+}
+/* the exchange's mark, in the corner of an exchange's tiles and of a tray copy known
+   to be on one */
+.exchange-mark {
+  position: absolute;
+  right: -0.1em;
+  bottom: -0.06em;
+  width: 0.4em;
+  height: 0.4em;
+  pointer-events: none;
+}
+.exchange-mark svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 /* a tombstone or magnifying glass, tucked into the tile's corner */
 .tray-mark {
@@ -832,6 +849,7 @@ exchange's two tiles side by side
   color: #555555;
 }
 .cell-marks .board-tile {
+  position: relative;
   font-size: 4.4cqmin;
   pointer-events: auto;
 }
