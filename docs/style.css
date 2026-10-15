@@ -556,7 +556,8 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
 .tray-copy {
   position: relative;
   font-family: var(--tile-font);
-  color: #c4c4c4;
+  /* drawn faded (see .tray-glyph), this is the pale grey of an unknown copy */
+  color: #7c7c7c;
 }
 .tray-copy.you,
 .tray-copy.you-dead {
@@ -570,10 +571,8 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
 .tray-copy.exchange {
   color: #555555;
 }
-.tray-copy.you-dead .tray-glyph,
-.tray-copy.them-dead .tray-glyph,
-.tray-copy.unused .tray-glyph,
-.tray-copy.exchange .tray-glyph {
+/* every copy faded, so the tray stays quieter than the board */
+.tray-glyph {
   opacity: 0.45;
 }
 /* the exchange's mark, in the corner of an exchange's tiles and of a tray copy known
