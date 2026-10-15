@@ -68,6 +68,9 @@ function setHash(hash) {
 // which screen is showing: "lobby", "room", or "game"
 function showScreen(screen) {
   document.body.className = `at-${screen}`;
+  if (screen !== "game") {
+    document.querySelector(".result").hidden = true;
+  }
 }
 
 // the opponent's side, given ours
@@ -244,6 +247,13 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  const result = document.querySelector(".result");
+  let resultChoice = 0;
+  result.querySelector(".next-game").addEventListener("click", () => {
+    net.send({choiceId: resultChoice, data: {}});
+    result.hidden = true;
+  });
+
   document.querySelector(".quit").addEventListener("click", () => {
     if (window.confirm("End this match for both players?")) {
       net.send({type: "quit"});
@@ -340,7 +350,10 @@ window.addEventListener("DOMContentLoaded", () => {
       clock = {...event, allowanceEnds: event.allowanceEnds + offset};
       showClocks();
     } else if (event.type === "MATCH_CHANGE") {
-      alert(event.message);
+      // how the game went, until we move on; null once we have
+      result.hidden = !event.message;
+      result.querySelector(".result-text").textContent = event.message ?? "";
+      resultChoice = event.choiceId;
     }
   }
 

@@ -48,6 +48,28 @@ async def send_waiting(activity: str, seat: Seat) -> None:
     await seat.send(event)
 
 
+async def acknowledge(message: str, seat: Seat) -> None:
+    """
+    Show the player a message, e.g. how the game went, and wait for them to dismiss it.
+    """
+    # nothing else is asked of either player meanwhile
+    await send_prompt("", seat)
+    expected_choice_id = seat.next_choice_id
+    seat.next_choice_id += 1
+    event = {
+        "type": OutEventType.MATCH_CHANGE,
+        "message": message,
+        "choiceId": expected_choice_id,
+    }
+    await seat.send(event)
+    while True:
+        event = await seat.recv()
+        if event.get("choiceId") == expected_choice_id:
+            break
+    # gone, also for a reconnecting player
+    await seat.send({"type": OutEventType.MATCH_CHANGE, "message": None, "choiceId": 0})
+
+
 async def _get_choice(prompt: str, seat: Seat) -> dict:
     """
     Prompts the player for a choice

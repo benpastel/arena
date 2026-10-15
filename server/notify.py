@@ -4,7 +4,8 @@ from typing import Optional
 from server.seat import Seat
 from server.state import State
 from server.constants import Player, Square, Action, Tile, OutEventType, other_player
-from server.agents import Agent
+from server.agents import Agent, Human
+from server.choices import acknowledge
 
 
 async def broadcast_state_changed(state: State, players: dict[Player, Agent]) -> None:
@@ -81,6 +82,10 @@ async def broadcast_game_over(
     players: dict[Player, Agent],
     game_score: dict[Player, int],
 ) -> None:
+    """
+    Tell both players how the game went, and wait until every person has dismissed it,
+    so the next game (and its clock) doesn't start without them.
+    """
     async with asyncio.TaskGroup() as tg:
         for player, agent in players.items():
             us = game_score[player]
@@ -91,8 +96,5 @@ async def broadcast_game_over(
                 msg = f"Tie! {us} - {them}. Wow, it finally happened! Cool!"
             else:
                 msg = f"You lose {us} to {them}... but this game is mostly luck, so try again!"
-            event = {
-                "type": OutEventType.MATCH_CHANGE.value,
-                "message": msg,
-            }
-            tg.create_task(agent.seat.send(event))
+            if isinstance(agent, Human):
+                tg.create_task(acknowledge(msg, agent.seat))
