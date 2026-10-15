@@ -1,10 +1,11 @@
 // Animates the change from one state to the next, so it's easier to see what happened:
 //   - a piece slides to its new square
-//   - a dying tile flies to the graveyard, and a tile placed from a hand flies onto
-//     the board, the rest of the hand closing up behind it
+//   - a dying tile flies to its place in the tray, and a tile placed from a hand flies
+//     onto the board, the rest of the hand closing up behind it
 //   - an exchange swaps the tile with the one it takes, then shuffles its stack
 //   - a tile that's revealed, or hidden again, turns over: on the board, on an
-//     exchange, in the unused tiles, and everything at the end of the game
+//     exchange, and everything at the end of the game; an unused tile seen with the
+//     bonus gets its magnifying glass in the tray
 //   - money gained or spent floats up from the player's amount
 //   - webs fade in and out
 //
@@ -19,7 +20,7 @@ import {findCell} from "./renderState.js";
 
 // pieces slide at one speed however far they go: a step, a hook's pull, a ram's knockback
 const SLIDE_MS_PER_SQUARE = 220;
-// tiles flying on and off the board (to the graveyard, from a hand, to and from an
+// tiles flying on and off the board (to the tray, from a hand, to and from an
 // exchange) go at one speed too, for now the slides', and however short the hop, take
 // as long as two squares, so a tile placed from a hand next to it is still seen to
 // arrive; a dying tile first pauses where it died
@@ -102,7 +103,7 @@ function animate(before, board, view) {
       slides.push([before.pieces[player][from], view.positions[player][to]]);
     }
     for (const index of change.died) {
-      deaths.push(before.pieces[player][index]);
+      deaths.push([player, before.pieces[player][index]]);
     }
     for (const index of change.appended) {
       placements.push([player, index]);
@@ -123,14 +124,17 @@ function animate(before, board, view) {
     }
   }
 
-  // the dead are the newest tiles in the graveyard
-  const graves = Array.from(document.querySelectorAll(".graveyard-contents .acc-tile"));
-  const newGraves = graves.slice(was.discard.length);
-  deaths.forEach((from, i) => {
+  // each of the dead flies to a copy of theirs that's just died in the tray
+  const graves = Array.from(document.querySelectorAll(".tray-copy[data-fresh$='-dead']"));
+  for (const [player, from] of deaths) {
+    const known = (copy) => from && (from.glyph === HIDDEN_TILE || copy.dataset.tile === from.glyph);
+    const index = graves.findIndex((copy) => copy.dataset.owner === player && known(copy));
+    const grave = index >= 0 ? graves.splice(index, 1)[0] : null;
     if (from) {
-      ghostToGrave(from, newGraves[i], square);
+      ghostToGrave(from, grave, square);
     }
-  });
+  }
+  popMarks();
 
   // a placed tile leaves as any tile it replaces does, and the hand closes up behind it
   const delay = deaths.length ? PAUSE_MS : 0;
@@ -261,8 +265,8 @@ function ghostToGrave(from, grave, square) {
   const duration = grave
     ? travel(from.rect, grave.getBoundingClientRect(), square, FLY_MS_PER_SQUARE, FLY_MIN_SQUARES)
     : FLY_MS_PER_SQUARE * FLY_MIN_SQUARES;
-  // the graveyard shows the tile's face, which the board may not have
-  ghost(grave ? grave.textContent : from.glyph, from, grave, duration, PAUSE_MS);
+  // the tray shows the tile's face, which the board may not have
+  ghost(grave ? grave.dataset.tile : from.glyph, from, grave, duration, PAUSE_MS);
 }
 
 // the tiles left in a hand slide over to where they're now drawn
@@ -345,7 +349,7 @@ function animateExchange(board, before, view, kept, square) {
 }
 
 // Turn over every tile that's been revealed, or hidden again: board pieces (also
-// our own, when the opponent gets to see them), exchange tiles, unused tiles, and the
+// our own, when the opponent gets to see them), exchange tiles, and the
 // hands at the end of the game.
 function flipChanged(board, was, view, kept, swapped, sliding) {
   const hidden = (glyph) => glyph === HIDDEN_TILE;
@@ -393,14 +397,20 @@ function flipChanged(board, was, view, kept, swapped, sliding) {
     });
   });
 
-  const unused = document.querySelectorAll(".unused-contents .acc-tile");
-  unused.forEach((tile, i) => {
-    const from = was.unused_tiles[i];
-    const to = view.unused_tiles[i];
-    if (from && hidden(from) !== hidden(to)) {
-      flip(tile, from, to);
-    }
-  });
+}
+
+// an unused tile just seen with the bonus gets its magnifying glass with a little pop
+function popMarks() {
+  for (const copy of document.querySelectorAll(".tray-copy[data-fresh='unused']")) {
+    copy.querySelector(".tray-mark")?.animate(
+      [
+        {transform: "translate(-50%, -50%) scale(0)"},
+        {transform: "translate(-50%, -50%) scale(1.3)", offset: 0.6},
+        {transform: "translate(-50%, -50%) scale(1)"},
+      ],
+      {duration: FLIP_MS, easing: "ease-out"},
+    );
+  }
 }
 
 // a tile turns over side to side, like a card: edge-on halfway, then the other face

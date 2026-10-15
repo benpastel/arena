@@ -16,6 +16,7 @@ import {renderSelection} from "./renderSelection.js";
 
 import {snapshot, animate} from "./animate.js";
 import {confetti} from "./confetti.js";
+import {renderTray} from "./tray.js";
 
 import {
   highlightSquares,
@@ -86,6 +87,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const bottomStrip = container.querySelector(".strip.bottom");
   const log = document.querySelector(".log");
   const rules = document.querySelector(".rules");
+  const tray = document.querySelector(".tray");
 
   // the board and strips are drawn from our side: ours at the bottom, theirs at the top
   let orientation = null;
@@ -127,7 +129,7 @@ window.addEventListener("DOMContentLoaded", () => {
     renderWebs(board, player_view);
     renderHand(player_view);
     renderOther(player_view);
-    renderRules(rules.querySelector(".rules-list"), player_view);
+    renderTray(tray, player_view, orientation);
     redrawSelection();
     animate(before, board, player_view);
   }
@@ -235,7 +237,22 @@ window.addEventListener("DOMContentLoaded", () => {
   // the reference for the tiles in play: one click opens it over most of the screen
   const openRules = () => { rules.hidden = false; };
   const closeRules = () => { rules.hidden = true; };
-  document.querySelector(".in-play").addEventListener("click", openRules);
+  // a row of the tray, or the smite cost, opens what it does
+  const showOne = (glyph) => {
+    renderRules(rules.querySelector(".rules-list"), lastView, [glyph]);
+    openRules();
+  };
+  tray.addEventListener("click", ({ target }) => {
+    const row = target.closest(".tray-row");
+    if (row && lastView) {
+      showOne(row.dataset.tile);
+    }
+  });
+  document.querySelector(".smite-cost").addEventListener("click", () => {
+    if (lastView) {
+      showOne("⚡");
+    }
+  });
   rules.querySelector(".rules-close").addEventListener("click", closeRules);
   rules.addEventListener("click", ({ target }) => {
     if (target === rules) {

@@ -486,100 +486,109 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
 }
 
 /* ------------------------------------------------------------------- left */
+/* quitting above, the tray beside the board, a row to each of its rows, and the smite
+   cost below; each row of the tray, and the smite cost, opens what it does */
 .sidebar {
   grid-column: 1;
   grid-row: 1 / 4;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: subgrid;
   border-right: 1px solid var(--line);
+}
+.quit {
+  grid-row: 1;
+  align-self: center;
+  justify-self: start;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+.quit .option {
+  font-size: 36px;
+  -webkit-text-stroke: 0;
+}
+.quit .option.shell::before {
+  border-width: var(--frame-width, 0.02em);
+}
+.tray {
+  grid-row: 2;
+  display: grid;
+  grid-template-rows: repeat(5, 1fr);
+  /* its tiles are sized to its width (the sidebar can't be the container: containing
+     its layout would stop it sharing the page's rows) */
   container-type: inline-size;
 }
-/* the tiles in play and the smite cost, filling the height above the board so the
-   graveyard's rule meets the board's top edge (unless they wrap in a narrow column) */
-.sidebar-top {
-  flex-shrink: 0;
-  box-sizing: border-box;
-  min-height: calc((100vh - var(--board)) / 2 - 1px);
+.tray-row {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: calc(var(--strip) * 0.06);
-  padding: calc(var(--strip) * 0.06) 0;
-}
-/* the tiles in play, at a glance; clicking opens what each does.  Each has a column,
-   which the unknown tiles below share, and the columns wrap together */
-.sidebar {
-  --play-glyph: calc(var(--strip) * 0.36);
-  --play-column: calc(var(--play-glyph) * 0.8);
-}
-.in-play,
-.hidden-tiles-contents {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, var(--play-column));
-  gap: 2px;
-  justify-items: center;
-}
-.in-play {
+  align-items: center;
+  gap: 6px;
   padding: 0 18px;
-  font-size: var(--play-glyph);
+  /* as big as a fifth of the board allows, unless three must fit a narrow column */
+  font-size: min(calc(var(--board) / 5 * 0.6), calc((100cqi - 48px) / 3 / 0.8));
   line-height: 1;
   cursor: pointer;
 }
-.in-play:hover {
+.tray-row:hover,
+.smite-cost:hover {
+  background-color: #f2f2f2;
+}
+.tray-copy {
+  position: relative;
+  font-family: var(--tile-font);
+  color: #c4c4c4;
+}
+.tray-copy.you,
+.tray-copy.you-dead {
   color: var(--you);
 }
+.tray-copy.them,
+.tray-copy.them-dead {
+  color: var(--them);
+}
+.tray-copy.unused {
+  color: #555555;
+}
+.tray-copy.you-dead .tray-glyph,
+.tray-copy.them-dead .tray-glyph,
+.tray-copy.unused .tray-glyph {
+  opacity: 0.45;
+}
+/* a tombstone or magnifying glass over the tile */
+.tray-mark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  font-size: 0.5em;
+}
 .smite-cost {
-  padding: 0 18px;
+  grid-row: 3;
+  align-self: start;
+  padding: 10px 18px;
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: calc(var(--strip) * 0.19);
+  cursor: pointer;
 }
 .smite-cost .option {
   font-size: calc(var(--strip) * 0.28);
-  cursor: default;
   -webkit-text-stroke: 0;
 }
 .smite-cost .option.shell::before {
   border-width: var(--frame-width, 0.02em);
 }
-/* each kind of tile has its own fixed share of the column, so one filling up never
-   moves the others, unless its tiles need more room than that (in a narrow column) */
-.acc {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
+/* a narrow column keeps its edges narrow too */
+@container (max-width: 200px) {
+  .tray-row {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
 }
-.acc-row {
-  flex: 1 1 0;
-  min-height: min-content;
-  padding: 12px 18px;
-  border-top: 1px solid var(--line);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.acc-label {
-  font-size: 14px;
-  color: var(--muted);
-}
-.acc-tiles {
-  font-size: 28px;
-  line-height: 1;
-  color: #555555;
-}
-/* the copies of a tile we haven't seen, stacked under it, drawn like the tiles in play */
-.hidden-tiles-contents {
-  font-size: var(--play-glyph);
-}
-.unknown-column {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-/* a tile that's left the board, on its way to the graveyard or an exchange */
+/* a tile that's left the board, on its way to the tray or an exchange */
 .ghost {
   position: fixed;
   z-index: 10;
@@ -593,29 +602,6 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
   line-height: 1;
   pointer-events: none;
   font-family: var(--text-font);
-}
-/* a narrow column stacks each label over its tiles */
-@container (max-width: 200px) {
-  .in-play, .smite-cost, .acc-row, .quit {
-    padding-left: 12px;
-    padding-right: 12px;
-  }
-}
-.quit {
-  margin-top: auto;
-  flex-shrink: 0;
-  height: var(--strip);
-  padding: 0 18px;
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-}
-.quit .option {
-  font-size: 36px;
-  -webkit-text-stroke: 0;
-}
-.quit .option.shell::before {
-  border-width: var(--frame-width, 0.02em);
 }
 
 /* ----------------------------------------------------------------- strips */
