@@ -1,19 +1,31 @@
 // Animates the change from one state to the next, so it's easier to see what happened:
-// a piece slides to its new square, a dying tile flies to the graveyard, and a tile
-// placed from a hand flies onto the board.
+//   - a piece slides to its new square
+//   - a dying tile flies to the graveyard, and a tile placed from a hand flies onto
+//     the board, the rest of the hand closing up behind it
+//   - an exchange swaps the tile with the one it takes, then shuffles its stack
+//   - a tile that's revealed, or hidden again, turns over: on the board, on an
+//     exchange, in the unused tiles, and everything at the end of the game
+//   - money gained or spent floats up from the player's amount
+//   - webs fade in and out
 //
 // Call snapshot() before drawing the new state, and animate() after, with the new state.
+//
+// Ideas not yet tried: attacks drawn from attacker to target (a fireball's flight, the
+// knives, the smite's bolt); the turn's highlight crossfading between the strips; the
+// tiles dealt out at the start of a game.
 
-import {PLAYERS} from "./constants.js";
+import {PLAYERS, HIDDEN_TILE} from "./constants.js";
 import {findCell} from "./renderState.js";
 
-// a piece slides at one speed however far it goes: a step, a hook's pull, a ram's
-// knockback
+// pieces slide at one speed however far they go: a step, a hook's pull, a ram's knockback
 const SLIDE_MS_PER_SQUARE = 220;
-// tiles leaving the board for the graveyard, or coming onto it from a hand, all take
-// the same time to fly; a dying tile first pauses where it died
-const FLY_MS = 400;
+// tiles flying on and off the board (to the graveyard, from a hand, to and from an
+// exchange) go at one speed too, faster; a dying tile first pauses where it died
+const FLY_MS_PER_SQUARE = 150;
 const PAUSE_MS = 140;
+const FLIP_MS = 420;
+const FADE_MS = 300;
+const FLOAT_MS = 1100;
 
 let lastView = null;
 
@@ -26,8 +38,7 @@ function snapshot(board) {
   const hands = {};
   for (const player of PLAYERS) {
     pieces[player] = lastView.positions[player].map(([row, col], index) => {
-      const cell = findCell(board, row, col);
-      const piece = cell && cell.querySelector(".piece");
+      const piece = pieceAt(board, row, col);
       if (!piece) {
         return null;
       }
@@ -44,7 +55,10 @@ function snapshot(board) {
       (tile) => ({glyph: tile.textContent, rect: tile.getBoundingClientRect()}),
     );
   }
-  return {view: lastView, pieces, hands};
+  const marks = lastView.exchange_positions.map(([row, col]) =>
+    Array.from(exchangeMarks(board, row, col), (mark) => mark.getBoundingClientRect()),
+  );
+  return {view: lastView, pieces, hands, marks};
 }
 
 function animate(before, board, view) {
@@ -63,12 +77,19 @@ function animate(before, board, view) {
     return;
   }
 
+  const square = board.querySelector(".cell").getBoundingClientRect().width;
+  floatCoins(was, view);
+  fadeWebs(board, was, view);
+
   const slides = [];
   const deaths = [];
   const placements = [];
+  // each piece that stayed on the board, from its old index to its new one
+  const kept = {};
   for (const player of PLAYERS) {
     const placed = was.tiles_in_hand[player].length - view.tiles_in_hand[player].length;
     const change = diff(was.positions[player], view.positions[player], placed);
+    kept[player] = change ? change.kept : [];
     if (!change) {
       continue;
     }
@@ -86,13 +107,14 @@ function animate(before, board, view) {
     return;
   }
 
+  // a slide's length, so a piece that's also turned over waits until it's arrived
+  let sliding = 0;
   for (const [from, [row, col]] of slides) {
     const piece = pieceAt(board, row, col);
     if (from && piece) {
-      const square = piece.closest(".cell").getBoundingClientRect().width;
-      const to = piece.getBoundingClientRect();
-      const squares = Math.hypot(from.rect.left - to.left, from.rect.top - to.top) / square;
-      fly(piece, from.rect, SLIDE_MS_PER_SQUARE * Math.max(1, squares));
+      const duration = travel(from.rect, piece.getBoundingClientRect(), square, SLIDE_MS_PER_SQUARE);
+      fly(piece, from.rect, duration);
+      sliding = Math.max(sliding, duration);
     }
   }
 
@@ -101,28 +123,36 @@ function animate(before, board, view) {
   const newGraves = graves.slice(was.discard.length);
   deaths.forEach((from, i) => {
     if (from) {
-      ghostToGrave(from, newGraves[i]);
+      ghostToGrave(from, newGraves[i], square);
     }
   });
 
-  // a placed tile leaves as any tile it replaces does
+  // a placed tile leaves as any tile it replaces does, and the hand closes up behind it
   const delay = deaths.length ? PAUSE_MS : 0;
   for (const [player, index] of placements) {
     const [row, col] = view.positions[player][index];
     const piece = pieceAt(board, row, col);
     const glyph = view.tiles_on_board[player][index];
     const hand = before.hands[player];
-    const from = hand.find((t) => t.glyph === glyph) || hand[hand.length - 1];
-    if (piece && from) {
-      fly(piece, from.rect, FLY_MS, delay);
+    let used = hand.findIndex((t) => t.glyph === glyph);
+    if (used < 0) {
+      used = hand.length - 1;
     }
+    if (piece && hand[used]) {
+      const from = hand[used].rect;
+      fly(piece, from, travel(from, piece.getBoundingClientRect(), square, FLY_MS_PER_SQUARE), delay);
+    }
+    closeHand(player, hand.filter((_, i) => i !== used), square);
   }
+
+  const swapped = animateExchange(board, before, view, kept, square);
+  flipChanged(board, was, view, kept, swapped, sliding);
 }
 
 // How one player's pieces changed, given how the server changes its list of positions:
 // a move changes a position in place, a death removes it, and a tile placed from the
-// hand is appended. Returns the indexes that moved (old to new), died (old), and were
-// appended (new), choosing which died so the fewest pieces moved.
+// hand is appended. Returns the indexes that stayed (old to new), moved (old to new),
+// died (old), and were appended (new), choosing which died so the fewest pieces moved.
 function diff(was, now, placed) {
   const died = was.length - now.length + placed;
   if (placed < 0 || died < 0 || died > was.length) {
@@ -131,12 +161,13 @@ function diff(was, now, placed) {
   const same = (a, b) => a[0] === b[0] && a[1] === b[1];
   let best = null;
   for (const removed of combinations(was.length, died)) {
-    const kept = was.map((_, i) => i).filter((i) => !removed.includes(i));
-    const moved = kept
-      .map((oldIndex, newIndex) => [oldIndex, newIndex])
-      .filter(([oldIndex, newIndex]) => !same(was[oldIndex], now[newIndex]));
+    const kept = was
+      .map((_, i) => i)
+      .filter((i) => !removed.includes(i))
+      .map((oldIndex, newIndex) => [oldIndex, newIndex]);
+    const moved = kept.filter(([oldIndex, newIndex]) => !same(was[oldIndex], now[newIndex]));
     if (!best || moved.length < best.moved.length) {
-      best = {moved, died: removed, appended: now.map((_, i) => i).slice(kept.length)};
+      best = {kept, moved, died: removed, appended: now.map((_, i) => i).slice(kept.length)};
     }
   }
   return best;
@@ -160,6 +191,18 @@ function pieceAt(board, row, col) {
   return cell && cell.querySelector(".piece");
 }
 
+function exchangeMarks(board, row, col) {
+  const cell = findCell(board, row, col);
+  return cell ? cell.querySelectorAll(".cell-marks .board-tile") : [];
+}
+
+// how long it takes to go from one rect to another at `msPerSquare`, centre to centre
+function travel(fromRect, toRect, square, msPerSquare, minimum = 1) {
+  const dx = fromRect.left + fromRect.width / 2 - (toRect.left + toRect.width / 2);
+  const dy = fromRect.top + fromRect.height / 2 - (toRect.top + toRect.height / 2);
+  return msPerSquare * Math.max(minimum, Math.hypot(dx, dy) / square);
+}
+
 // draw an element at its new place as if it were still at the old rect, then let it go
 function fly(element, fromRect, duration, delay = 0) {
   const to = element.getBoundingClientRect();
@@ -176,34 +219,243 @@ function fly(element, fromRect, duration, delay = 0) {
     .finished.then(() => element.style.removeProperty("z-index"), () => {});
 }
 
-// a copy of the dead tile, which pauses where it died, then flies to its place in the graveyard
-function ghostToGrave(from, grave) {
-  const ghost = document.createElement("span");
-  ghost.className = "ghost";
-  ghost.textContent = grave ? grave.textContent : from.glyph;
-  ghost.style.left = `${from.rect.left}px`;
-  ghost.style.top = `${from.rect.top}px`;
-  ghost.style.fontSize = from.fontSize;
-  ghost.style.color = from.color;
-  document.body.append(ghost);
+// a copy of a tile that's left, flying from where it was to `target` (an element,
+// hidden until the copy arrives), or fading where it was if there's no target
+function ghost(glyph, from, target, duration, pause = 0) {
+  const element = document.createElement("span");
+  element.className = "ghost";
+  element.textContent = target ? target.textContent : glyph;
+  element.style.left = `${from.rect.left}px`;
+  element.style.top = `${from.rect.top}px`;
+  element.style.fontSize = from.fontSize;
+  element.style.color = from.color;
+  document.body.append(element);
 
-  const duration = PAUSE_MS + FLY_MS;
+  const total = pause + duration;
   const keyframes = [
     {transform: "none", opacity: 1},
-    {transform: "none", opacity: 1, offset: PAUSE_MS / duration},
+    {transform: "none", opacity: 1, offset: pause / total},
   ];
-  if (grave) {
-    const to = grave.getBoundingClientRect();
+  if (target) {
+    const to = target.getBoundingClientRect();
     const dx = to.left + to.width / 2 - (from.rect.left + from.rect.width / 2);
     const dy = to.top + to.height / 2 - (from.rect.top + from.rect.height / 2);
     keyframes.push({transform: `translate(${dx}px, ${dy}px) scale(${to.height / from.rect.height})`, opacity: 0.6});
-    grave.animate([{opacity: 0}, {opacity: 0}], {duration});
+    target.animate([{opacity: 0}, {opacity: 0}], {duration: total});
   } else {
     keyframes.push({transform: "scale(0.6)", opacity: 0});
   }
-  ghost
-    .animate(keyframes, {duration, easing: "ease-in"})
-    .finished.then(() => ghost.remove(), () => ghost.remove());
+  element
+    .animate(keyframes, {duration: total, easing: "ease-in"})
+    .finished.then(() => element.remove(), () => element.remove());
+}
+
+// a dead tile pauses where it died, then flies to its place in the graveyard
+function ghostToGrave(from, grave, square) {
+  const duration = grave
+    ? travel(from.rect, grave.getBoundingClientRect(), square, FLY_MS_PER_SQUARE)
+    : FLY_MS_PER_SQUARE;
+  ghost(from.glyph, from, grave, duration, PAUSE_MS);
+}
+
+// the tiles left in a hand slide over to where they're now drawn
+function closeHand(player, left, square) {
+  const tiles = document.querySelectorAll(`.strip.${player} .hand-tile`);
+  if (tiles.length !== left.length) {
+    return;
+  }
+  tiles.forEach((tile, i) => {
+    const duration = travel(left[i].rect, tile.getBoundingClientRect(), square, SLIDE_MS_PER_SQUARE, 0);
+    if (duration > 0) {
+      fly(tile, left[i].rect, duration);
+    }
+  });
+}
+
+// After an exchange: if we can see it was a swap (it was ours), the new tile flies out
+// of the stack onto the piece's square and the old one into the stack; then, for both
+// players, the stack's two tiles change places, so neither can tell which is which.
+// Returns the square of a piece that swapped, which isn't also turned over.
+function animateExchange(board, before, view, kept, square) {
+  const exchanges = (log) =>
+    log.flatMap((turn) => turn.events).filter((event) => event.kind === "exchange");
+  const latest = exchanges(view.public_log);
+  if (latest.length <= exchanges(before.view.public_log).length) {
+    return null;
+  }
+  const player = latest[latest.length - 1].player;
+  const same = (a, b) => a[0] === b[0] && a[1] === b[1];
+  for (const [oldIndex, newIndex] of kept[player] || []) {
+    const position = view.positions[player][newIndex];
+    const e = view.exchange_positions.findIndex((p) => same(p, position));
+    if (e < 0) {
+      continue;
+    }
+    const piece = pieceAt(board, ...position);
+    const marks = Array.from(exchangeMarks(board, ...position));
+    const oldGlyph = before.view.tiles_on_board[player][oldIndex];
+    const newGlyph = view.tiles_on_board[player][newIndex];
+    let wait = 0;
+    let swapped = null;
+    const from = before.pieces[player][oldIndex];
+    if (piece && from && oldGlyph !== newGlyph && oldGlyph !== HIDDEN_TILE && newGlyph !== HIDDEN_TILE) {
+      // the new tile came out of the stack, from where it lay
+      const stack = before.view.exchange_tiles[e];
+      const slot = Math.max(0, stack.indexOf(newGlyph));
+      const out = before.marks[e][slot];
+      const into = marks.find((mark) => mark.textContent === oldGlyph);
+      if (out) {
+        wait = travel(out, piece.getBoundingClientRect(), square, FLY_MS_PER_SQUARE);
+        fly(piece, out, wait);
+      }
+      if (into) {
+        ghost(oldGlyph, from, into, travel(from.rect, into.getBoundingClientRect(), square, FLY_MS_PER_SQUARE));
+      }
+      swapped = position;
+    }
+    if (marks.length === 2) {
+      const [a, b] = marks.map((mark) => mark.getBoundingClientRect());
+      const duration = travel(a, b, square, SLIDE_MS_PER_SQUARE, 0.5);
+      fly(marks[0], b, duration, wait);
+      fly(marks[1], a, duration, wait);
+    }
+    return swapped;
+  }
+  return null;
+}
+
+// Turn over every tile that's been revealed, or hidden again: board pieces (also
+// our own, when the opponent gets to see them), exchange tiles, unused tiles, and the
+// hands at the end of the game.
+function flipChanged(board, was, view, kept, swapped, sliding) {
+  const hidden = (glyph) => glyph === HIDDEN_TILE;
+  const same = (a, b) => a && b && a[0] === b[0] && a[1] === b[1];
+
+  for (const player of PLAYERS) {
+    for (const [oldIndex, newIndex] of kept[player] || []) {
+      const position = view.positions[player][newIndex];
+      if (same(position, swapped)) {
+        continue;
+      }
+      const from = was.tiles_on_board[player][oldIndex];
+      const to = view.tiles_on_board[player][newIndex];
+      const shown =
+        was.tiles_on_board_revealed[player][oldIndex] !== view.tiles_on_board_revealed[player][newIndex] ||
+        hidden(from) !== hidden(to);
+      const piece = pieceAt(board, ...position);
+      // a piece that also moved turns over once it's arrived
+      const moved = !same(was.positions[player][oldIndex], position);
+      if (shown && piece) {
+        flip(piece, from, to, moved ? sliding : 0);
+      }
+    }
+
+    // the hands, face up at the end of the game
+    const hand = document.querySelectorAll(`.strip.${player} .hand-tile`);
+    if (hand.length === was.tiles_in_hand[player].length) {
+      hand.forEach((tile, i) => {
+        if (hidden(was.tiles_in_hand[player][i]) !== hidden(view.tiles_in_hand[player][i])) {
+          flip(tile, was.tiles_in_hand[player][i], view.tiles_in_hand[player][i]);
+        }
+      });
+    }
+  }
+
+  // an exchange's tiles, seen on stepping onto it, after the step
+  view.exchange_positions.forEach(([row, col], e) => {
+    const marks = exchangeMarks(board, row, col);
+    marks.forEach((mark, i) => {
+      const from = was.exchange_tiles[e]?.[i];
+      const to = view.exchange_tiles[e][i];
+      if (from && hidden(from) !== hidden(to)) {
+        flip(mark, from, to, sliding);
+      }
+    });
+  });
+
+  const unused = document.querySelectorAll(".unused-contents .acc-tile");
+  unused.forEach((tile, i) => {
+    const from = was.unused_tiles[i];
+    const to = view.unused_tiles[i];
+    if (from && hidden(from) !== hidden(to)) {
+      flip(tile, from, to);
+    }
+  });
+}
+
+// a tile turns over side to side, like a card: edge-on halfway, then the other face
+function flip(element, from, to, delay = 0) {
+  element.textContent = from;
+  const turn = (start, end, easing) =>
+    element.animate(
+      [{transform: `perspective(400px) rotateY(${start}deg)`}, {transform: `perspective(400px) rotateY(${end}deg)`}],
+      {duration: FLIP_MS / 2, easing},
+    );
+  window.setTimeout(() => {
+    turn(0, 90, "ease-in").finished.then(() => {
+      element.textContent = to;
+      turn(-90, 0, "ease-out");
+    }, () => {});
+  }, delay);
+}
+
+// money gained or spent rises from the player's amount, and fades
+function floatCoins(was, view) {
+  for (const player of PLAYERS) {
+    const delta = view.coins[player] - was.coins[player];
+    const amount = document.querySelector(`.strip.${player} .amount`);
+    if (!delta || !amount) {
+      continue;
+    }
+    const rect = amount.getBoundingClientRect();
+    const style = getComputedStyle(amount);
+    const float = document.createElement("span");
+    float.className = "coin-float";
+    float.textContent = `${delta > 0 ? "+" : "−"}$${Math.abs(delta)}`;
+    float.style.left = `${rect.right}px`;
+    float.style.top = `${rect.top}px`;
+    float.style.color = style.color;
+    float.style.fontSize = `${parseFloat(style.fontSize) * 0.55}px`;
+    document.body.append(float);
+    float
+      .animate(
+        [
+          {transform: "translate(-100%, 0)", opacity: 0},
+          {transform: "translate(-100%, -40%)", opacity: 1, offset: 0.2},
+          {transform: "translate(-100%, -160%)", opacity: 0},
+        ],
+        {duration: FLOAT_MS, easing: "ease-out"},
+      )
+      .finished.then(() => float.remove(), () => float.remove());
+  }
+}
+
+// webs fade in where they're laid and out where they're cleared
+function fadeWebs(board, was, view) {
+  const has = (webs, [row, col]) => webs.some(([r, c]) => r === row && c === col);
+  for (const player of PLAYERS) {
+    for (const [row, col] of view.webs[player]) {
+      if (!has(was.webs[player], [row, col])) {
+        findCell(board, row, col)
+          ?.querySelector(`.web.${player}`)
+          ?.animate([{opacity: 0}, {opacity: 1}], {duration: FADE_MS, easing: "ease-out"});
+      }
+    }
+    for (const [row, col] of was.webs[player]) {
+      if (!has(view.webs[player], [row, col])) {
+        const cell = findCell(board, row, col);
+        if (!cell) {
+          continue;
+        }
+        const web = document.createElement("div");
+        web.classList.add("web", player);
+        cell.append(web);
+        web
+          .animate([{opacity: 1}, {opacity: 0}], {duration: FADE_MS, easing: "ease-in", fill: "forwards"})
+          .finished.then(() => web.remove(), () => web.remove());
+      }
+    }
+  }
 }
 
 export {snapshot, animate};

@@ -132,6 +132,9 @@ class State(BaseModel):
     # replacement from their hand
     vacant: dict[Player, Square] = {}
 
+    # set when the game is over: every tile is shown to both players
+    revealed_all: bool = False
+
     # position of the exchange squares that allow swapping tiles
     exchange_positions: list[Square]
 
@@ -287,6 +290,8 @@ class State(BaseModel):
 
         This represents the player's knowledge of the state.
         """
+        if self.revealed_all:
+            return self.model_copy()
         opponent = other_player(player)
 
         # we know the number of tiles in the opponent's hand but not their identity

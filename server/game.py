@@ -831,6 +831,8 @@ async def play_one_game(
         await broadcast_state_changed(state, players)
 
     _log_game_over(state)
+    # the game is over, so every tile is turned face up
+    state.revealed_all = True
     await broadcast_state_changed(state, players)
     return state.game_score
 
@@ -857,6 +859,7 @@ async def play_one_match(
             match_score[player] += points
         first_player = other_player(first_player)
 
-        await asyncio.sleep(0.5)
+        # time to see every tile turn over before the result covers the board
+        await asyncio.sleep(1.5)
 
         await broadcast_game_over(players, game_score)

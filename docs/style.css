@@ -559,12 +559,20 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
   line-height: 1;
   color: #555555;
 }
-/* a dying tile, on its way from the board to the graveyard */
+/* a tile that's left the board, on its way to the graveyard or an exchange */
 .ghost {
   position: fixed;
   z-index: 10;
   line-height: 1;
   pointer-events: none;
+}
+/* money gained or spent, rising from the amount (see animate.js) */
+.coin-float {
+  position: fixed;
+  z-index: 10;
+  line-height: 1;
+  pointer-events: none;
+  font-family: var(--text-font);
 }
 /* a narrow column stacks each label over its tiles */
 @container (max-width: 200px) {
