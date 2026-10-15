@@ -229,7 +229,8 @@ function renderHand(player_view) {
     }
     const coins = player_view.coins[player];
     strip.querySelector(".name").textContent = player_view.names[player];
-    strip.querySelector(".amount").textContent = `$${coins}`;
+    // debt reads like the log's losses: −$1
+    strip.querySelector(".amount").textContent = coins < 0 ? `−$${-coins}` : `$${coins}`;
 
     // compare by contents, not just count: a rematch can deal a new hand with the
     // same number of tiles, and a length-only check would leave stale tiles (and

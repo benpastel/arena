@@ -623,8 +623,11 @@ def reflect_action(
         start_index = state.positions[player].index(start)
         state.positions[player][start_index] = end_square
 
-        # steal
-        steal_amount = min(GRAPPLE_STEAL_AMOUNT * repeats, state.coins[player])
+        # steal; same as original action with players swapped
+        if NEGATIVE_COINS_OK:
+            steal_amount = GRAPPLE_STEAL_AMOUNT * repeats
+        else:
+            steal_amount = min(GRAPPLE_STEAL_AMOUNT * repeats, state.coins[player])
         state.coins[enemy] += steal_amount
         state.coins[player] -= steal_amount
 

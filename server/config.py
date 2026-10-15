@@ -21,7 +21,7 @@ DEFAULT_SMITE_COST = 10
 POSSIBLE_START_COINS = [0, 1, 2, 3, 4]
 DEFAULT_START_COINS = 2
 
-# can you go into debt via HOOK?
+# can a steal (HOOK or THIEF, reflected or not) take you into debt?
 NEGATIVE_COINS_OK = True
 
 # possible tiles in the game, randomized per game
