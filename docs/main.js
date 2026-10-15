@@ -38,6 +38,8 @@ let CHOICE_ID = 0;
 // remembered across visits, so a refresh puts you back in your seat
 const ID_KEY = "arena.playerId";
 const NAME_KEY = "arena.name";
+// which layout of the left column this browser last chose: "tray", or the lists
+const LAYOUT_KEY = "arena.layout";
 
 function load(key) {
   try {
@@ -237,22 +239,33 @@ window.addEventListener("DOMContentLoaded", () => {
   // the reference for the tiles in play: one click opens it over most of the screen
   const openRules = () => { rules.hidden = false; };
   const closeRules = () => { rules.hidden = true; };
-  // a row of the tray, or the smite cost, opens what it does
-  const showOne = (glyph) => {
-    renderRules(rules.querySelector(".rules-list"), lastView, [glyph]);
-    openRules();
+  // in the lists layout, the tiles in play open what every tile does; in the tray, a
+  // row, or the smite cost, opens what it does
+  const showRules = (entries) => {
+    if (lastView) {
+      renderRules(rules.querySelector(".rules-list"), lastView, entries);
+      openRules();
+    }
   };
+  document.querySelector(".in-play").addEventListener("click", () => showRules(undefined));
   tray.addEventListener("click", ({ target }) => {
     const row = target.closest(".tray-row");
-    if (row && lastView) {
-      showOne(row.dataset.tile);
+    if (row) {
+      showRules([row.dataset.tile]);
     }
   });
-  document.querySelector(".smite-cost").addEventListener("click", () => {
-    if (lastView) {
-      showOne("⚡");
-    }
-  });
+  document.querySelector(".tray-side .smite-cost").addEventListener("click", () => showRules(["⚡"]));
+
+  // the left column's layout, switched from the corner and remembered
+  const layoutToggle = document.querySelector(".layout-toggle");
+  function setLayout(tray) {
+    container.classList.toggle("tray-layout", tray);
+    layoutToggle.textContent = tray ? "lists" : "tray";
+    layoutToggle.title = tray ? "show the graveyard, unused, and unknown lists" : "show every tile in a tray";
+    save(LAYOUT_KEY, tray ? "tray" : "lists");
+  }
+  setLayout(load(LAYOUT_KEY) === "tray");
+  layoutToggle.addEventListener("click", () => setLayout(!container.classList.contains("tray-layout")));
   rules.querySelector(".rules-close").addEventListener("click", closeRules);
   rules.addEventListener("click", ({ target }) => {
     if (target === rules) {
@@ -317,11 +330,13 @@ window.addEventListener("DOMContentLoaded", () => {
   result.querySelector(".next-game").addEventListener("click", () => answerResult({}));
   result.querySelector(".back-to-table").addEventListener("click", () => answerResult({back: true}));
 
-  document.querySelector(".quit").addEventListener("click", () => {
-    if (window.confirm("End this match for both players?")) {
-      net.send({type: "quit"});
-    }
-  });
+  for (const quit of document.querySelectorAll(".quit")) {
+    quit.addEventListener("click", () => {
+      if (window.confirm("End this match for both players?")) {
+        net.send({type: "quit"});
+      }
+    });
+  }
 
   window.addEventListener("hashchange", () => {
     wantTable = hashTable();

@@ -277,7 +277,46 @@ function renderWebs(board, player_view) {
 }
 
 function renderOther(player_view) {
-  document.querySelector(".smite-cost .cost").textContent = `= $${player_view.smite_cost}`;
+  // the lists layout of the left column (the tray is drawn by tray.js):
+  // each tile its own element, so a dying tile can fly to its place in the graveyard
+  for (const [selector, tiles] of [
+    [".graveyard-contents", player_view.discard],
+    [".unused-contents", player_view.unused_tiles],
+  ]) {
+    const contents = document.querySelector(selector);
+    contents.innerHTML = "";
+    for (const tile of tiles) {
+      const element = document.createElement("span");
+      element.className = "acc-tile";
+      element.textContent = tile;
+      contents.append(element);
+    }
+  }
+  // the tiles in play, and under each in its own column, its copies we haven't seen
+  const inPlay = document.querySelector(".in-play");
+  const unknown = document.querySelector(".hidden-tiles-contents");
+  inPlay.replaceChildren();
+  unknown.replaceChildren();
+  for (const tile of player_view.tiles_in_game) {
+    const glyph = document.createElement("span");
+    glyph.textContent = tile;
+    inPlay.append(glyph);
+    const column = document.createElement("span");
+    column.className = "unknown-column";
+    for (const hidden of player_view.hidden_tiles) {
+      if (hidden === tile) {
+        const element = document.createElement("span");
+        element.className = "acc-tile";
+        element.textContent = tile;
+        column.append(element);
+      }
+    }
+    unknown.append(column);
+  }
+  // both layouts show the smite cost
+  for (const cost of document.querySelectorAll(".smite-cost .cost")) {
+    cost.textContent = `= $${player_view.smite_cost}`;
+  }
 }
 
 function renderRules(list, player_view, entries = [...player_view.tiles_in_game, "↕", "⚡"]) {
