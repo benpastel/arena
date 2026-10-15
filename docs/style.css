@@ -556,6 +556,7 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
 .sidebar.lists .smite-cost {
   padding: 0 18px;
   display: flex;
+  justify-content: center;
   align-items: center;
   gap: 8px;
   font-size: calc(var(--strip) * 0.19);
