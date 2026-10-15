@@ -522,13 +522,25 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
 }
 .tray-row {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 4px;
   padding: 0 18px;
-  /* as big as a fifth of the board allows, unless three must fit a narrow column */
-  font-size: min(calc(var(--board) / 5 * 0.6), calc((100cqi - 48px) / 3 / 0.8));
-  line-height: 1;
   cursor: pointer;
+}
+.tray-copies {
+  display: flex;
+  gap: 6px;
+  /* as big as a fifth of the board allows with the name under them, unless three
+     must fit a narrow column */
+  font-size: min(calc(var(--board) / 5 * 0.5), calc((100cqi - 48px) / 3 / 0.8));
+  line-height: 1;
+}
+.tray-name {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
 }
 .tray-row:hover,
 .smite-cost:hover {
@@ -555,14 +567,14 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
 .tray-copy.unused .tray-glyph {
   opacity: 0.45;
 }
-/* a tombstone or magnifying glass over the tile */
+/* a tombstone or magnifying glass, tucked into the tile's corner */
 .tray-mark {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  right: -0.08em;
+  bottom: -0.04em;
   font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
-  font-size: 0.5em;
+  font-size: 0.36em;
+  line-height: 1;
 }
 .smite-cost {
   grid-row: 3;

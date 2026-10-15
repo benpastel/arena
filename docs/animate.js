@@ -404,9 +404,9 @@ function popMarks() {
   for (const copy of document.querySelectorAll(".tray-copy[data-fresh='unused']")) {
     copy.querySelector(".tray-mark")?.animate(
       [
-        {transform: "translate(-50%, -50%) scale(0)"},
-        {transform: "translate(-50%, -50%) scale(1.3)", offset: 0.6},
-        {transform: "translate(-50%, -50%) scale(1)"},
+        {transform: "scale(0)"},
+        {transform: "scale(1.3)", offset: 0.6},
+        {transform: "scale(1)"},
       ],
       {duration: FLIP_MS, easing: "ease-out"},
     );

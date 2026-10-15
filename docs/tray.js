@@ -3,15 +3,15 @@
 // The tray: every tile in the game, three copies of each kind in play, a row to a kind,
 // each copy drawn with what we know of it:
 //   - ours, in our colour, and theirs once we've seen it, in theirs
-//   - dead, in the colour of whoever it was, under a tombstone
-//   - unused, seen with the bonus, under a magnifying glass
+//   - dead, in the colour of whoever it was, with a tombstone in its corner
+//   - unused, seen with the bonus, with a magnifying glass in its corner
 //   - unknown, pale
 //
 // Our copies start on the left. After that a copy keeps its place as what we know of
 // it changes (ours dies where it was), and a copy we newly know of takes a row's
 // leftmost unknown place, so nothing is ever reordered.
 
-import {HIDDEN_TILE} from "./constants.js";
+import {HIDDEN_TILE, ACTION_NAMES} from "./constants.js";
 
 const COPIES = 3;
 // what a copy can be, in the order newly known copies fill a row's free places
@@ -109,6 +109,12 @@ function renderTray(tray, view, me) {
     const row = document.createElement("div");
     row.className = "tray-row";
     row.dataset.tile = tile;
+    const copies = document.createElement("div");
+    copies.className = "tray-copies";
+    const name = document.createElement("span");
+    name.className = "tray-name";
+    name.textContent = ACTION_NAMES[tile];
+    row.append(copies, name);
     rows[tile].forEach((kind, i) => {
       const copy = document.createElement("span");
       copy.className = `tray-copy ${kind}`;
@@ -129,7 +135,7 @@ function renderTray(tray, view, me) {
         mark.textContent = MARKS[kind];
         copy.append(mark);
       }
-      row.append(copy);
+      copies.append(copy);
     });
     tray.append(row);
   }
