@@ -507,12 +507,23 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
   gap: calc(var(--strip) * 0.06);
   padding: calc(var(--strip) * 0.06) 0;
 }
-/* the tiles in play, at a glance; clicking opens what each does */
+/* the tiles in play, at a glance; clicking opens what each does.  Each has a column,
+   which the unknown tiles below share, and the columns wrap together */
+.sidebar {
+  --play-glyph: calc(var(--strip) * 0.36);
+  --play-column: calc(var(--play-glyph) * 0.8);
+}
+.in-play,
+.hidden-tiles-contents {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, var(--play-column));
+  column-gap: 2px;
+  justify-items: center;
+}
 .in-play {
   padding: 0 18px;
-  font-size: calc(var(--strip) * 0.36);
+  font-size: var(--play-glyph);
   line-height: 1;
-  letter-spacing: 2px;
   cursor: pointer;
 }
 .in-play:hover {
@@ -558,6 +569,16 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
   font-size: 28px;
   line-height: 1;
   color: #555555;
+}
+/* the copies of a tile we haven't seen, stacked under it */
+.hidden-tiles-contents {
+  row-gap: 10px;
+  font-size: calc(var(--play-glyph) * 0.72);
+}
+.unknown-column {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 /* a tile that's left the board, on its way to the graveyard or an exchange */
 .ghost {

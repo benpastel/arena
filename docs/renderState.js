@@ -272,7 +272,6 @@ function renderOther(player_view) {
   for (const [selector, tiles] of [
     [".graveyard-contents", player_view.discard],
     [".unused-contents", player_view.unused_tiles],
-    [".hidden-tiles-contents", player_view.hidden_tiles],
   ]) {
     const contents = document.querySelector(selector);
     contents.innerHTML = "";
@@ -283,7 +282,27 @@ function renderOther(player_view) {
       contents.append(element);
     }
   }
-  document.querySelector(".in-play").textContent = player_view.tiles_in_game.join("");
+  // the tiles in play, and under each in its own column, its copies we haven't seen
+  const inPlay = document.querySelector(".in-play");
+  const unknown = document.querySelector(".hidden-tiles-contents");
+  inPlay.replaceChildren();
+  unknown.replaceChildren();
+  for (const tile of player_view.tiles_in_game) {
+    const glyph = document.createElement("span");
+    glyph.textContent = tile;
+    inPlay.append(glyph);
+    const column = document.createElement("span");
+    column.className = "unknown-column";
+    for (const hidden of player_view.hidden_tiles) {
+      if (hidden === tile) {
+        const element = document.createElement("span");
+        element.className = "acc-tile";
+        element.textContent = tile;
+        column.append(element);
+      }
+    }
+    unknown.append(column);
+  }
   document.querySelector(".smite-cost .cost").textContent = `= $${player_view.smite_cost}`;
 }
 
