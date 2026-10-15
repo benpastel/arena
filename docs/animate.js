@@ -20,8 +20,11 @@ import {findCell} from "./renderState.js";
 // pieces slide at one speed however far they go: a step, a hook's pull, a ram's knockback
 const SLIDE_MS_PER_SQUARE = 220;
 // tiles flying on and off the board (to the graveyard, from a hand, to and from an
-// exchange) go at one speed too, faster; a dying tile first pauses where it died
-const FLY_MS_PER_SQUARE = 150;
+// exchange) go at one speed too, for now the slides', and however short the hop, take
+// as long as two squares, so a tile placed from a hand next to it is still seen to
+// arrive; a dying tile first pauses where it died
+const FLY_MS_PER_SQUARE = 220;
+const FLY_MIN_SQUARES = 2;
 const PAUSE_MS = 140;
 // the pause between an exchange's swap and the shuffle of its stack
 const SHUFFLE_BEAT_MS = 250;
@@ -142,7 +145,7 @@ function animate(before, board, view) {
     }
     if (piece && hand[used]) {
       const from = hand[used].rect;
-      fly(piece, from, travel(from, piece.getBoundingClientRect(), square, FLY_MS_PER_SQUARE), delay);
+      fly(piece, from, travel(from, piece.getBoundingClientRect(), square, FLY_MS_PER_SQUARE, FLY_MIN_SQUARES), delay);
     }
     closeHand(player, hand.filter((_, i) => i !== used), square);
   }
@@ -256,8 +259,8 @@ function ghost(glyph, from, target, duration, pause = 0, toRect = null) {
 // a dead tile pauses where it died, then flies to its place in the graveyard
 function ghostToGrave(from, grave, square) {
   const duration = grave
-    ? travel(from.rect, grave.getBoundingClientRect(), square, FLY_MS_PER_SQUARE)
-    : FLY_MS_PER_SQUARE;
+    ? travel(from.rect, grave.getBoundingClientRect(), square, FLY_MS_PER_SQUARE, FLY_MIN_SQUARES)
+    : FLY_MS_PER_SQUARE * FLY_MIN_SQUARES;
   // the graveyard shows the tile's face, which the board may not have
   ghost(grave ? grave.textContent : from.glyph, from, grave, duration, PAUSE_MS);
 }
@@ -321,12 +324,12 @@ function animateExchange(board, before, view, kept, square) {
 
     let wait = 0;
     if (swapped && piece && from && slots[slot]) {
-      wait = travel(slots[slot], piece.getBoundingClientRect(), square, FLY_MS_PER_SQUARE);
+      wait = travel(slots[slot], piece.getBoundingClientRect(), square, FLY_MS_PER_SQUARE, FLY_MIN_SQUARES);
       fly(piece, slots[slot], wait);
       // the old tile lands in that place, drawn there by whichever tile will be there
       // until the shuffle
       const lands = marks[reorder ? 1 - slot : slot];
-      const duration = travel(from.rect, slots[slot], square, FLY_MS_PER_SQUARE);
+      const duration = travel(from.rect, slots[slot], square, FLY_MS_PER_SQUARE, FLY_MIN_SQUARES);
       ghost(oldGlyph, from, lands, duration, 0, slots[slot]);
       wait = Math.max(wait, duration);
     }
