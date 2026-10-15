@@ -637,34 +637,60 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
 .strip .coins {
   grid-column: 2;
   display: flex;
-  align-items: baseline;
-  gap: 2px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: calc(var(--strip) * 0.06);
 }
 .amount {
   min-width: 2.2em;
   text-align: right;
   font-size: calc(var(--strip) * 0.32);
+  line-height: 1;
 }
-/* this decision's seconds, then the reserve; only on a timed table */
+/* a timed table's money gives up a little size to the clock under it */
+.timed .amount {
+  font-size: calc(var(--strip) * 0.28);
+}
+/* this decision's seconds, then the reserve, in a chip drawn like a tile's shell; only
+   on a timed table */
 .clock {
   display: none;
-  margin-left: calc(var(--strip) * 0.3);
-  gap: calc(var(--strip) * 0.14);
-  font-size: calc(var(--strip) * 0.18);
+  border: 1px solid var(--frame);
+  border-radius: 5px;
+  font-size: calc(var(--strip) * 0.16);
+  line-height: 1;
   font-variant-numeric: tabular-nums;
-  color: var(--muted);
+  color: var(--ink);
+  background-color: white;
+}
+.timed .clock {
+  display: flex;
+}
+.clock span {
+  padding: 0.35em 0.6em;
+  text-align: right;
 }
 /* sized for their widest, so the numbers stay put as they count down */
 .allowance {
   min-width: 1.3em;
-  text-align: right;
+}
+.allowance:empty {
+  display: none;
 }
 .reserve {
   min-width: 2.3em;
-  text-align: right;
 }
-.timed .clock {
-  display: flex;
+.allowance + .reserve {
+  border-left: 1px solid var(--line);
+}
+/* whichever isn't counting down is greyed */
+.clock .idle {
+  color: var(--faint);
+}
+/* a clock that isn't running at all */
+.clock.stopped {
+  border-color: var(--line);
+  color: var(--muted);
 }
 .hand-tiles {
   grid-column: 3;

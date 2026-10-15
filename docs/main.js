@@ -157,13 +157,19 @@ window.addEventListener("DOMContentLoaded", () => {
         continue;
       }
       let left = clock.reserve[owner];
-      if (clock.running === owner) {
+      const running = clock.running === owner;
+      let onReserve = false;
+      if (running) {
         const now = Date.now();
         allowance.textContent = Math.ceil(Math.max(0, clock.allowanceEnds - now) / 1000);
+        onReserve = now >= clock.allowanceEnds;
         left = Math.max(0, left - Math.max(0, now - clock.allowanceEnds));
       } else {
         allowance.textContent = "";
       }
+      strip.querySelector(".clock").classList.toggle("stopped", !running);
+      allowance.classList.toggle("idle", onReserve);
+      reserve.classList.toggle("idle", running && !onReserve);
       const seconds = Math.ceil(left / 1000);
       reserve.textContent = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
     }
