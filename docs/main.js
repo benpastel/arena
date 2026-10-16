@@ -13,16 +13,13 @@ import {
 } from "./renderState.js";
 
 import {renderSelection} from "./renderSelection.js";
+import {renderChoice} from "./renderChoice.js";
 
 import {snapshot, animate} from "./animate.js";
 import {confetti} from "./confetti.js";
 import {renderTray} from "./tray.js";
 
-import {
-  highlightSquares,
-  highlightHand,
-  highlightBoardTiles,
-} from "./renderHighlights.js";
+import {highlightSquares} from "./renderHighlights.js";
 
 import {setUpLobby, renderLobby, renderRoom} from "./lobby.js";
 
@@ -119,10 +116,14 @@ window.addEventListener("DOMContentLoaded", () => {
   const toast = document.querySelector(".toast");
 
   // the latest picks / claim, redrawn whenever the board is
-  // and the latest highlights, whose actions and targets are drawn on the board too
+  // and the latest highlights, whose actions and targets are drawn on the board too,
+  // and whose other choices are offered beside the board's squares
   let selection = null;
   let highlight = null;
-  const redrawSelection = () => renderSelection(board, selection, highlight);
+  const redrawSelection = () => {
+    renderSelection(board, selection, highlight);
+    renderChoice(board, selection, highlight, orientation);
+  };
 
   function renderGame(player_view) {
     const before = snapshot(board);
@@ -416,8 +417,6 @@ window.addEventListener("DOMContentLoaded", () => {
       // the server should call this again with empty lists to clear the highlights
       highlight = event;
       highlightSquares(event["squares"], board, table?.mySide);
-      highlightHand(event["handTiles"], container);
-      highlightBoardTiles(event["boardTiles"], board);
       redrawSelection();
     } else if (event.type === "PROMPT") {
       CHOICE_ID = parseInt(event.choiceId);
@@ -433,14 +432,20 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  sendSelection(board, container, net);
+  sendSelection(board, net);
 
   net.connect();
 });
 
-function sendSelection(board, container, net) {
+function sendSelection(board, net) {
   // send all clicks on the board
   board.addEventListener("click", ({ target }) => {
+    // a tile or answer in a choice's panel
+    const pick = target.closest(".choice-panel .option");
+    if (pick) {
+      net.send({choiceId: CHOICE_ID, data: {[pick.dataset.pick]: pick.dataset.name}});
+      return;
+    }
     // an ability or response drawn on the board; one in a square also picks that square
     const option = target.closest(".option");
     if (option) {
@@ -457,10 +462,8 @@ function sendSelection(board, container, net) {
       return;
     }
 
-    // send both the square's (row, column)
-    // and the tile if it exists
-    // and let the server decide if it's a valid start, target, or exchange tile
-    const boardTile = target.closest("[data-tile-name]")?.dataset.tileName;
+    // send the square's (row, column)
+    // and let the server decide if it's a valid start or target
     const cell = target.closest(".cell");
     if (!cell) {
       return;
@@ -474,28 +477,10 @@ function sendSelection(board, container, net) {
       data.row = row;
       data.column = column;
     }
-    if (boardTile !== undefined) {
-      data.boardTile = boardTile;
-    }
 
     net.send({
       choiceId: CHOICE_ID,
       data
-    });
-  });
-
-  // send all clicks in the hand
-  // and let server decide if they are valid replacements for a lost tile
-  //
-  // clicks on the opponent's tiles are also sent, but they are Tile.HIDDEN so never valid
-  container.addEventListener("click", ({ target }) => {
-    const handTile = target.closest(".hand-tile")?.dataset.tileName;
-    if (handTile === undefined) {
-      return;
-    }
-    net.send({
-      choiceId: CHOICE_ID,
-      data: {handTile}
     });
   });
 }

@@ -5,15 +5,14 @@
 //  - Once a piece is picked, every square it can reach shows a small glyph for each
 //    ability that can target it; clicking one picks the ability and the target at once.
 //  - A finished claim is a line from the piece to its target in the claimant's colour,
-//    annotated with the claimed ability.  A reflect is added to the note, and so are
-//    the responses (✓, 🚩, reflect) when it's this player's turn to respond.
+//    annotated with the claimed ability.  A reflect is added to the note; the answers
+//    to a claim are offered beside it (see renderChoice.js).
 //  - A target picked on its own (the tile a player is about to lose) is a pick.
 
 import {
   CHOSEN_START,
   CHOSEN_TARGET,
   ACTION_NAMES,
-  RESPONSES,
   ALL_TILES,
   TILES,
 } from "./constants.js";
@@ -83,7 +82,7 @@ function drawTargets(board, targets) {
   }
 }
 
-function drawClaim(board, selection, responses) {
+function drawClaim(board, selection) {
   const {player, start, action, target, reflect} = selection;
   const [x1, y1] = pieceCenter(board, start);
   const [x2, y2] = pieceCenter(board, target);
@@ -166,16 +165,6 @@ function drawClaim(board, selection, responses) {
     note.append(reflected);
   }
 
-  if (responses.length > 0) {
-    // the claim, then a break, then the answers to it
-    const separator = document.createElement("span");
-    separator.classList.add("note-separator");
-    separator.textContent = "—";
-    note.append(separator);
-  }
-  for (const response of responses) {
-    note.append(option(response));
-  }
   board.append(note);
   keepOnBoard(board, note, noteX, noteY, x1, y1, x2, y2);
 }
@@ -228,12 +217,9 @@ function clearSelection(board) {
 function renderSelection(board, selection, highlight) {
   clearSelection(board);
   const targets = highlight?.targets ?? {};
-  const actions = highlight?.actions ?? [];
 
   if (selection && selection.start && selection.action && selection.target) {
-    // a finished claim, with the responses to it if they're ours to make
-    const responding = actions.some((name) => name in RESPONSES);
-    drawClaim(board, selection, responding ? actions : []);
+    drawClaim(board, selection);
     return;
   }
 
@@ -248,4 +234,4 @@ function renderSelection(board, selection, highlight) {
   drawTargets(board, targets);
 }
 
-export {renderSelection};
+export {renderSelection, option};

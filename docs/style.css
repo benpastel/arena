@@ -1002,19 +1002,15 @@ exchange's two tiles side by side
 
 /*
 selection; colour only ever says whose piece it is
-  - a tile that can be clicked (a piece, in hand, on an exchange) is drawn bolder,
-    and a picked one also gets a bar under it
-  - abilities, smites and responses are drawn on the board as options (see .option)
+  - a piece that can be clicked is drawn bolder, and a picked one also gets a bar
+    under it
+  - abilities and smites are drawn on the board as options (see .option); the other
+    choices are options in a panel beside a square (see .choice-panel)
 */
-.hand-tile.highlight,
-.board-tile.highlight,
 .cell.highlight.own-piece .piece,
 .cell.chosen-start .piece,
 .cell.chosen-target .piece {
   -webkit-text-stroke: var(--bold) currentColor;
-}
-.cell-marks .board-tile.highlight {
-  color: var(--ink);
 }
 .cell.chosen-start .piece::after,
 .cell.chosen-target .piece::after {
@@ -1076,11 +1072,6 @@ selection; colour only ever says whose piece it is
 .claim-note .option {
   font-size: 7.3cqmin;
 }
-.claim-note .note-separator {
-  font-size: 4.9cqmin;
-  color: var(--muted);
-}
-
 /* options, in every square: a row in the top-right corner, ↕ rightmost */
 .cell-options {
   --option-gap: 0.5cqmin;
@@ -1162,6 +1153,48 @@ the same place
   font-size: 0.5em;
   line-height: 1;
 }
+
+/* a choice that isn't of a square: a panel beside the square it's about, pointing at
+   it; placed by renderChoice.js, which names the side it's on */
+.choice-panel {
+  position: absolute;
+  z-index: 3;
+  padding: 2.2cqmin;
+  display: flex;
+  gap: 1.6cqmin;
+  background-color: white;
+  border: 1.5px solid var(--frame);
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  white-space: nowrap;
+}
+.choice-panel .option {
+  font-size: 12cqmin;
+  transition: transform 120ms;
+}
+.choice-panel .option:hover {
+  transform: translateY(-4%);
+}
+.choice-panel .option.mine {
+  color: var(--you);
+}
+.choice-panel .option.apart {
+  margin-left: 2.4cqmin;
+}
+.choice-panel::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background-color: white;
+  border: 1.5px solid var(--frame);
+  border-top: 0;
+  border-left: 0;
+}
+.choice-panel.above::after { left: calc(var(--point) - 8px); bottom: -9px; transform: rotate(45deg); }
+.choice-panel.below::after { left: calc(var(--point) - 8px); top: -9px; transform: rotate(225deg); }
+.choice-panel.right::after { top: calc(var(--point) - 8px); left: -9px; transform: rotate(135deg); }
+.choice-panel.left::after { top: calc(var(--point) - 8px); right: -9px; transform: rotate(-45deg); }
 
 /* ------------------------------------------------------------------- log */
 .side {

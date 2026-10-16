@@ -29,28 +29,4 @@ function highlightSquares(squares, board, mySide) {
   }
 }
 
-function highlightHand(handTiles, container) {
-  // highlight tiles in hand
-  // pass an empty list to clear highlighting
-  for (const element of container.querySelectorAll('.hand-tile')) {
-    if (handTiles.includes(element.dataset.tileName)) {
-      element.classList.add(HIGHLIGHT);
-    } else {
-      element.classList.remove(HIGHLIGHT);
-    }
-  }
-}
-
-function highlightBoardTiles(boardTiles, board) {
-  // highlight tiles on board
-  // pass an empty list to clear highlighting
-  for (const element of board.querySelectorAll('.board-tile')) {
-    if (boardTiles.includes(element.dataset.tileName)) {
-      element.classList.add(HIGHLIGHT);
-    } else {
-      element.classList.remove(HIGHLIGHT);
-    }
-  }
-}
-
-export {highlightSquares, highlightHand, highlightBoardTiles};
+export {highlightSquares};
