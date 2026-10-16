@@ -590,6 +590,9 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
   font-size: 14px;
   color: var(--muted);
 }
+.sidebar.lists .sidebar-top .area-label {
+  padding: 0 18px;
+}
 .sidebar.lists .acc-tiles {
   font-size: 28px;
   line-height: 1;
@@ -870,8 +873,24 @@ board is sized relative to it (cqmin), so the layout holds at any laptop size.
   border-color: var(--line);
   color: var(--muted);
 }
-.hand-tiles {
+/* a label over an area of the page: the hands, the history, the piece info */
+.area-label {
+  font-size: 14px;
+  color: var(--muted);
+}
+/* your hand and theirs, labelled; the label sits over the tiles' right end */
+.hand {
   grid-column: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.hand .area-label {
+  font-size: 12px;
+  line-height: 1;
+}
+.hand-tiles {
   display: flex;
   justify-content: flex-end;
   gap: 6px;
@@ -1161,11 +1180,24 @@ the same place
   z-index: 3;
   padding: 2.2cqmin;
   display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 1.6cqmin;
   background-color: white;
   border: 1.5px solid var(--frame);
   border-radius: 8px;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+}
+/* what's being asked, no wider than the board allows */
+.choice-prompt {
+  max-width: min(22em, 70cqw);
+  font-size: 14px;
+  text-align: center;
+  color: var(--ink);
+}
+.choice-options {
+  display: flex;
+  gap: 1.6cqmin;
   white-space: nowrap;
 }
 .choice-panel .option {
@@ -1204,6 +1236,11 @@ the same place
   display: flex;
   flex-direction: column;
   border-left: 1px solid var(--line);
+  /* sized by the page's grid, so its label can line up with the log's rows (cqi) */
+  container-type: inline-size;
+}
+.side > .area-label {
+  padding: 12px 5cqi 0;
 }
 /* switches the left column's layout; kept out of the way in the corner */
 .layout-toggle {

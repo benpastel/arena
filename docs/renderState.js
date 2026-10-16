@@ -319,6 +319,14 @@ function renderOther(player_view) {
   }
 }
 
+// what a tile, moving, smiting, or an answer to a claim does, a line to an effect;
+// the smite's cost is this game's
+function ruleLines(glyph, player_view) {
+  return glyph === "⚡"
+    ? [`on reaching $${player_view.smite_cost}, pay it to kill any enemy tile`]
+    : DESCRIPTIONS[glyph];
+}
+
 function renderRules(list, player_view, entries = [...player_view.tiles_in_game, "↕", "⚡"]) {
   // the reference: every tile in play, then moving and smiting, written out
   list.innerHTML = "";
@@ -336,10 +344,7 @@ function renderRules(list, player_view, entries = [...player_view.tiles_in_game,
     name.textContent = ACTION_NAMES[glyph];
     const text = document.createElement("div");
     text.className = "rule-text";
-    const lines = glyph === "⚡"
-      ? [`on reaching $${player_view.smite_cost}, pay it to kill any enemy tile`]
-      : DESCRIPTIONS[glyph];
-    for (const line of lines) {
+    for (const line of ruleLines(glyph, player_view)) {
       const lineElement = document.createElement("div");
       lineElement.textContent = line;
       text.append(lineElement);
@@ -432,4 +437,4 @@ function renderArrows(arrows) {
   return svg;
 }
 
-export {createBoard, renderBoard, renderLog, renderHand, findCell, renderOther, renderRules, renderWebs};
+export {createBoard, renderBoard, renderLog, renderHand, findCell, renderOther, renderRules, ruleLines, renderWebs};

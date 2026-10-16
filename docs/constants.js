@@ -82,6 +82,11 @@ const DESCRIPTIONS = {
   "🀗": ["move 2", "leave webs: an enemy crossing one loses a turn", "webs block fireballs, and fireballs and grenades clear them", "go again after an exchange"],
   "↕": ["move 1", "gain $1"],
   "⚡": ["on reaching the smite cost, pay it to kill any enemy tile"],
+  "✓": ["the claimed ability goes ahead"],
+  "🚩": [
+    "the tile is revealed: if it has the ability, the challenger loses a tile and the ability goes ahead",
+    "if it doesn't, the claimer loses a tile and the ability is blocked",
+  ],
 };
 // a mini board for each, drawn from your side (forward is up); a tile with two uses
 // gets one board per use. Each square is a token:

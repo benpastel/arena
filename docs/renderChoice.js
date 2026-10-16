@@ -8,7 +8,8 @@
 //  - an exchange: your tile, then the exchange's two, beside the exchange
 //  - a replacement: your hand, beside the empty place it fills
 //
-// Each tile or answer in the panel carries what clicking it sends.
+// The panel says what's being asked, over the tiles or answers; each carries what
+// clicking it sends.
 
 import {RESPONSES} from "./constants.js";
 import {findCell} from "./renderState.js";
@@ -124,23 +125,35 @@ function place(board, panel, cell, sides) {
   panel.style.setProperty("--point", `${Math.min(Math.max(point, 14), length - 14)}px`);
 }
 
-function renderChoice(board, selection, highlight, me) {
+// Draw the panel for the choice in hand, if there is one, asking `prompt`; says
+// whether it drew one.
+function renderChoice(board, selection, highlight, me, prompt) {
   board.querySelector(".choice-panel")?.remove();
   const choice = choiceOf(board, selection, highlight, me);
   if (!choice) {
-    return;
+    return false;
   }
   const panel = document.createElement("div");
   panel.className = "choice-panel";
+  if (prompt) {
+    const asked = document.createElement("div");
+    asked.className = "choice-prompt";
+    asked.textContent = prompt;
+    panel.append(asked);
+  }
+  const options = document.createElement("div");
+  options.className = "choice-options";
+  panel.append(options);
   for (const {pick, name, mine, apart} of choice.items) {
     const item = option(name);
     item.dataset.pick = pick;
     item.classList.toggle("mine", Boolean(mine));
     item.classList.toggle("apart", Boolean(apart));
-    panel.append(item);
+    options.append(item);
   }
   board.append(panel);
   place(board, panel, choice.cell, choice.sides);
+  return true;
 }
 
 export {renderChoice};

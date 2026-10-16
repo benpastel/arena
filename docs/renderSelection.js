@@ -12,7 +12,6 @@
 import {
   CHOSEN_START,
   CHOSEN_TARGET,
-  ACTION_NAMES,
   ALL_TILES,
   TILES,
 } from "./constants.js";
@@ -38,7 +37,6 @@ function option(name) {
   const element = document.createElement("span");
   element.classList.add("option");
   element.dataset.name = name;
-  element.title = ACTION_NAMES[name];
   if (!(name in TILES)) {
     element.classList.add("shell");
     const symbol = document.createElement("span");
@@ -154,14 +152,12 @@ function drawClaim(board, selection) {
   const claimed = document.createElement("span");
   claimed.classList.add("claimed", player);
   claimed.textContent = action;
-  claimed.title = ACTION_NAMES[action];
   note.append(claimed);
 
   if (reflect) {
     const reflected = document.createElement("span");
     reflected.classList.add("claimed", player === "north" ? "south" : "north");
     reflected.textContent = reflect;
-    reflected.title = ACTION_NAMES[reflect];
     note.append(reflected);
   }
 

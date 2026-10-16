@@ -9,8 +9,11 @@ import {
   renderHand,
   renderOther,
   renderRules,
+  ruleLines,
   renderWebs,
 } from "./renderState.js";
+
+import {ACTION_NAMES, DESCRIPTIONS} from "./constants.js";
 
 import {renderSelection} from "./renderSelection.js";
 import {renderChoice} from "./renderChoice.js";
@@ -122,7 +125,7 @@ window.addEventListener("DOMContentLoaded", () => {
   let highlight = null;
   const redrawSelection = () => {
     renderSelection(board, selection, highlight);
-    renderChoice(board, selection, highlight, orientation);
+    drawTurn();
   };
 
   function renderGame(player_view) {
@@ -138,17 +141,27 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   // the turn is shown in the strip of whoever the game is waiting on: what to do in
-  // ours, or what they're doing in theirs
-  function showTurn(promptText, choiceId, waiting) {
+  // ours, or what they're doing in theirs; a choice with a panel of its own is asked
+  // there instead, and once it's made the strip stays quiet until the next prompt
+  let turn = {prompt: "", choiceId: 0, waiting: false, asked: false};
+  function showTurn(prompt, choiceId, waiting) {
+    turn = {prompt, choiceId, waiting, asked: false};
+    redrawSelection();
+  }
+  function drawTurn() {
+    const ours = turn.choiceId > 0;
+    const panel = renderChoice(board, selection, highlight, orientation, ours ? turn.prompt : "");
+    turn.asked ||= panel && ours;
     let acting = null;
-    if (choiceId > 0) {
+    if (ours) {
       acting = bottomStrip;
-    } else if (waiting) {
+    } else if (turn.waiting) {
       acting = topStrip;
     }
     for (const strip of [topStrip, bottomStrip]) {
       strip.classList.toggle("acting", strip === acting);
-      strip.querySelector(".turn-note").textContent = strip === acting ? promptText : "";
+      const shown = strip === acting && !(ours && turn.asked);
+      strip.querySelector(".turn-note").textContent = shown ? turn.prompt : "";
     }
   }
   window.addEventListener("resize", redrawSelection);
@@ -256,6 +269,32 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   });
   document.querySelector(".tray-side .smite-cost").addEventListener("click", () => showRules(["⚡"]));
+
+  // any tile or button in the game says what it is and does when hovered, and opens
+  // its own reference when right-clicked
+  const describedAt = (target) => {
+    for (let element = target; element && element !== container; element = element.parentElement) {
+      const {name, tileName, tile} = element.dataset;
+      const glyph = name ?? tileName ?? tile ?? (element.children.length === 0 ? element.textContent.trim() : "");
+      if (glyph in DESCRIPTIONS) {
+        return {element, glyph};
+      }
+    }
+    return null;
+  };
+  container.addEventListener("mouseover", ({ target }) => {
+    const found = lastView && describedAt(target);
+    if (found) {
+      found.element.title = [ACTION_NAMES[found.glyph], ...ruleLines(found.glyph, lastView)].join("\n");
+    }
+  });
+  container.addEventListener("contextmenu", (event) => {
+    const found = lastView && describedAt(event.target);
+    if (found) {
+      event.preventDefault();
+      showRules([found.glyph]);
+    }
+  });
 
   // the left column's layout, switched from the corner and remembered
   const layoutToggle = document.querySelector(".layout-toggle");
